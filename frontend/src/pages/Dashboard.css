@@ -1,0 +1,81 @@
+.dashboard {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dashboard h1 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metric label {
+  display: block;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.error {
+  background-color: #e74c3c;
+  color: white;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.trend-item {
+  padding: 1rem;
+  background-color: #ecf0f1;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.trend-item p {
+  margin: 0;
+}
+
+.card ul {
+  list-style-position: inside;
+  line-height: 2;
+}
+
+.card li {
+  margin-bottom: 0.5rem;
+}
+

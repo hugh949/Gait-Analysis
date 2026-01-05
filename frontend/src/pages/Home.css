@@ -1,0 +1,75 @@
+.home {
+  text-align: center;
+}
+
+.hero {
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.feature-card {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.feature-card h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.feature-card p {
+  color: #7f8c8d;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.info-section {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.info-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.info-section ul {
+  list-style-position: inside;
+  color: #7f8c8d;
+  line-height: 2;
+}
+
+.info-section li {
+  margin-bottom: 0.5rem;
+}
+
