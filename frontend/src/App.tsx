@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import AnalysisUpload from './pages/AnalysisUpload'
 
 function App() {
   const [selectedAudience, setSelectedAudience] = useState('home')
@@ -16,10 +17,7 @@ function App() {
         } />
         <Route path="/upload" element={
           <Layout selectedAudience={selectedAudience} setSelectedAudience={setSelectedAudience}>
-            <div className="upload-page">
-              <h2>Upload Video</h2>
-              <p>Upload page coming soon...</p>
-            </div>
+            <AnalysisUpload />
           </Layout>
         } />
         <Route path="/medical" element={
