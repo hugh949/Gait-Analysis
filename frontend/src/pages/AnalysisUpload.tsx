@@ -200,8 +200,8 @@ export default function AnalysisUpload() {
                   <div className="step-description">Computing gait metrics</div>
                 </div>
               </div>
-              <div className={`step ${currentStep === 'report_generation' ? 'active' : status === 'completed' ? 'completed' : ''}`}>
-                <div className="step-number">{status === 'completed' ? '✓' : currentStep === 'report_generation' ? <Loader2 className="spinner" /> : '4'}</div>
+              <div className={`step ${currentStep === 'report_generation' ? 'active' : ''}`}>
+                <div className="step-number">{currentStep === 'report_generation' ? <Loader2 className="spinner" /> : '4'}</div>
                 <div className="step-content">
                   <div className="step-title">Report Generation</div>
                   <div className="step-description">Generating analysis reports</div>
