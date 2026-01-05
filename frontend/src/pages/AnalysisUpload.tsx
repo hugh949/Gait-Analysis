@@ -2,7 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import './AnalysisUpload.css'
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+// Use production backend URL when running on Azure Static Web Apps
+const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('azurestaticapps.net')) {
+    return 'https://gait-analysis-api-simple.azurewebsites.net'
+  }
+  return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+}
+
+const API_URL = getApiUrl()
 
 type AnalysisStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed'
 

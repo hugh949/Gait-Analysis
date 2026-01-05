@@ -195,8 +195,8 @@ echo ""
 # Step 5: Verify deployment
 print_status "Step 5/5: Verifying deployment..."
 
-# Go back to project root for Azure CLI
-cd "$(dirname "$0")/.."
+# Go back to project root for Azure CLI (we're in frontend directory)
+cd "$(dirname "$0")/.." 2>/dev/null || cd .. 2>/dev/null || true
 
 STATIC_WEB_APP_URL=$(az staticwebapp show \
     --name "$STATIC_WEB_APP_NAME" \

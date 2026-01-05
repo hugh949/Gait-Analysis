@@ -3,10 +3,21 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSASToken, uploadToBlobStorage, processVideo, getAnalysis } from '../services/api'
+import { getAnalysis } from '../services/api'
+import axios from 'axios'
 import './UploadImproved.css'
 
-type UploadStatus = 'idle' | 'getting-token' | 'uploading' | 'processing' | 'completed' | 'failed'
+// Use production backend URL when running on Azure Static Web Apps
+const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('azurestaticapps.net')) {
+    return 'https://gait-analysis-api-simple.azurewebsites.net'
+  }
+  return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+}
+
+const API_URL = getApiUrl()
+
+type UploadStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed'
 
 type ProcessingStep = 
   | 'pose_estimation'
@@ -141,12 +152,6 @@ export default function UploadImproved() {
     }
   }
 
-  const generateBlobName = (fileName: string): string => {
-    const timestamp = Date.now()
-    const sanitized = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
-    return `videos/${timestamp}_${sanitized}`
-  }
-
   const handleUpload = async () => {
     if (!file) {
       setError('Please select a file')
@@ -154,42 +159,61 @@ export default function UploadImproved() {
     }
 
     setError(null)
-    setStatus('getting-token')
-    setStatusMessage('Preparing upload...')
+    setStatus('uploading')
+    setStatusMessage('Uploading video...')
     setCurrentStep(null)
     setCompletedSteps(new Set())
+    setUploadProgress(0)
+
+    const formData = new FormData()
+    formData.append('file', file)
 
     try {
-      const blobName = generateBlobName(file.name)
-
-      setStatusMessage('Getting upload permissions...')
-      const sasResponse = await getSASToken(blobName, 60)
-
-      setStatus('uploading')
-      setStatusMessage('Uploading video...')
-      setUploadProgress(0)
-
-      await uploadToBlobStorage(file, sasResponse.sas_url, (progress) => {
-        setUploadProgress(progress)
-        setStatusMessage(`Uploading video... ${Math.round(progress)}%`)
+      const response = await axios.post(`${API_URL}/api/v1/analysis/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 300000, // 5 minutes timeout for large files
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            )
+            setUploadProgress(percentCompleted)
+            setStatusMessage(`Uploading video... ${percentCompleted}%`)
+          }
+        },
       })
 
+      setAnalysisId(response.data.analysis_id)
       setStatus('processing')
-      setStatusMessage('Starting analysis...')
+      setStatusMessage('Video uploaded! Starting analysis...')
       setUploadProgress(100)
-
-      const processResponse = await processVideo({
-        blob_name: blobName,
-        view_type: 'front',
-        fps: 30.0,
-      })
-
-      setAnalysisId(processResponse.analysis_id)
-      setStatusMessage('Processing video...')
 
     } catch (err: any) {
       setStatus('failed')
-      setError(err.message || 'Upload failed. Please try again.')
+      
+      // Provide more detailed error messages
+      let errorMessage = 'Upload failed'
+      
+      if (err.response) {
+        // Server responded with error
+        errorMessage = err.response.data?.detail || err.response.data?.message || `Server error: ${err.response.status}`
+      } else if (err.request) {
+        // Request made but no response
+        if (err.code === 'ECONNABORTED') {
+          errorMessage = 'Upload timeout - The file may be too large or the server is taking too long to respond. Please try again.'
+        } else if (err.code === 'ERR_NETWORK') {
+          errorMessage = 'Network error - Cannot connect to server. The server may be starting up (this can take 30-60 seconds). Please wait and try again.'
+        } else {
+          errorMessage = `Network error: ${err.message || 'Unable to connect to server'}`
+        }
+      } else {
+        // Error setting up request
+        errorMessage = `Error: ${err.message || 'Unknown error'}`
+      }
+      
+      setError(errorMessage)
       setStatusMessage('')
       setUploadProgress(0)
       setCurrentStep(null)
@@ -306,7 +330,6 @@ export default function UploadImproved() {
             disabled={!file || status !== 'idle'}
             className="upload-button"
           >
-            {status === 'getting-token' && 'Preparing...'}
             {status === 'uploading' && 'Uploading...'}
             {status === 'processing' && 'Processing...'}
             {status === 'idle' && 'Upload and Analyze'}

@@ -2,7 +2,14 @@ import { useState } from 'react'
 import axios from 'axios'
 import './Dashboard.css'
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('azurestaticapps.net')) {
+    return 'https://gait-analysis-api-simple.azurewebsites.net'
+  }
+  return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+}
+
+const API_URL = getApiUrl()
 
 interface CaregiverReport {
   fall_risk: {

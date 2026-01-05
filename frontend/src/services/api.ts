@@ -3,7 +3,17 @@
  */
 import axios from 'axios'
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+// Use production backend URL when running on Azure Static Web Apps
+const getApiUrl = () => {
+  // Check if we're in production (hosted on Azure)
+  if (typeof window !== 'undefined' && window.location.hostname.includes('azurestaticapps.net')) {
+    return 'https://gait-analysis-api-simple.azurewebsites.net'
+  }
+  // Use environment variable if set, otherwise default to localhost for development
+  return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+}
+
+const API_URL = getApiUrl()
 
 const apiClient = axios.create({
   baseURL: `${API_URL}/api/v1`,
