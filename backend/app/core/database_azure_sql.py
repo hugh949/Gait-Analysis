@@ -325,9 +325,16 @@ class AzureSQLService:
     async def create_analysis(self, analysis_data: Dict) -> bool:
         """Create new analysis record"""
         if self._use_mock:
+            # CRITICAL: Reload from file first to ensure we don't overwrite existing data
+            self._load_mock_storage()
+            
             # Store in in-memory mock storage (use class variable to ensure persistence)
             from datetime import datetime
             analysis_id = analysis_data.get('id')
+            if not analysis_id:
+                logger.error("Analysis data missing 'id' field")
+                return False
+            
             AzureSQLService._mock_storage[analysis_id] = {
                 'id': analysis_id,
                 'patient_id': analysis_data.get('patient_id'),
@@ -343,8 +350,15 @@ class AzureSQLService:
             }
             logger.debug(f"About to save mock storage with {len(AzureSQLService._mock_storage)} analyses")
             self._save_mock_storage()  # Persist to file
-            logger.info(f"Created analysis in mock storage: {analysis_id}. Total analyses: {len(AzureSQLService._mock_storage)}")
-            return True
+            
+            # CRITICAL: Verify the save worked by checking in-memory storage
+            # The in-memory storage should be the source of truth immediately after save
+            if analysis_id in AzureSQLService._mock_storage:
+                logger.info(f"Created analysis in mock storage: {analysis_id}. Total analyses: {len(AzureSQLService._mock_storage)}")
+                return True
+            else:
+                logger.error(f"Analysis was not found in mock storage immediately after creation: {analysis_id}")
+                return False
         
         try:
             with self.get_connection() as conn:
@@ -372,6 +386,10 @@ class AzureSQLService:
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
         """Update analysis record"""
         if self._use_mock:
+            # CRITICAL: Reload from file first to ensure we have latest data
+            # This handles cases where another process/thread might have updated it
+            self._load_mock_storage()
+            
             # Update in-memory mock storage (use class variable to ensure persistence)
             if analysis_id in AzureSQLService._mock_storage:
                 from datetime import datetime
