@@ -256,6 +256,8 @@ class AzureSQLService:
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """Get analysis record"""
         if self._use_mock:
+            # Reload from file to ensure we have latest data (handles multi-process scenarios)
+            self._load_mock_storage()
             # Get from in-memory mock storage (use class variable to ensure persistence)
             if analysis_id in AzureSQLService._mock_storage:
                 logger.debug(f"Retrieved analysis from mock storage: {analysis_id}")
@@ -298,6 +300,8 @@ class AzureSQLService:
     async def list_analyses(self, limit: int = 50) -> List[Dict]:
         """List all analyses, ordered by most recent first"""
         if self._use_mock:
+            # Reload from file to ensure we have latest data
+            self._load_mock_storage()
             # Get all from in-memory mock storage (use class variable to ensure persistence)
             analyses = list(AzureSQLService._mock_storage.values())
             # Sort by created_at descending
