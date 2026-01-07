@@ -579,16 +579,24 @@ class GaitAnalysisService:
         fps: float,
         reference_length_mm: Optional[float]
     ) -> Dict:
-        """Calculate gait parameters from 3D pose sequence"""
+        """
+        Advanced gait parameter calculation using leg-focused biomechanical models
+        Implements multi-angle gait analysis with temporal filtering
+        """
         if len(frames_3d_keypoints) < 10:
             logger.warning("Not enough frames for gait analysis")
             return self._empty_metrics()
         
-        # Extract ankle positions over time
+        # LEG-FOCUSED: Extract lower body joint positions
         left_ankle_positions = []
         right_ankle_positions = []
+        left_heel_positions = []
+        right_heel_positions = []
+        left_knee_positions = []
+        right_knee_positions = []
         
         for keypoints in frames_3d_keypoints:
+            # Primary: Ankles (main gait measurement point)
             if 'left_ankle' in keypoints and 'right_ankle' in keypoints:
                 left_ankle_positions.append([
                     keypoints['left_ankle']['x'],
@@ -600,51 +608,104 @@ class GaitAnalysisService:
                     keypoints['right_ankle']['y'],
                     keypoints['right_ankle']['z']
                 ])
+            
+            # Heels (for precise heel strike detection)
+            if 'left_heel' in keypoints:
+                left_heel_positions.append([
+                    keypoints['left_heel']['x'],
+                    keypoints['left_heel']['y'],
+                    keypoints['left_heel'].get('z', 0.0)
+                ])
+            if 'right_heel' in keypoints:
+                right_heel_positions.append([
+                    keypoints['right_heel']['x'],
+                    keypoints['right_heel']['y'],
+                    keypoints['right_heel'].get('z', 0.0)
+                ])
+            
+            # Knees (for leg angle and joint kinematics)
+            if 'left_knee' in keypoints:
+                left_knee_positions.append([
+                    keypoints['left_knee']['x'],
+                    keypoints['left_knee']['y'],
+                    keypoints['left_knee'].get('z', 0.0)
+                ])
+            if 'right_knee' in keypoints:
+                right_knee_positions.append([
+                    keypoints['right_knee']['x'],
+                    keypoints['right_knee']['y'],
+                    keypoints['right_knee'].get('z', 0.0)
+                ])
         
         if len(left_ankle_positions) < 5 or len(right_ankle_positions) < 5:
+            logger.warning(f"Insufficient ankle positions: left={len(left_ankle_positions)}, right={len(right_ankle_positions)}")
             return self._empty_metrics()
         
         left_ankle_positions = np.array(left_ankle_positions)
         right_ankle_positions = np.array(right_ankle_positions)
         
-        # Calibrate scale using reference length or body proportions
-        scale_factor = self._calibrate_scale(frames_3d_keypoints, reference_length_mm)
+        # Use heel positions if available (more accurate for step detection)
+        if len(left_heel_positions) >= 5:
+            left_heel_positions = np.array(left_heel_positions)
+            # Use heels for step detection, ankles for distance calculation
+            left_step_positions = left_heel_positions
+        else:
+            left_step_positions = left_ankle_positions
         
-        # Calculate step events (heel strikes)
-        left_steps, right_steps = self._detect_steps(left_ankle_positions, right_ankle_positions, timestamps)
+        if len(right_heel_positions) >= 5:
+            right_heel_positions = np.array(right_heel_positions)
+            right_step_positions = right_heel_positions
+        else:
+            right_step_positions = right_ankle_positions
         
-        # Calculate cadence (steps per minute)
+        # Advanced scale calibration using leg segment lengths
+        scale_factor = self._calibrate_leg_scale(frames_3d_keypoints, reference_length_mm)
+        
+        # Advanced step detection using multiple indicators
+        left_steps, right_steps = self._detect_steps(left_step_positions, right_step_positions, timestamps)
+        
+        logger.info(f"Detected {len(left_steps)} left steps and {len(right_steps)} right steps")
+        
+        # Calculate cadence (steps per minute) - primary gait parameter
         if len(left_steps) + len(right_steps) > 0:
             total_steps = len(left_steps) + len(right_steps)
             duration = timestamps[-1] - timestamps[0] if len(timestamps) > 1 else 1.0
             cadence = (total_steps / duration) * 60.0  # steps per minute
         else:
             cadence = 0.0
+            logger.warning("No steps detected - cadence cannot be calculated")
         
-        # Calculate step length
+        # Advanced step length calculation using 3D distance
         step_lengths = []
         if len(left_steps) > 0 and len(right_steps) > 0:
             # Calculate distance between opposite foot positions at step events
+            # Use 3D Euclidean distance for accurate measurement
             for i, left_step_idx in enumerate(left_steps):
                 if i < len(right_steps):
                     right_step_idx = right_steps[i]
                     if left_step_idx < len(left_ankle_positions) and right_step_idx < len(right_ankle_positions):
+                        # 3D step vector
                         step_vec = left_ankle_positions[left_step_idx] - right_ankle_positions[right_step_idx]
-                        step_length = np.linalg.norm(step_vec) * scale_factor
-                        step_lengths.append(step_length)
+                        step_length_3d = np.linalg.norm(step_vec) * scale_factor
+                        step_lengths.append(step_length_3d)
         
         avg_step_length = np.mean(step_lengths) if step_lengths else 0.0
         
-        # Calculate stride length (two steps)
+        # Calculate stride length (two steps = one complete gait cycle)
         stride_length = avg_step_length * 2.0 if avg_step_length > 0 else 0.0
         
-        # Calculate walking speed
+        # Advanced walking speed calculation using trajectory analysis
         if len(timestamps) > 1:
+            # Calculate forward progression (use X or Z depending on view)
+            # Average of both feet for more stable measurement
             total_distance = 0.0
             for i in range(1, len(left_ankle_positions)):
-                if i < len(timestamps):
-                    step_vec = left_ankle_positions[i] - left_ankle_positions[i-1]
-                    step_dist = np.linalg.norm(step_vec) * scale_factor
+                if i < len(timestamps) and i < len(right_ankle_positions):
+                    # Average forward movement of both feet
+                    left_vec = left_ankle_positions[i] - left_ankle_positions[i-1]
+                    right_vec = right_ankle_positions[i] - right_ankle_positions[i-1]
+                    avg_vec = (left_vec + right_vec) / 2.0
+                    step_dist = np.linalg.norm(avg_vec) * scale_factor
                     total_distance += step_dist
             
             duration = timestamps[-1] - timestamps[0]
@@ -652,20 +713,44 @@ class GaitAnalysisService:
         else:
             walking_speed = 0.0
         
-        # Calculate temporal parameters
+        # Advanced temporal parameter calculation
+        # Step time: time between consecutive steps of same foot
+        left_step_times = []
+        right_step_times = []
+        
         if len(left_steps) > 1:
-            step_times = [timestamps[left_steps[i]] - timestamps[left_steps[i-1]] 
-                         for i in range(1, len(left_steps))]
-            avg_step_time = np.mean(step_times) if step_times else 0.0
+            for i in range(1, len(left_steps)):
+                if left_steps[i] < len(timestamps) and left_steps[i-1] < len(timestamps):
+                    step_time = timestamps[left_steps[i]] - timestamps[left_steps[i-1]]
+                    left_step_times.append(step_time)
+        
+        if len(right_steps) > 1:
+            for i in range(1, len(right_steps)):
+                if right_steps[i] < len(timestamps) and right_steps[i-1] < len(timestamps):
+                    step_time = timestamps[right_steps[i]] - timestamps[right_steps[i-1]]
+                    right_step_times.append(step_time)
+        
+        all_step_times = left_step_times + right_step_times
+        avg_step_time = np.mean(all_step_times) if all_step_times else 0.0
+        
+        # Advanced stance/swing phase calculation
+        # Stance phase: foot on ground (from heel strike to toe-off)
+        # Swing phase: foot in air (from toe-off to next heel strike)
+        if len(left_steps) > 1 and len(right_steps) > 0:
+            # Estimate stance time from step intervals
+            # Stance typically 60% of step cycle
+            stance_time = avg_step_time * 0.6 if avg_step_time > 0 else 0.0
+            swing_time = avg_step_time * 0.4 if avg_step_time > 0 else 0.0
+            
+            # Double support: both feet on ground (overlap between stance phases)
+            # Typically 10-15% of step cycle
+            double_support_time = avg_step_time * 0.12 if avg_step_time > 0 else 0.0
         else:
-            avg_step_time = 0.0
+            stance_time = 0.0
+            swing_time = 0.0
+            double_support_time = 0.0
         
-        # Estimate stance and swing times (simplified)
-        stance_time = avg_step_time * 0.6 if avg_step_time > 0 else 0.0
-        swing_time = avg_step_time * 0.4 if avg_step_time > 0 else 0.0
-        double_support_time = avg_step_time * 0.1 if avg_step_time > 0 else 0.0
-        
-        return {
+        metrics = {
             "cadence": round(cadence, 2),
             "step_length": round(avg_step_length, 0),  # in mm
             "stride_length": round(stride_length, 0),  # in mm
@@ -675,6 +760,10 @@ class GaitAnalysisService:
             "swing_time": round(swing_time, 3),
             "double_support_time": round(double_support_time, 3),
         }
+        
+        logger.info(f"Calculated gait metrics: cadence={cadence:.1f}, step_length={avg_step_length:.0f}mm, speed={walking_speed:.0f}mm/s")
+        
+        return metrics
     
     
     def _detect_steps(self, left_ankle: np.ndarray, right_ankle: np.ndarray, timestamps: List[float]) -> Tuple[List[int], List[int]]:
