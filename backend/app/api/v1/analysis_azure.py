@@ -22,7 +22,21 @@ router = APIRouter()
 # Initialize services
 storage_service = AzureStorageService()
 vision_service = AzureVisionService()
-gait_analysis_service = GaitAnalysisService()
+# Initialize gait analysis service lazily (only when needed)
+# This avoids import errors if dependencies aren't available
+_gait_analysis_service = None
+
+def get_gait_analysis_service():
+    """Get or create gait analysis service instance"""
+    global _gait_analysis_service
+    if _gait_analysis_service is None:
+        try:
+            _gait_analysis_service = GaitAnalysisService()
+        except Exception as e:
+            logger.warning(f"Failed to initialize GaitAnalysisService: {e}")
+            _gait_analysis_service = None
+    return _gait_analysis_service
+
 db_service = AzureSQLService()
 
 
@@ -163,9 +177,14 @@ async def process_analysis_azure(
             'step_message': 'Downloading video for analysis...'
         })
         
+        # Get gait analysis service
+        gait_service = get_gait_analysis_service()
+        if not gait_service:
+            raise ValueError("Gait analysis service is not available. Required dependencies (OpenCV, MediaPipe) may not be installed.")
+        
         # Download video from blob storage to temporary file
         if video_url.startswith('http') or video_url.startswith('https'):
-            video_path = await gait_analysis_service.download_video_from_url(video_url)
+            video_path = await gait_service.download_video_from_url(video_url)
         elif os.path.exists(video_url):
             video_path = video_url
         else:
@@ -206,7 +225,7 @@ async def process_analysis_azure(
             })
         
         # Analyze video using advanced gait analysis
-        analysis_result = await gait_analysis_service.analyze_video(
+        analysis_result = await gait_service.analyze_video(
             video_path,
             fps=fps,
             reference_length_mm=reference_length_mm,

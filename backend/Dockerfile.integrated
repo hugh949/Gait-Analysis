@@ -1,26 +1,30 @@
 # Dockerfile for Integrated Application
 # Single container serving API + React frontend
-# Microsoft Native Architecture - NO ML libraries (torch, opencv, etc.)
-# Uses Azure managed services: Computer Vision, Blob Storage, SQL Database
+# Uses Azure managed services + advanced gait analysis with pose estimation
 
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (minimal - only what's needed for Azure SDKs)
+# Install system dependencies
+# - gcc, unixodbc-dev: for Azure SQL (pyodbc)
+# - libgl1, libglib2.0-0: for OpenCV
+# - ffmpeg: for video processing (optional but helpful)
 RUN apt-get update && apt-get install -y \
     gcc \
     unixodbc-dev \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for better caching)
-# requirements.txt contains ONLY Azure SDKs - no torch, no ML libraries
+# requirements.txt contains Azure SDKs + gait analysis dependencies (opencv-python, mediapipe)
 COPY requirements.txt .
 
 # Install Python dependencies
-# This installs: fastapi, uvicorn, azure-storage-blob, azure-cognitiveservices-vision-computervision, etc.
-# NO torch, NO opencv, NO mmpose, NO smplx, NO transformers
+# This installs: fastapi, uvicorn, azure-storage-blob, azure-cognitiveservices-vision-computervision,
+# opencv-python, mediapipe, numpy, etc.
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code

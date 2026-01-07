@@ -3,7 +3,6 @@ Advanced Gait Analysis Service
 Uses pose estimation and 3D reconstruction to calculate accurate gait parameters
 Simulates multi-camera systems used in professional gait labs
 """
-import cv2
 import numpy as np
 from typing import List, Dict, Optional, Tuple, Callable
 from pathlib import Path
@@ -14,11 +13,21 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
+# Optional imports - handle gracefully if not available
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    cv2 = None
+    logger.warning("OpenCV not available - video processing will be limited")
+
 try:
     import mediapipe as mp
     MEDIAPIPE_AVAILABLE = True
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
+    mp = None
     logger.warning("MediaPipe not available - gait analysis will be limited")
 
 
@@ -146,6 +155,9 @@ class GaitAnalysisService:
         progress_callback: Optional[Callable] = None
     ) -> Dict:
         """Synchronous video processing"""
+        if not CV2_AVAILABLE:
+            raise ImportError("OpenCV (cv2) is required for video processing. Please install opencv-python.")
+        
         cap = cv2.VideoCapture(video_path)
         
         if not cap.isOpened():
@@ -180,7 +192,7 @@ class GaitAnalysisService:
             timestamp = frame_count / video_fps
             
             # Detect pose in frame
-            if self.pose:
+            if self.pose and MEDIAPIPE_AVAILABLE:
                 # Convert BGR to RGB for MediaPipe
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 results = self.pose.process(rgb_frame)
