@@ -105,6 +105,14 @@ async def upload_video(
         
         tmp_file.close()
         
+        # Log request details for debugging
+        logger.info(f"Upload request received: {file.filename}")
+        logger.info(f"Request URL: {request.url}")
+        logger.info(f"Request method: {request.method}")
+        logger.info(f"Content-Type: {request.headers.get('content-type', 'not set')}")
+        logger.info(f"Origin: {request.headers.get('origin', 'not set')}")
+        logger.info(f"Referer: {request.headers.get('referer', 'not set')}")
+        
         # Generate analysis ID
         analysis_id = str(uuid.uuid4())
         
