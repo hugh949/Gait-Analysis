@@ -207,8 +207,8 @@ class AzureSQLService:
             os.replace(temp_file, AzureSQLService._mock_storage_file)
             
             # Force filesystem sync to ensure rename is visible immediately
+            # Note: os is already imported at module level, don't re-import here
             try:
-                import os
                 # Sync the directory to ensure the rename is visible
                 dir_fd = os.open(storage_dir, os.O_RDONLY)
                 try:
