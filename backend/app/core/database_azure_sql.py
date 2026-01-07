@@ -112,11 +112,16 @@ class AzureSQLService:
         try:
             # Ensure directory exists
             storage_dir = os.path.dirname(AzureSQLService._mock_storage_file)
-            if storage_dir:
-                os.makedirs(storage_dir, exist_ok=True)
+            if storage_dir and storage_dir != '/':
+                try:
+                    os.makedirs(storage_dir, exist_ok=True)
+                except Exception as e:
+                    logger.warning(f"Could not create directory {storage_dir}: {e}")
             
             # Use atomic write with file locking (if available)
             temp_file = AzureSQLService._mock_storage_file + '.tmp'
+            logger.debug(f"Attempting to save {len(AzureSQLService._mock_storage)} analyses to {temp_file}")
+            
             with open(temp_file, 'w') as f:
                 if HAS_FCNTL:
                     try:
@@ -133,7 +138,16 @@ class AzureSQLService:
             
             # Atomic rename
             os.replace(temp_file, AzureSQLService._mock_storage_file)
-            logger.debug(f"Saved {len(AzureSQLService._mock_storage)} analyses to mock storage file: {list(AzureSQLService._mock_storage.keys())}")
+            logger.info(f"Successfully saved {len(AzureSQLService._mock_storage)} analyses to mock storage file: {AzureSQLService._mock_storage_file}. IDs: {list(AzureSQLService._mock_storage.keys())}")
+            
+            # Verify file was created
+            if os.path.exists(AzureSQLService._mock_storage_file):
+                file_size = os.path.getsize(AzureSQLService._mock_storage_file)
+                logger.debug(f"Storage file verified: {AzureSQLService._mock_storage_file} ({file_size} bytes)")
+            else:
+                logger.error(f"Storage file was not created: {AzureSQLService._mock_storage_file}")
+        except PermissionError as e:
+            logger.error(f"Permission denied saving mock storage to {AzureSQLService._mock_storage_file}: {e}")
         except Exception as e:
             logger.error(f"Failed to save mock storage to file: {e}", exc_info=True)
     
