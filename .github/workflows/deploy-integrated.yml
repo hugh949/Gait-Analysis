@@ -234,8 +234,9 @@ jobs:
         echo ""
         echo "All required files verified!"
         
-        # Build image using ACR Tasks (force rebuild with --no-cache)
-        echo "🔨 Starting Docker build (no cache to ensure clean build)..."
+        # Build image using ACR Tasks
+        # Note: ACR builds always use fresh context, no --no-cache flag needed
+        echo "🔨 Starting Docker build..."
         echo "   Registry: ${{ env.ACR_NAME }}"
         echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
         echo "   Dockerfile: Dockerfile.integrated"
@@ -246,8 +247,7 @@ jobs:
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           --file Dockerfile.integrated \
-          . \
-          --no-cache; then
+          .; then
           echo ""
           echo "❌ Docker build failed!"
           echo "   Check the logs above for the specific error"
@@ -255,6 +255,7 @@ jobs:
           echo "   - Missing files (requirements.txt, main_integrated.py, etc.)"
           echo "   - Frontend build not found (frontend-dist/)"
           echo "   - Dockerfile syntax errors"
+          echo "   - ACR authentication issues"
           exit 1
         fi
           
