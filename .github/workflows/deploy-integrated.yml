@@ -8,6 +8,7 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - '.github/workflows/deploy-integrated.yml'
+      - 'scripts/deploy-integrated-app.sh'
   workflow_dispatch:
 
 env:
@@ -59,21 +60,76 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         
+    - name: Verify Azure resources exist
+      run: |
+        echo "🔍 Verifying Azure resources..."
+        
+        # Check Resource Group
+        if ! az group show --name ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+          echo "❌ Error: Resource group '${{ env.RESOURCE_GROUP }}' not found!"
+          exit 1
+        fi
+        echo "✅ Resource group exists"
+        
+        # Check App Service
+        if ! az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+          echo "❌ Error: App Service '${{ env.AZURE_WEBAPP_NAME }}' not found!"
+          exit 1
+        fi
+        echo "✅ App Service exists"
+        
+        # Check ACR
+        if ! az acr show --name ${{ env.ACR_NAME }} &>/dev/null; then
+          echo "❌ Error: ACR '${{ env.ACR_NAME }}' not found!"
+          exit 1
+        fi
+        echo "✅ ACR exists"
+        
+        echo "✅ All Azure resources verified"
+        
     - name: Log in to Azure Container Registry
       run: |
         az acr login --name ${{ env.ACR_NAME }}
+        
+    - name: Verify Dockerfile exists
+      run: |
+        if [ ! -f "backend/Dockerfile.integrated" ]; then
+          echo "❌ Error: Dockerfile.integrated not found!"
+          exit 1
+        fi
+        echo "✅ Dockerfile.integrated found"
+        
+    - name: Verify frontend build exists
+      run: |
+        if [ ! -d "backend/frontend-dist" ]; then
+          echo "❌ Error: frontend-dist directory not found!"
+          exit 1
+        fi
+        if [ ! -f "backend/frontend-dist/index.html" ]; then
+          echo "❌ Error: frontend-dist/index.html not found!"
+          exit 1
+        fi
+        echo "✅ Frontend build verified"
         
     - name: Build and push Docker image to ACR
       run: |
         echo "🐳 Building Docker image (Frontend + Backend)..."
         cd backend
         
+        # Verify required files exist
+        echo "📋 Verifying required files..."
+        ls -la Dockerfile.integrated || exit 1
+        ls -la frontend-dist/index.html || exit 1
+        ls -la main_integrated.py || exit 1
+        
         # Build image using ACR Tasks
+        echo "🔨 Starting Docker build..."
         az acr build \
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           --file Dockerfile.integrated \
-          .
+          . \
+          --no-logs || exit 1
           
         echo "✅ Docker image built and pushed to ACR"
         
@@ -177,25 +233,76 @@ jobs:
         echo "🧪 Testing application health..."
         APP_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
         
-        for i in {1..15}; do
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/health" || echo "000")
-          if [ "$HTTP_CODE" = "200" ]; then
+        echo "📍 Testing endpoints:"
+        echo "   - $APP_URL/"
+        echo "   - $APP_URL/health"
+        echo ""
+        
+        for i in {1..20}; do
+          # Test root endpoint
+          HTTP_CODE_ROOT=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/" || echo "000")
+          # Test health endpoint
+          HTTP_CODE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/health" || echo "000")
+          
+          if [ "$HTTP_CODE_ROOT" = "200" ] || [ "$HTTP_CODE_HEALTH" = "200" ]; then
             echo ""
-            echo "✅✅✅ Application is healthy! (HTTP $HTTP_CODE)"
+            echo "✅✅✅ Application is healthy!"
+            echo "   Root endpoint: HTTP $HTTP_CODE_ROOT"
+            echo "   Health endpoint: HTTP $HTTP_CODE_HEALTH"
             echo ""
-            curl -s --max-time 10 "$APP_URL/health" | python3 -m json.tool || true
+            
+            # Show health check details
+            curl -s --max-time 10 "$APP_URL/health" | python3 -m json.tool 2>/dev/null || \
+            curl -s --max-time 10 "$APP_URL/" | python3 -m json.tool 2>/dev/null || \
+            echo "   (Response received but not JSON)"
+            
             echo ""
             echo "🔗 Application URL: $APP_URL"
             echo "✅ Integrated deployment successful!"
             exit 0
           else
-            echo "   Check $i/15... (HTTP $HTTP_CODE)"
+            echo "   Check $i/20... (Root: $HTTP_CODE_ROOT, Health: $HTTP_CODE_HEALTH)"
+            if [ "$i" -eq 10 ]; then
+              echo "   ⏳ Still starting... checking logs might help"
+            fi
             sleep 10
           fi
         done
         
+        echo ""
         echo "⚠️  Application health check failed or still starting"
-        echo "   Check Azure Portal logs for details"
+        echo "   Final status: Root=$HTTP_CODE_ROOT, Health=$HTTP_CODE_HEALTH"
+        echo "   Check Azure Portal logs for details:"
+        echo "   https://portal.azure.com/#@/resource/subscriptions/*/resourceGroups/${{ env.RESOURCE_GROUP }}/providers/Microsoft.Web/sites/${{ env.AZURE_WEBAPP_NAME }}/logStream"
+        echo ""
+        echo "   You can also check logs with:"
+        echo "   az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}"
         exit 1
+
+    - name: Deployment summary
+      if: always()
+      run: |
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 DEPLOYMENT SUMMARY"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "🔗 Application URL:"
+        echo "   https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo ""
+        echo "📦 Docker Image:"
+        echo "   ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        echo ""
+        echo "🔍 Azure Resources:"
+        echo "   Resource Group: ${{ env.RESOURCE_GROUP }}"
+        echo "   App Service: ${{ env.AZURE_WEBAPP_NAME }}"
+        echo "   ACR: ${{ env.ACR_NAME }}"
+        echo ""
+        echo "📝 Useful Commands:"
+        echo "   View logs: az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}"
+        echo "   Check status: az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query state"
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
 
 
