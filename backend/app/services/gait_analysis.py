@@ -262,11 +262,10 @@ class GaitAnalysisService:
             
             frame_count += 1
             
-            # Progress update - update more frequently (every 5 processed frames or every 10 total frames)
+            # Progress update - update frequently for smooth progress bar
             if progress_callback:
-                processed_frames = len(frames_2d_keypoints)
-                # Update more frequently: every 5 processed frames OR every 10 total frames
-                if processed_frames % 5 == 0 or frame_count % 10 == 0:
+                # Update every 5 total frames for smooth progress (not just processed frames)
+                if frame_count % 5 == 0:
                     # Pose estimation phase: 0-50% of total progress
                     progress = min(50, int((frame_count / total_frames) * 50))
                     sync_progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
