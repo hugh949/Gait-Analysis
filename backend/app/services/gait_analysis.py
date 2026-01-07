@@ -113,6 +113,7 @@ class GaitAnalysisService:
         progress_updates = []
         progress_lock = threading.Lock()
         processing_done = threading.Event()
+        last_update_idx = [0]  # Use list to allow modification in nested function
         
         def sync_progress_callback(progress: int, message: str):
             """Sync callback that stores progress for async retrieval"""
@@ -135,14 +136,13 @@ class GaitAnalysisService:
         
         # Monitor progress updates
         async def monitor_progress():
-            last_update_idx = 0
             while not processing_done.is_set():
                 await asyncio.sleep(0.1)  # Check every 100ms
                 
                 # Get new progress updates
                 with progress_lock:
-                    new_updates = progress_updates[last_update_idx:]
-                    last_update_idx = len(progress_updates)
+                    new_updates = progress_updates[last_update_idx[0]:]
+                    last_update_idx[0] = len(progress_updates)
                 
                 # Send updates via async callback
                 for progress, message in new_updates:
@@ -159,7 +159,7 @@ class GaitAnalysisService:
             
             # Send any remaining updates
             with progress_lock:
-                remaining_updates = progress_updates[last_update_idx:]
+                remaining_updates = progress_updates[last_update_idx[0]:]
             for progress, message in remaining_updates:
                 if progress_callback:
                     await progress_callback(progress, message)
