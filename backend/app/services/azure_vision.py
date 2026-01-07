@@ -6,10 +6,6 @@ No custom ML models needed!
 from typing import List, Dict, Optional
 import asyncio
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
-from azure.cognitiveservices.vision.computervision.models import (
-    VideoAnalysisType,
-    VideoOperationLocation
-)
 from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
 from loguru import logger
