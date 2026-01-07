@@ -383,18 +383,25 @@ class AzureSQLService:
         """Get analysis record"""
         if self._use_mock:
             # Reload from file to ensure we have latest data (handles multi-process scenarios)
-            self._load_mock_storage()
-            # Get from in-memory mock storage (use class variable to ensure persistence)
-            if analysis_id in AzureSQLService._mock_storage:
-                logger.debug(f"Retrieved analysis from mock storage: {analysis_id}")
-                return AzureSQLService._mock_storage[analysis_id].copy()
-            logger.warning(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
-            # Try one more time to load from file (in case it was just written)
-            time.sleep(0.1)
-            self._load_mock_storage()
-            if analysis_id in AzureSQLService._mock_storage:
-                logger.info(f"Found analysis after retry: {analysis_id}")
-                return AzureSQLService._mock_storage[analysis_id].copy()
+            # Try multiple times with retries in case file was just written
+            for retry in range(3):
+                self._load_mock_storage()
+                # Get from in-memory mock storage (use class variable to ensure persistence)
+                if analysis_id in AzureSQLService._mock_storage:
+                    if retry > 0:
+                        logger.info(f"Retrieved analysis from mock storage: {analysis_id} (after {retry + 1} attempts)")
+                    else:
+                        logger.debug(f"Retrieved analysis from mock storage: {analysis_id}")
+                    return AzureSQLService._mock_storage[analysis_id].copy()
+                
+                if retry < 2:  # Don't sleep on last attempt
+                    time.sleep(0.2 * (retry + 1))  # Increasing delay: 0.2s, 0.4s
+            
+            logger.warning(f"Analysis not found in mock storage after {3} attempts: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
+            # Check if file exists but wasn't loaded
+            if os.path.exists(AzureSQLService._mock_storage_file):
+                file_size = os.path.getsize(AzureSQLService._mock_storage_file)
+                logger.warning(f"Storage file exists ({file_size} bytes) but analysis not found. File may be corrupted or have permission issues.")
             return None
         
         try:
