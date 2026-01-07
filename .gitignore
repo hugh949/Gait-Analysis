@@ -9,3 +9,11 @@ frontend/dist/
 backend/.last_*
 frontend/.last_*
 GET_DEPLOYMENT_TOKEN.md
+
+# Token and secret files (should never be committed)
+*TOKEN*.md
+*SECRET*.md
+*PAT*.md
+GET_DEPLOYMENT_TOKEN.md
+PAT_TOKEN_CONFIGURED.md
+TOKEN_EXPLANATION.md
