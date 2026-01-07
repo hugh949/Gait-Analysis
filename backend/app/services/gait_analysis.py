@@ -271,6 +271,34 @@ class GaitAnalysisService:
         # Progress: Moving to metrics calculation
         if progress_callback:
             progress_callback(75, "Calculating gait parameters...")
+        
+        # Calculate gait metrics
+        metrics = self._calculate_gait_metrics(
+            frames_3d_keypoints,
+            frame_timestamps,
+            video_fps,
+            reference_length_mm
+        )
+        
+        # Progress: Finalizing
+        if progress_callback:
+            progress_callback(95, "Finalizing analysis results...")
+        
+        result = {
+            "status": "completed",
+            "analysis_type": "advanced_gait_analysis",
+            "frames_processed": len(frames_2d_keypoints),
+            "total_frames": total_frames,
+            "keypoints_2d": frames_2d_keypoints[:10],  # Store sample for debugging
+            "keypoints_3d": frames_3d_keypoints[:10],  # Store sample
+            "metrics": metrics
+        }
+        
+        # Progress: Complete
+        if progress_callback:
+            progress_callback(100, "Analysis complete!")
+        
+        return result
     
     def _create_dummy_keypoints(self, width: int, height: int) -> Dict:
         """Create dummy keypoints for fallback when MediaPipe is not available"""
