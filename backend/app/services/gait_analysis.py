@@ -30,17 +30,20 @@ except ImportError:
 
 try:
     import mediapipe as mp
-    # Verify MediaPipe has the solutions module
-    if hasattr(mp, 'solutions') and hasattr(mp.solutions, 'pose'):
+    # Try to access solutions to verify it's available
+    try:
+        _ = mp.solutions
+        _ = mp.solutions.pose
         MEDIAPIPE_AVAILABLE = True
-    else:
+        logger.info("MediaPipe imported successfully")
+    except AttributeError as e:
         MEDIAPIPE_AVAILABLE = False
         mp = None
-        logger.warning("MediaPipe installed but 'solutions' module not available - check MediaPipe version")
+        logger.warning(f"MediaPipe installed but 'solutions' module not available: {e}. Check MediaPipe version (need >=0.10.0)")
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
     mp = None
-    logger.warning("MediaPipe not available - gait analysis will be limited")
+    logger.warning("MediaPipe not installed - gait analysis will be limited. Install with: pip install mediapipe")
 except Exception as e:
     MEDIAPIPE_AVAILABLE = False
     mp = None
@@ -54,20 +57,33 @@ class GaitAnalysisService:
         """Initialize gait analysis service"""
         self.executor = ThreadPoolExecutor(max_workers=2)
         
-        if MEDIAPIPE_AVAILABLE:
-            self.mp_pose = mp.solutions.pose
-            self.pose = self.mp_pose.Pose(
-                static_image_mode=False,
-                model_complexity=2,  # Use high accuracy model
-                enable_segmentation=False,
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5
-            )
-            self.mp_drawing = mp.solutions.drawing_utils
-            logger.info("MediaPipe pose estimation initialized")
+        if MEDIAPIPE_AVAILABLE and mp is not None:
+            try:
+                self.mp_pose = mp.solutions.pose
+                self.pose = self.mp_pose.Pose(
+                    static_image_mode=False,
+                    model_complexity=2,  # Use high accuracy model
+                    enable_segmentation=False,
+                    min_detection_confidence=0.5,
+                    min_tracking_confidence=0.5
+                )
+                self.mp_drawing = mp.solutions.drawing_utils
+                logger.info("MediaPipe pose estimation initialized successfully")
+            except AttributeError as e:
+                logger.error(f"Failed to initialize MediaPipe pose: {e}. MediaPipe may be incorrectly installed.")
+                self.pose = None
+                self.mp_pose = None
+                self.mp_drawing = None
+            except Exception as e:
+                logger.error(f"Unexpected error initializing MediaPipe: {e}")
+                self.pose = None
+                self.mp_pose = None
+                self.mp_drawing = None
         else:
             self.pose = None
-            logger.warning("MediaPipe not available - using basic analysis")
+            self.mp_pose = None
+            self.mp_drawing = None
+            logger.warning("MediaPipe not available - gait analysis will be limited")
     
     async def analyze_video(
         self,
