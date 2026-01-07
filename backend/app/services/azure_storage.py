@@ -99,6 +99,28 @@ class AzureStorageService:
             logger.error(f"Failed to get blob URL: {e}")
             return None
     
+    async def download_blob(self, blob_name: str) -> Optional[bytes]:
+        """Download blob data asynchronously"""
+        if not self.container_client:
+            return None
+        
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            
+            def _download():
+                blob_client = self.container_client.get_blob_client(blob_name)
+                if blob_client.exists():
+                    download_stream = blob_client.download_blob()
+                    return download_stream.readall()
+                return None
+            
+            # Run in thread pool to avoid blocking
+            return await loop.run_in_executor(None, _download)
+        except Exception as e:
+            logger.error(f"Failed to download blob: {e}")
+            return None
+    
     async def delete_blob(self, blob_name: str) -> bool:
         """Delete a blob"""
         if not self.container_client:

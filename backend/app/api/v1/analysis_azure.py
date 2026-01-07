@@ -14,6 +14,7 @@ import uuid
 
 from app.services.azure_storage import AzureStorageService
 from app.services.azure_vision import AzureVisionService
+from app.services.gait_analysis import GaitAnalysisService
 from app.core.database_azure_sql import AzureSQLService
 
 router = APIRouter()
@@ -21,6 +22,7 @@ router = APIRouter()
 # Initialize services
 storage_service = AzureStorageService()
 vision_service = AzureVisionService()
+gait_analysis_service = GaitAnalysisService()
 db_service = AzureSQLService()
 
 
@@ -148,57 +150,87 @@ async def process_analysis_azure(
     reference_length_mm: Optional[float],
     fps: float
 ):
-    """Background task to process video analysis using Azure services"""
+    """Background task to process video analysis using advanced gait analysis"""
+    video_path = None
     try:
-        logger.info(f"Starting Azure-based analysis: {analysis_id}")
+        logger.info(f"Starting advanced gait analysis: {analysis_id}")
         
         # Update progress: Starting
         await db_service.update_analysis(analysis_id, {
             'status': 'processing',
             'current_step': 'pose_estimation',
-            'step_progress': 10,
-            'step_message': 'Initializing Azure Computer Vision...'
+            'step_progress': 5,
+            'step_message': 'Downloading video for analysis...'
         })
         
-        # Step 1: Pose Estimation (using Azure Computer Vision)
-        await db_service.update_analysis(analysis_id, {
-            'current_step': 'pose_estimation',
-            'step_progress': 30,
-            'step_message': 'Analyzing video frames...'
-        })
+        # Download video from blob storage to temporary file
+        if video_url.startswith('http') or video_url.startswith('https'):
+            video_path = await gait_analysis_service.download_video_from_url(video_url)
+        elif os.path.exists(video_url):
+            video_path = video_url
+        else:
+            # Try to get video from blob storage
+            blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
+            # Download from blob storage
+            import tempfile
+            video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
+            blob_data = await storage_service.download_blob(blob_name)
+            if blob_data:
+                with open(video_path, 'wb') as f:
+                    f.write(blob_data)
+            else:
+                raise ValueError(f"Could not download video: {video_url}")
         
-        # Analyze video using Azure Computer Vision
+        logger.info(f"Video downloaded to: {video_path}")
+        
+        # Step 1: Pose Estimation
         async def progress_callback(progress_pct: int, message: str):
+            # Map progress to overall steps
+            if progress_pct < 60:
+                # Pose estimation phase (0-60%)
+                step = 'pose_estimation'
+                mapped_progress = 10 + int(progress_pct * 0.5)
+            elif progress_pct < 80:
+                # 3D lifting phase (60-80%)
+                step = '3d_lifting'
+                mapped_progress = 60 + int((progress_pct - 60) * 0.2)
+            else:
+                # Metrics calculation phase (80-100%)
+                step = 'metrics_calculation'
+                mapped_progress = 80 + int((progress_pct - 80) * 0.2)
+            
             await db_service.update_analysis(analysis_id, {
-                'current_step': 'pose_estimation',
-                'step_progress': 30 + int(progress_pct * 0.3),
+                'current_step': step,
+                'step_progress': mapped_progress,
                 'step_message': message
             })
         
-        analysis_result = await vision_service.analyze_video(
-            video_url,
-            progress_callback
+        # Analyze video using advanced gait analysis
+        analysis_result = await gait_analysis_service.analyze_video(
+            video_path,
+            fps=fps,
+            reference_length_mm=reference_length_mm,
+            view_type=view_type,
+            progress_callback=progress_callback
         )
         
-        await db_service.update_analysis(analysis_id, {
-            'current_step': '3d_lifting',
-            'step_progress': 60,
-            'step_message': 'Processing 3D analysis...'
-        })
+        # Extract and format metrics
+        raw_metrics = analysis_result.get('metrics', {})
         
-        # Step 2: 3D Lifting (simplified - using Azure results)
-        await db_service.update_analysis(analysis_id, {
-            'current_step': 'metrics_calculation',
-            'step_progress': 70,
-            'step_message': 'Calculating gait metrics...'
-        })
-        
-        # Step 3: Metrics Calculation
-        metrics = analysis_result.get('metrics', {})
+        # Map to expected metric names
+        metrics = {
+            'cadence': raw_metrics.get('cadence', 0.0),
+            'step_length': raw_metrics.get('step_length', 0.0),  # in mm
+            'walking_speed': raw_metrics.get('walking_speed', 0.0),  # in mm/s
+            'stride_length': raw_metrics.get('stride_length', 0.0),  # in mm
+            'double_support_time': raw_metrics.get('double_support_time', 0.0),  # in seconds
+            'swing_time': raw_metrics.get('swing_time', 0.0),  # in seconds
+            'stance_time': raw_metrics.get('stance_time', 0.0),  # in seconds
+        }
         
         await db_service.update_analysis(analysis_id, {
             'current_step': 'report_generation',
-            'step_progress': 90,
+            'step_progress': 95,
             'step_message': 'Generating analysis report...'
         })
         
@@ -212,6 +244,7 @@ async def process_analysis_azure(
         })
         
         logger.info(f"Analysis completed: {analysis_id}")
+        logger.info(f"Metrics: {metrics}")
     
     except Exception as e:
         logger.error(f"Error processing analysis {analysis_id}: {e}", exc_info=True)
@@ -219,6 +252,15 @@ async def process_analysis_azure(
             'status': 'failed',
             'step_message': f'Analysis failed: {str(e)}'
         })
+    
+    finally:
+        # Clean up temporary video file
+        if video_path and os.path.exists(video_path) and video_path != video_url:
+            try:
+                os.unlink(video_path)
+                logger.info(f"Cleaned up temporary video: {video_path}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file: {e}")
 
 
 @router.get("/list")
