@@ -30,11 +30,21 @@ except ImportError:
 
 try:
     import mediapipe as mp
-    MEDIAPIPE_AVAILABLE = True
+    # Verify MediaPipe has the solutions module
+    if hasattr(mp, 'solutions') and hasattr(mp.solutions, 'pose'):
+        MEDIAPIPE_AVAILABLE = True
+    else:
+        MEDIAPIPE_AVAILABLE = False
+        mp = None
+        logger.warning("MediaPipe installed but 'solutions' module not available - check MediaPipe version")
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
     mp = None
     logger.warning("MediaPipe not available - gait analysis will be limited")
+except Exception as e:
+    MEDIAPIPE_AVAILABLE = False
+    mp = None
+    logger.warning(f"Error importing MediaPipe: {e} - gait analysis will be limited")
 
 
 class GaitAnalysisService:

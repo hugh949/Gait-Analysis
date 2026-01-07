@@ -142,10 +142,10 @@ class AzureSQLService:
     async def create_analysis(self, analysis_data: Dict) -> bool:
         """Create new analysis record"""
         if self._use_mock:
-            # Store in in-memory mock storage
+            # Store in in-memory mock storage (use class variable to ensure persistence)
             from datetime import datetime
             analysis_id = analysis_data.get('id')
-            self._mock_storage[analysis_id] = {
+            AzureSQLService._mock_storage[analysis_id] = {
                 'id': analysis_id,
                 'patient_id': analysis_data.get('patient_id'),
                 'filename': analysis_data.get('filename'),
@@ -158,7 +158,7 @@ class AzureSQLService:
                 'created_at': datetime.now().isoformat(),
                 'updated_at': datetime.now().isoformat()
             }
-            logger.info(f"Created analysis in mock storage: {analysis_id}")
+            logger.info(f"Created analysis in mock storage: {analysis_id}. Total analyses: {len(AzureSQLService._mock_storage)}")
             return True
         
         try:
@@ -187,14 +187,14 @@ class AzureSQLService:
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
         """Update analysis record"""
         if self._use_mock:
-            # Update in-memory mock storage
-            if analysis_id in self._mock_storage:
+            # Update in-memory mock storage (use class variable to ensure persistence)
+            if analysis_id in AzureSQLService._mock_storage:
                 from datetime import datetime
-                self._mock_storage[analysis_id].update(updates)
-                self._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
+                AzureSQLService._mock_storage[analysis_id].update(updates)
+                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
                 logger.debug(f"Updated analysis in mock storage: {analysis_id}")
                 return True
-            logger.warning(f"Analysis not found in mock storage: {analysis_id}")
+            logger.warning(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}")
             return False
         
         try:
@@ -229,11 +229,11 @@ class AzureSQLService:
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """Get analysis record"""
         if self._use_mock:
-            # Get from in-memory mock storage
-            if analysis_id in self._mock_storage:
+            # Get from in-memory mock storage (use class variable to ensure persistence)
+            if analysis_id in AzureSQLService._mock_storage:
                 logger.debug(f"Retrieved analysis from mock storage: {analysis_id}")
-                return self._mock_storage[analysis_id].copy()
-            logger.debug(f"Analysis not found in mock storage: {analysis_id}")
+                return AzureSQLService._mock_storage[analysis_id].copy()
+            logger.debug(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}")
             return None
         
         try:
@@ -271,8 +271,8 @@ class AzureSQLService:
     async def list_analyses(self, limit: int = 50) -> List[Dict]:
         """List all analyses, ordered by most recent first"""
         if self._use_mock:
-            # Get all from in-memory mock storage
-            analyses = list(self._mock_storage.values())
+            # Get all from in-memory mock storage (use class variable to ensure persistence)
+            analyses = list(AzureSQLService._mock_storage.values())
             # Sort by created_at descending
             analyses.sort(key=lambda x: x.get('created_at', ''), reverse=True)
             return analyses[:limit]
