@@ -1,17 +1,20 @@
 """
 API v1 router - combines all v1 endpoints
 Microsoft Native Architecture - uses analysis_azure, not analysis.py
+
+IMPORTANT: This file does NOT import the old analysis.py, health.py, or reports.py
+because they have been deleted and contained torch dependencies.
+The integrated app (main_integrated.py) imports analysis_azure directly.
 """
 from fastapi import APIRouter
 
 # Create main router
 router = APIRouter()
 
-# Note: We do NOT import the old analysis.py here because it has torch dependencies
-# The integrated app (main_integrated.py) imports analysis_azure directly
-# 
-# health.py and reports.py may also have old dependencies, so we skip them for now
-# They can be added later with Azure-native versions if needed
+# DO NOT import old files - they have been deleted:
+# - analysis.py (deleted - had torch dependencies)
+# - health.py (deleted - not needed)
+# - reports.py (deleted - not needed)
 
-# Note: analysis_azure is imported directly in main_integrated.py
-# We don't import it here to avoid circular dependencies
+# The integrated app imports analysis_azure directly:
+# from app.api.v1.analysis_azure import router as analysis_router
