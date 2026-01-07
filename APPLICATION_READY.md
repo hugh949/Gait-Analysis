@@ -10,7 +10,7 @@ The frontend has been redeployed to a new Static Web App in **East US 2**.
 **https://jolly-meadow-0a467810f.1.azurestaticapps.net**
 
 ### Backend API
-**https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io**
+**https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io**
 
 ---
 
@@ -81,8 +81,8 @@ This is normal behavior for cost optimization.
 3. **Check Backend Logs**
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
@@ -92,12 +92,12 @@ This is normal behavior for cost optimization.
 
 | Resource | Name | Status |
 |----------|------|--------|
-| Resource Group | `gait-analysis-rg-eus2` | ✅ |
-| Storage Account | `gaitanalysisprodstoreus2` | ✅ |
-| Cosmos DB | `gaitanalysisprodcosmoseus2` | ✅ |
-| Container App | `gait-analysis-api-eus2` | ✅ |
-| Static Web App | `gait-analysis-web-eus2` | ✅ |
-| Container Registry | `gaitanalysisacreus2` | ✅ |
+| Resource Group | `gait-analysis-rg-wus3` | ✅ |
+| Storage Account | `gaitanalysisprodstorwus3` | ✅ |
+| Cosmos DB | `gaitanalysisprodcosmoswus3` | ✅ |
+| Container App | `gait-analysis-api-wus3` | ✅ |
+| Static Web App | `gait-analysis-web-wus3` | ✅ |
+| Container Registry | `gaitanalysisacrwus3` | ✅ |
 
 ---
 

@@ -68,3 +68,4 @@ def test_gate_analysis():
     assert can_proceed is False
     assert error_msg is not None
 
+

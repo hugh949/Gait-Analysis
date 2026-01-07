@@ -4,7 +4,7 @@
 
 set -e
 
-BACKEND_URL="${BACKEND_URL:-https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io}"
+BACKEND_URL="${BACKEND_URL:-https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io}"
 FRONTEND_URL="${FRONTEND_URL:-https://jolly-meadow-0a467810f.1.azurestaticapps.net}"
 
 echo "🧪 Backend Quality Assurance Tests"
@@ -114,4 +114,5 @@ else
     echo "⚠️  Some tests failed. Backend may not be ready."
     exit 1
 fi
+
 

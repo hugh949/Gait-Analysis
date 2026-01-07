@@ -129,3 +129,4 @@ az containerapp show \
 - Once backend is deployed, update frontend API URL and redeploy
 - The application will be fully functional after these final steps
 
+

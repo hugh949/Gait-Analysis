@@ -3,14 +3,16 @@ __pycache__
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv
+*.so
+*.egg
 *.egg-info
+build
 .pytest_cache
 .coverage
+htmlcov
 .env
-*.log
-models/
-tests/
-
+.venv
+venv/
+ENV/
+env/
+# Don't ignore frontend-dist - we need it!

@@ -8,16 +8,16 @@
    - ✅ Deployed and accessible
    - ✅ API URL configured
 
-2. **Backend**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+2. **Backend**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
    - ✅ Running with new ACR image
    - ✅ CORS configured
    - ✅ Environment variables set
 
 3. **Infrastructure** (All East US 2):
-   - ✅ Storage: `gaitanalysisprodstoreus2`
-   - ✅ Cosmos DB: `gaitanalysisprodcosmoseus2`
-   - ✅ Container Registry: `gaitanalysisacreus2`
-   - ✅ Container App: `gait-analysis-api-eus2`
+   - ✅ Storage: `gaitanalysisprodstorwus3`
+   - ✅ Cosmos DB: `gaitanalysisprodcosmoswus3`
+   - ✅ Container Registry: `gaitanalysisacrwus3`
+   - ✅ Container App: `gait-analysis-api-wus3`
 
 ---
 
@@ -46,11 +46,11 @@
 
 ```bash
 # Health check (wakes up container)
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 
 # Upload video
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@your-video.mp4" \
   -F "view_type=front"
 ```
@@ -83,8 +83,8 @@ curl -X POST \
 3. Check backend logs:
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
@@ -93,8 +93,8 @@ curl -X POST \
 2. Check status:
    ```bash
    az containerapp show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query properties.runningStatus
    ```
 
@@ -119,4 +119,5 @@ curl -X POST \
 **Remember**: First request takes 30-60 seconds! ⏱️
 
 The application is **ready for production testing**! 🎉
+
 

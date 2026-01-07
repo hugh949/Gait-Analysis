@@ -1,0 +1,42 @@
+# Dockerfile for Integrated Application
+# Single container serving API + React frontend
+# Microsoft Native Architecture
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    unixodbc-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first (for better caching)
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY app/ ./app/
+COPY main_integrated.py .
+COPY app/core/config_simple.py ./app/core/
+
+# Copy frontend build (must be built and copied to backend/frontend-dist before Docker build)
+# Create directory first, then copy files individually to avoid ACR layer issues
+RUN mkdir -p ./frontend/dist
+COPY frontend-dist/index.html ./frontend/dist/index.html
+COPY frontend-dist/assets ./frontend/dist/assets
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Start the integrated application
+CMD ["uvicorn", "main_integrated:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "300"]
+

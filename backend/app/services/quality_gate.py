@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 from loguru import logger
 from enum import Enum
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 class QualityLevel(Enum):

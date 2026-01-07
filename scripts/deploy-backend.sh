@@ -4,9 +4,9 @@
 
 set -e
 
-RESOURCE_GROUP="gait-analysis-rg-eus2"
-CONTAINER_APP="gait-analysis-api-eus2"
-REGISTRY="gaitanalysisacreus2"
+RESOURCE_GROUP="gait-analysis-rg-wus3"
+CONTAINER_APP="gait-analysis-api-wus3"
+REGISTRY="gaitanalysisacrwus3"
 IMAGE_NAME="gait-analysis-api"
 
 # Generate version tag based on timestamp
@@ -52,7 +52,7 @@ echo "Latest revision: $LATEST_REVISION"
 
 # Step 5: Verify health
 echo "🔍 Step 5/5: Verifying backend health..."
-BACKEND_URL="https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
+BACKEND_URL="https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
 
 for i in {1..12}; do
     if curl -s -f -m 10 "$BACKEND_URL/" > /dev/null 2>&1; then
@@ -65,4 +65,5 @@ done
 
 echo "❌ Backend health check failed after 2 minutes"
 exit 1
+
 

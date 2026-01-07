@@ -32,3 +32,4 @@
 - Direct blob upload from frontend (faster, more reliable)
 - Simple API endpoints for processing triggers
 
+

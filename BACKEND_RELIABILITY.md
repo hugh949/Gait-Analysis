@@ -59,12 +59,12 @@ curl https://gait-analysis-api-simple.azurewebsites.net/
 
 **View logs:**
 ```bash
-az webapp log tail --name gait-analysis-api-simple --resource-group gait-analysis-rg-eus2
+az webapp log tail --name gait-analysis-api-simple --resource-group gait-analysis-rg-wus3
 ```
 
 **Restart backend:**
 ```bash
-az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis-rg-eus2
+az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis-rg-wus3
 ```
 
 ## Next Steps
@@ -88,4 +88,5 @@ az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis
 - Add comprehensive error handling
 - Use background tasks for long operations
 - Implement graceful degradation
+
 

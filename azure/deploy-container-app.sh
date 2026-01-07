@@ -6,17 +6,17 @@ echo "Deploying Container App..."
 # Get connection strings
 STORAGE_CONN=$(az storage account show-connection-string \
   --name gaitanalysisprodstor \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query connectionString -o tsv)
 
 COSMOS_ENDPOINT=$(az cosmosdb show \
   --name gaitanalysisprodcosmos \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query documentEndpoint -o tsv)
 
 COSMOS_KEY=$(az cosmosdb keys list \
   --name gaitanalysisprodcosmos \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query primaryMasterKey -o tsv)
 
 # Get ACR credentials
@@ -25,9 +25,9 @@ ACR_PASS=$(az acr credential show --name gaitanalysisacr --query passwords[0].va
 
 # Create container app
 az containerapp create \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
-  --environment gait-analysis-env-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
+  --environment gait-analysis-env-wus3 \
   --image gaitanalysisacr.azurecr.io/gait-analysis-api:latest \
   --registry-server gaitanalysisacr.azurecr.io \
   --registry-username "$ACR_USER" \
@@ -50,5 +50,5 @@ az containerapp create \
 
 echo ""
 echo "✅ Container App deployed!"
-echo "Get the URL with: az containerapp show --name gait-analysis-api-eus2 --resource-group gait-analysis-rg-eus2 --query properties.configuration.ingress.fqdn -o tsv"
+echo "Get the URL with: az containerapp show --name gait-analysis-api-wus3 --resource-group gait-analysis-rg-wus3 --query properties.configuration.ingress.fqdn -o tsv"
 

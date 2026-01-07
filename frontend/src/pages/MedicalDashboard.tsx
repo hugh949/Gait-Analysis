@@ -4,7 +4,7 @@ import './Dashboard.css'
 
 const getApiUrl = () => {
   if (typeof window !== 'undefined' && window.location.hostname.includes('azurestaticapps.net')) {
-    return 'https://gait-analysis-api-simple.azurewebsites.net'
+    return 'https://gait-native-api-wus3.azurewebsites.net'
   }
   return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
 }

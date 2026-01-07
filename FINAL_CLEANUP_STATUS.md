@@ -16,14 +16,14 @@
 
 **Infrastructure**:
 - ✅ All Bicep templates default to `eastus2`
-- ✅ All deployment scripts use `gait-analysis-rg-eus2`
-- ✅ All resource names use `-eus2` suffix
+- ✅ All deployment scripts use `gait-analysis-rg-wus3`
+- ✅ All resource names use `-wus3` suffix
 
 **Documentation**:
 - ✅ All docs updated to reference East US 2 only
 
 ### 3. ✅ Created New ACR in East US 2
-- New Container Registry: `gaitanalysisacreus2`
+- New Container Registry: `gaitanalysisacrwus3`
 - Location: East US 2
 - Docker image rebuilding with CORS fix
 
@@ -36,12 +36,12 @@
 
 | Resource | Name | Location | Status |
 |----------|------|----------|--------|
-| Resource Group | `gait-analysis-rg-eus2` | East US 2 | ✅ Active |
-| Storage Account | `gaitanalysisprodstoreus2` | East US 2 | ✅ Active |
-| Cosmos DB | `gaitanalysisprodcosmoseus2` | East US 2 | ✅ Active |
-| Container Registry | `gaitanalysisacreus2` | East US 2 | ✅ Active |
-| Container App Env | `gait-analysis-env-eus2` | East US 2 | ✅ Active |
-| Container App | `gait-analysis-api-eus2` | East US 2 | ✅ Active |
+| Resource Group | `gait-analysis-rg-wus3` | East US 2 | ✅ Active |
+| Storage Account | `gaitanalysisprodstorwus3` | East US 2 | ✅ Active |
+| Cosmos DB | `gaitanalysisprodcosmoswus3` | East US 2 | ✅ Active |
+| Container Registry | `gaitanalysisacrwus3` | East US 2 | ✅ Active |
+| Container App Env | `gait-analysis-env-wus3` | East US 2 | ✅ Active |
+| Container App | `gait-analysis-api-wus3` | East US 2 | ✅ Active |
 | Static Web App | `gait-analysis-web` | East US 2 | ✅ Active |
 
 ## CORS Fix Applied
@@ -57,19 +57,19 @@ The upload error was caused by CORS configuration. Fixed by:
 
 1. **Wait for Docker Build**: 
    ```bash
-   az acr task list-runs --registry gaitanalysisacreus2 --output table
+   az acr task list-runs --registry gaitanalysisacrwus3 --output table
    ```
 
 2. **Update Container App** (once image ready):
    ```bash
-   ACR_USER=$(az acr credential show --name gaitanalysisacreus2 --query username -o tsv)
-   ACR_PASS=$(az acr credential show --name gaitanalysisacreus2 --query passwords[0].value -o tsv)
+   ACR_USER=$(az acr credential show --name gaitanalysisacrwus3 --query username -o tsv)
+   ACR_PASS=$(az acr credential show --name gaitanalysisacrwus3 --query passwords[0].value -o tsv)
    
    az containerapp update \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
-     --image gaitanalysisacreus2.azurecr.io/gait-analysis-api:latest \
-     --registry-server gaitanalysisacreus2.azurecr.io \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
+     --image gaitanalysisacrwus3.azurecr.io/gait-analysis-api:latest \
+     --registry-server gaitanalysisacrwus3.azurecr.io \
      --registry-username "$ACR_USER" \
      --registry-password "$ACR_PASS"
    ```
@@ -83,12 +83,12 @@ The upload error was caused by CORS configuration. Fixed by:
 az group show --name gait-analysis-rg
 
 # Check Docker build
-az acr task list-runs --registry gaitanalysisacreus2 --output table
+az acr task list-runs --registry gaitanalysisacrwus3 --output table
 
 # Check Container App CORS
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query "properties.template.containers[0].env[?name=='CORS_ORIGINS']"
 ```
 
@@ -101,4 +101,5 @@ az containerapp show \
 ✅ **Docker image rebuilding**  
 
 The application now exclusively uses **East US 2** and will be ready for testing once the Docker image is built and deployed!
+
 

@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Optional
 from loguru import logger
 import math
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 class TemporalTransformer(nn.Module):
@@ -237,7 +237,8 @@ class Pose3DLifter:
     def lift_to_3d(
         self,
         keypoints_2d: List[Dict[str, np.ndarray]],
-        window_size: int = 30
+        window_size: int = 30,
+        progress_callback=None
     ) -> List[Dict[str, np.ndarray]]:
         """
         Lift 2D keypoints to 3D using temporal context
@@ -245,6 +246,7 @@ class Pose3DLifter:
         Args:
             keypoints_2d: List of 2D keypoint dictionaries
             window_size: Temporal window size for processing
+            progress_callback: Optional callback function(progress_pct, message) for progress updates
         
         Returns:
             List of 3D keypoint dictionaries
@@ -253,7 +255,15 @@ class Pose3DLifter:
             # Pad sequence if too short
             keypoints_2d = self._pad_sequence(keypoints_2d, window_size)
         
+        total_windows = len(keypoints_2d) // (window_size // 2) + 1
         results = []
+        window_count = 0
+        import time
+        start_time = time.time()
+        last_time_update = 0
+        
+        if progress_callback:
+            progress_callback(5, f'Starting 3D conversion for {len(keypoints_2d)} frames')
         
         # Process in sliding windows
         for i in range(0, len(keypoints_2d), window_size // 2):
@@ -281,6 +291,41 @@ class Pose3DLifter:
             
             kp_3d_np = kp_3d.cpu().numpy()
             
+            window_count += 1
+            
+            # Update progress every 10 seconds OR every window or every 5%
+            current_time = time.time()
+            time_since_update = current_time - last_time_update
+            
+            if progress_callback and total_windows > 0:
+                progress_pct = min(30 + int((window_count / total_windows) * 40), 69)  # 30-69% range
+                
+                # Update if 10 seconds passed, or every 10% of windows, or first window
+                should_update = (time_since_update >= 10.0 or 
+                                window_count % max(1, total_windows // 10) == 0 or 
+                                window_count == 1)
+                
+                if should_update:
+                    windows_remaining = total_windows - window_count
+                    elapsed_time = current_time - start_time
+                    
+                    # Calculate time estimate
+                    if window_count > 0 and elapsed_time > 0:
+                        windows_per_second = window_count / elapsed_time
+                        est_time_remaining = (windows_remaining / windows_per_second) if windows_per_second > 0 else 0
+                        
+                        if est_time_remaining > 60:
+                            time_str = f'~{int(est_time_remaining / 60)}m {int(est_time_remaining % 60)}s remaining'
+                        else:
+                            time_str = f'~{int(est_time_remaining)}s remaining'
+                        
+                        message = f'Converting window {window_count}/{total_windows} to 3D - {time_str}'
+                    else:
+                        message = f'Converting window {window_count}/{total_windows} to 3D...'
+                    
+                    progress_callback(progress_pct, message)
+                    last_time_update = current_time
+            
             # Store results
             for j, kp_dict in enumerate(window):
                 if i + j < len(keypoints_2d):
@@ -290,6 +335,9 @@ class Pose3DLifter:
                         'confidence': kp_dict['confidence'],
                         'frame_id': kp_dict.get('frame_id', i + j)
                     })
+        
+        if progress_callback:
+            progress_callback(69, f'Completed 3D conversion for {len(results)} frames')
         
         return results
     

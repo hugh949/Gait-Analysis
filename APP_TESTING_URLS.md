@@ -6,7 +6,7 @@
 This is where you upload videos and view results.
 
 ## Backend API
-**URL**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+**URL**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
 
 This is the API endpoint (not for direct browser access).
 
@@ -39,5 +39,6 @@ Go to: **https://jolly-meadow-0a467810f.1.azurestaticapps.net**
 
 ## Quick Health Check
 - Frontend: https://jolly-meadow-0a467810f.1.azurestaticapps.net
-- Backend Health: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
+- Backend Health: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
+
 

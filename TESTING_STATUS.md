@@ -8,7 +8,7 @@
 - **Location**: East US 2
 
 ### Backend
-- **URL**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+- **URL**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
 - **Status**: ✅ Running (updating image)
 - **Location**: East US 2
 - **Note**: Container scales from zero (first request takes 30-60 seconds)
@@ -38,14 +38,14 @@
 
 #### Health Check (Wake up container)
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 **Wait 30-60 seconds** for first response (container starting)
 
 #### Upload Video
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@your-video.mp4" \
   -F "view_type=front"
 ```
@@ -76,24 +76,24 @@ curl -X POST \
 ### Check Container App
 ```bash
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query "{image:properties.template.containers[0].image,status:properties.runningStatus}"
 ```
 
 ### Check Revisions
 ```bash
 az containerapp revision list \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --output table
 ```
 
 ### Check Logs
 ```bash
 az containerapp logs show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --tail 20
 ```
 
@@ -118,4 +118,5 @@ az containerapp logs show \
 **Remember**: First request takes 30-60 seconds (container startup)
 
 The application is ready for testing! 🎉
+
 

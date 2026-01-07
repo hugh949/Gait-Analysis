@@ -78,3 +78,4 @@ For production, environment variables are configured in:
 - Container App (for backend)
 - Static Web App (for frontend)
 
+

@@ -76,13 +76,14 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 
 // Get connection strings from existing resources
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
-  name: 'gaitanalysisprodstoreus2'
+  name: 'gaitanalysisprodstorwus3'
 }
 
 resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-01-01' existing = {
-  name: 'gaitanalysisprodcosmoseus2'
+  name: 'gaitanalysisprodcosmoswus3'
 }
 
 output appServiceUrl string = 'https://${appService.properties.defaultHostName}'
 output appServiceName string = appServiceName
+
 

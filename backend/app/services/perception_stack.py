@@ -10,7 +10,7 @@ from typing import List, Dict, Tuple, Optional
 from loguru import logger
 from pathlib import Path
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 class PoseEstimationBackbone(nn.Module):
@@ -41,12 +41,20 @@ class HRNetBackbone(PoseEstimationBackbone):
     def _build_hrnet(self):
         """Build HRNet backbone"""
         # Placeholder - integrate with mmpose in production
+        # Output must match head input channels (256)
         return nn.Sequential(
             nn.Conv2d(3, 64, 7, 2, 3),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, 2, 1),
-            # Add HRNet stages here
+            # Add more layers to reach 256 channels
+            nn.Conv2d(64, 128, 3, 2, 1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, 3, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            # Add HRNet stages here in production
         )
     
     def forward(self, x):
@@ -103,13 +111,20 @@ class PoseEstimator:
             raise ValueError(f"Unknown model type: {self.model_type}")
         
         # Load pretrained weights if available
+        # NOTE: If loading old weights, they may not match new architecture
         if Path(settings.POSE_MODEL_PATH).exists():
             try:
                 state_dict = torch.load(settings.POSE_MODEL_PATH, map_location=self.device)
-                model.load_state_dict(state_dict)
-                logger.info(f"Loaded pretrained weights from {settings.POSE_MODEL_PATH}")
+                # Try to load with strict=False to allow architecture mismatches
+                try:
+                    model.load_state_dict(state_dict, strict=True)
+                    logger.info(f"Loaded pretrained weights from {settings.POSE_MODEL_PATH}")
+                except RuntimeError as e:
+                    logger.warning(f"Could not load pretrained weights (architecture mismatch): {e}")
+                    logger.info("Using randomly initialized weights (architecture changed)")
             except Exception as e:
                 logger.warning(f"Could not load pretrained weights: {e}")
+                logger.info("Using randomly initialized weights")
         
         return model.to(self.device)
     
@@ -171,9 +186,13 @@ class PoseEstimator:
         
         return np.array(keypoints), np.array(confidences)
     
-    def process_video(self, video_path: str) -> List[Dict[str, np.ndarray]]:
+    def process_video(self, video_path: str, progress_callback=None) -> List[Dict[str, np.ndarray]]:
         """
         Process entire video and extract keypoints for all frames
+        
+        Args:
+            video_path: Path to video file
+            progress_callback: Optional callback function(progress_pct, message) for progress updates
         
         Returns:
             List of keypoint dictionaries, one per frame
@@ -182,8 +201,20 @@ class PoseEstimator:
         if not cap.isOpened():
             raise ValueError(f"Could not open video: {video_path}")
         
+        # Get total frame count
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        duration_sec = total_frames / fps if fps > 0 else 0
+        
+        if progress_callback:
+            progress_callback(5, f'Video loaded: {total_frames} frames, {duration_sec:.1f}s duration')
+        
         results = []
         frame_count = 0
+        last_progress_update = 0
+        last_time_update = 0
+        import time
+        start_time = time.time()
         
         while True:
             ret, frame = cap.read()
@@ -194,9 +225,49 @@ class PoseEstimator:
             keypoints['frame_id'] = frame_count
             results.append(keypoints)
             frame_count += 1
+            
+            # Update progress every 10 seconds OR every 5% OR every 10 frames
+            current_time = time.time()
+            time_since_update = current_time - last_time_update
+            should_update = False
+            
+            if progress_callback and total_frames > 0:
+                progress_pct = min(30 + int((frame_count / total_frames) * 70), 99)  # 30-99% range
+                
+                # Update if 10 seconds passed, or 5% progress, or every 10 frames
+                if time_since_update >= 10.0 or progress_pct >= last_progress_update + 5 or frame_count % 10 == 0:
+                    should_update = True
+                
+                if should_update:
+                    frames_remaining = total_frames - frame_count
+                    frames_processed = frame_count
+                    elapsed_time = current_time - start_time
+                    
+                    # Calculate processing rate and time estimate
+                    if frames_processed > 0 and elapsed_time > 0:
+                        frames_per_second = frames_processed / elapsed_time
+                        est_time_remaining = (frames_remaining / frames_per_second) if frames_per_second > 0 else 0
+                        
+                        # Format time estimate
+                        if est_time_remaining > 60:
+                            time_str = f'~{int(est_time_remaining / 60)}m {int(est_time_remaining % 60)}s remaining'
+                        else:
+                            time_str = f'~{int(est_time_remaining)}s remaining'
+                        
+                        message = f'Processing frame {frame_count}/{total_frames} ({frames_per_second:.1f} fps) - {time_str}'
+                    else:
+                        message = f'Processing frame {frame_count}/{total_frames}...'
+                    
+                    progress_callback(progress_pct, message)
+                    last_progress_update = progress_pct
+                    last_time_update = current_time
         
         cap.release()
         logger.info(f"Processed {frame_count} frames from {video_path}")
+        
+        if progress_callback:
+            progress_callback(99, f'Completed processing {frame_count} frames')
+        
         return results
     
     def get_joint_names(self) -> List[str]:
@@ -207,4 +278,5 @@ class PoseEstimator:
             'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
             'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
         ]
+
 

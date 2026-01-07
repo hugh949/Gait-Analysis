@@ -92,3 +92,4 @@ az cosmosdb keys list \
 - **Resource Group**: `gait-analysis-rg`
 - **Location**: East US
 
+

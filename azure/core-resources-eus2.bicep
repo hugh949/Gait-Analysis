@@ -137,3 +137,4 @@ output cosmosKey string = cosmosAccount.listKeys().primaryMasterKey
 output cosmosDatabaseName string = 'gait-analysis-db'
 output keyVaultName string = keyVault.name
 
+

@@ -34,12 +34,12 @@ npx @azure/static-web-apps-cli deploy dist \
 **Manual Steps:**
 ```bash
 cd backend
-az acr build --registry gaitanalysisacreus2 --image gait-analysis-api:latest .
+az acr build --registry gaitanalysisacrwus3 --image gait-analysis-api:latest .
 az webapp config container set \
   --name gait-analysis-api-simple \
-  --resource-group gait-analysis-rg-eus2 \
-  --docker-custom-image-name gaitanalysisacreus2.azurecr.io/gait-analysis-api:latest
-az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis-rg-eus2
+  --resource-group gait-analysis-rg-wus3 \
+  --docker-custom-image-name gaitanalysisacrwus3.azurecr.io/gait-analysis-api:latest
+az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis-rg-wus3
 ```
 
 **Backend URL:** https://gait-analysis-api-simple.azurewebsites.net
@@ -57,4 +57,5 @@ az webapp restart --name gait-analysis-api-simple --resource-group gait-analysis
 - Backend deployments take longer (~2-3 minutes for Docker build + restart)
 - All deployments go directly from local code to Azure
 - GitHub is no longer part of the deployment pipeline
+
 

@@ -1,28 +1,65 @@
 """
 Main FastAPI application for Gait Analysis Service
 """
+import sys
+import logging
+
+# Setup basic logging first (before any other imports that might use logger)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+
+# Try to use loguru if available, otherwise use standard logging
+try:
+    from loguru import logger as loguru_logger
+    logger = loguru_logger
+    logger.info("Using loguru for logging")
+except ImportError:
+    logger.info("Using standard logging (loguru not available)")
+
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import uvicorn
-from loguru import logger
 
 from app.core.config_simple import settings
 from app.api.v1 import router as api_router
 from app.core.database import init_db
-from app.services.quality_gate import QualityGateService
+
+# QualityGateService is optional
+try:
+    from app.services.quality_gate import QualityGateService
+except ImportError:
+    QualityGateService = None
+    logger.warning("QualityGateService not available")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    # Startup
-    logger.info("Initializing Gait Analysis Service...")
-    await init_db()
-    logger.info("Database initialized")
-    logger.info("Service ready")
+    # Startup - start accepting requests immediately
+    logger.info("Starting Gait Analysis Service...")
+    logger.info("Service ready and accepting requests")
+    
+    # Start database initialization in background (non-blocking)
+    import asyncio
+    async def init_db_background():
+        try:
+            await init_db()
+            logger.info("Database initialized")
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            logger.warning("Continuing without database (degraded mode)")
+    
+    # Start database init as background task (doesn't block app startup)
+    asyncio.create_task(init_db_background())
+    
     yield
+    
     # Shutdown
     logger.info("Shutting down Gait Analysis Service...")
 

@@ -4,31 +4,31 @@
 echo "Updating Container App with new image from ACR..."
 
 # Get ACR credentials
-ACR_USER=$(az acr credential show --name gaitanalysisacreus2 --query username -o tsv)
-ACR_PASS=$(az acr credential show --name gaitanalysisacreus2 --query passwords[0].value -o tsv)
+ACR_USER=$(az acr credential show --name gaitanalysisacrwus3 --query username -o tsv)
+ACR_PASS=$(az acr credential show --name gaitanalysisacrwus3 --query passwords[0].value -o tsv)
 
 # Get connection strings
 STORAGE_CONN=$(az storage account show-connection-string \
-  --name gaitanalysisprodstoreus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodstorwus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query connectionString -o tsv)
 
 COSMOS_ENDPOINT=$(az cosmosdb show \
-  --name gaitanalysisprodcosmoseus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodcosmoswus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query documentEndpoint -o tsv)
 
 COSMOS_KEY=$(az cosmosdb keys list \
-  --name gaitanalysisprodcosmoseus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodcosmoswus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query primaryMasterKey -o tsv)
 
 # Update Container App
 az containerapp update \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
-  --image gaitanalysisacreus2.azurecr.io/gait-analysis-api:latest \
-  --registry-server gaitanalysisacreus2.azurecr.io \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
+  --image gaitanalysisacrwus3.azurecr.io/gait-analysis-api:latest \
+  --registry-server gaitanalysisacrwus3.azurecr.io \
   --registry-username "$ACR_USER" \
   --registry-password "$ACR_PASS" \
   --set-env-vars \
@@ -45,5 +45,6 @@ az containerapp update \
 
 echo ""
 echo "✅ Container App updated!"
-echo "Backend URL: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
+echo "Backend URL: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
+
 

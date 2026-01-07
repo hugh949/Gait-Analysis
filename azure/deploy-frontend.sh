@@ -15,7 +15,7 @@ fi
 echo "Getting deployment token..."
 TOKEN=$(az staticwebapp secrets list \
   --name gait-analysis-web \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query deploymentToken -o tsv 2>/dev/null)
 
 if [ -z "$TOKEN" ]; then

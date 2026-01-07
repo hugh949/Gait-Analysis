@@ -27,7 +27,7 @@
 
 #### Quick Health Check
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 
 **Expected**: `{"status":"healthy",...}`
@@ -35,7 +35,7 @@ curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainera
 #### Upload a Video
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@/path/to/video.mp4" \
   -F "view_type=front"
 ```
@@ -62,7 +62,7 @@ This will test:
 ## 📍 Application URLs
 
 - **Frontend**: https://gentle-wave-0d4e1d10f.4.azurestaticapps.net
-- **Backend**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+- **Backend**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
 
 ---
 
@@ -99,8 +99,8 @@ This will test:
 3. **Check Backend Logs**
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
@@ -112,8 +112,8 @@ The container scales from zero. Options:
 2. **Increase min replicas** (costs more):
    ```bash
    az containerapp update \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --min-replicas 1
    ```
 
@@ -135,4 +135,5 @@ The container scales from zero. Options:
 **Start here**: https://gentle-wave-0d4e1d10f.4.azurestaticapps.net
 
 The application is ready for testing! 🚀
+
 

@@ -3,7 +3,7 @@
 ## Current Status: NOT WORKING
 
 ### Container App Backend
-- **URL**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+- **URL**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
 - **Status**: ❌ DOWN (connection timeout)
 - **Issue**: Container Apps have been unreliable - revisions not updating, crashes on startup
 
@@ -34,4 +34,5 @@
 ---
 
 **Status**: Both backends are down. Working on fixing App Service to be reliable.
+
 

@@ -7,9 +7,10 @@ from app.core.database import db
 router = APIRouter()
 
 
+@router.get("")
 @router.get("/")
 async def health_check():
-    """Basic health check"""
+    """Basic health check - handles both /api/v1/health and /api/v1/health/"""
     return {"status": "healthy"}
 
 
@@ -30,4 +31,5 @@ async def detailed_health_check():
             "api": "operational"
         }
     }
+
 

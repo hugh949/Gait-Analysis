@@ -10,15 +10,15 @@
    - ✅ Location: East US 2
 
 2. **Backend** (Container App)
-   - ✅ URL: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+   - ✅ URL: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
    - ✅ Status: Running (scales from zero)
    - ✅ Location: East US 2
    - ✅ CORS: Configured for Static Web App
 
 3. **Infrastructure** (All East US 2)
-   - ✅ Storage Account: `gaitanalysisprodstoreus2`
-   - ✅ Cosmos DB: `gaitanalysisprodcosmoseus2`
-   - ✅ Container Registry: `gaitanalysisacreus2`
+   - ✅ Storage Account: `gaitanalysisprodstorwus3`
+   - ✅ Cosmos DB: `gaitanalysisprodcosmoswus3`
+   - ✅ Container Registry: `gaitanalysisacrwus3`
 
 ---
 
@@ -51,13 +51,13 @@
 
 #### Test Health Check
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 
 #### Test Upload
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@your-video.mp4" \
   -F "view_type=front"
 ```
@@ -65,19 +65,19 @@ curl -X POST \
 #### Check Analysis Status
 ```bash
 # Replace {analysis_id} with ID from upload response
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
 ```
 
 #### Get Reports
 ```bash
 # Medical report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical"
 
 # Caregiver report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=caregiver"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=caregiver"
 
 # Older adult report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=older_adult"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=older_adult"
 ```
 
 ---
@@ -105,8 +105,8 @@ This is normal! The container is starting. Options:
 3. Increase min replicas (costs more):
    ```bash
    az containerapp update \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --min-replicas 1
    ```
 
@@ -151,16 +151,16 @@ This is normal! The container is starting. Options:
 2. **Check Backend Logs**
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
 3. **Verify Container is Running**
    ```bash
    az containerapp show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query properties.runningStatus
    ```
 
@@ -170,8 +170,8 @@ This is normal! The container is starting. Options:
 2. **Check if container is starting**:
    ```bash
    az containerapp revision list \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3
    ```
 
 ---
@@ -212,4 +212,5 @@ For detailed testing instructions, see:
 - `HOW_TO_TEST.md` - Comprehensive testing guide
 - `QUICK_TEST_GUIDE.md` - Quick reference
 - `test-app.sh` - Automated test script
+
 

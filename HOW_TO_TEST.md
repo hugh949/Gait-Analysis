@@ -6,7 +6,7 @@
 **https://gentle-wave-0d4e1d10f.4.azurestaticapps.net**
 
 ### Backend API
-**https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io**
+**https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io**
 
 ---
 
@@ -37,7 +37,7 @@
 
 #### 1. Health Check
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 
 **Expected Response:**
@@ -54,13 +54,13 @@ curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainera
 
 #### 2. Test Root Endpoint
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
 ```
 
 #### 3. Upload a Video
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@/path/to/your/video.mp4" \
   -F "view_type=front"
 ```
@@ -77,19 +77,19 @@ curl -X POST \
 #### 4. Check Analysis Status
 ```bash
 # Replace {analysis_id} with the ID from step 3
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
 ```
 
 #### 5. Get Reports
 ```bash
 # Medical report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical"
 
 # Caregiver report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=caregiver"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=caregiver"
 
 # Older adult report
-curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=older_adult"
+curl "https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=older_adult"
 ```
 
 ---
@@ -98,16 +98,16 @@ curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainer
 
 1. **Import Collection** (create these requests):
 
-   - **GET** `https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health`
+   - **GET** `https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health`
    
-   - **POST** `https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload`
+   - **POST** `https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload`
      - Body Type: `form-data`
      - Key: `file` (type: File)
      - Key: `view_type` (type: Text, value: `front`)
    
-   - **GET** `https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}`
+   - **GET** `https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}`
    
-   - **GET** `https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical`
+   - **GET** `https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/reports/{analysis_id}?audience=medical`
 
 ---
 
@@ -151,16 +151,16 @@ curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainer
 2. **Check Backend Logs**
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
 3. **Verify CORS Configuration**
    ```bash
    az containerapp show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query "properties.template.containers[0].env[?name=='CORS_ORIGINS']"
    ```
 
@@ -169,25 +169,25 @@ curl "https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainer
 1. **Check Container App Status**
    ```bash
    az containerapp show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query properties.runningStatus
    ```
 
 2. **Check if Container is Running**
    ```bash
    az containerapp revision list \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query "[0].properties.activeState"
    ```
 
 3. **Restart Container App** (if needed)
    ```bash
    az containerapp revision restart \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
-     --revision gait-analysis-api-eus2--latest
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
+     --revision gait-analysis-api-wus3--latest
    ```
 
 ---
@@ -199,7 +199,7 @@ Save this as `test-app.sh`:
 ```bash
 #!/bin/bash
 
-API_URL="https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
+API_URL="https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
 
 echo "Testing Gait Analysis API..."
 echo ""
@@ -264,4 +264,5 @@ For testing, use a video that:
 3. **Check logs** if anything fails
 
 The application is ready for testing! 🎉
+
 

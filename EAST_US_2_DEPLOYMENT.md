@@ -6,14 +6,14 @@ All resources have been deployed to **East US 2** where service quota is availab
 
 ### Infrastructure (East US 2)
 
-1. ✅ **Resource Group**: `gait-analysis-rg-eus2`
-2. ✅ **Storage Account**: `gaitanalysisprodstoreus2`
+1. ✅ **Resource Group**: `gait-analysis-rg-wus3`
+2. ✅ **Storage Account**: `gaitanalysisprodstorwus3`
    - Container: `gait-videos` ✅
-3. ✅ **Cosmos DB**: `gaitanalysisprodcosmoseus2`
+3. ✅ **Cosmos DB**: `gaitanalysisprodcosmoswus3`
    - Database: `gait-analysis-db` ✅
    - Containers: `analyses`, `videos`, `reports`, `users` ✅
-4. ✅ **Container Apps Environment**: `gait-analysis-env-eus2`
-5. ✅ **Container App**: `gait-analysis-api-eus2`
+4. ✅ **Container Apps Environment**: `gait-analysis-env-wus3`
+5. ✅ **Container App**: `gait-analysis-api-wus3`
    - Status: ✅ Deployed and Running
    - Image: `gaitanalysisacr.azurecr.io/gait-analysis-api:latest`
    - Auto-scaling: 0-5 replicas
@@ -31,8 +31,8 @@ All resources have been deployed to **East US 2** where service quota is availab
 ```bash
 # Get the Container App URL
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query properties.configuration.ingress.fqdn -o tsv
 ```
 
@@ -45,12 +45,12 @@ The backend will be available at: `https://<container-app-fqdn>`
 ## Connection Information
 
 ### Storage Account
-- **Name**: `gaitanalysisprodstoreus2`
+- **Name**: `gaitanalysisprodstorwus3`
 - **Location**: East US 2
 - **Container**: `gait-videos`
 
 ### Cosmos DB
-- **Account**: `gaitanalysisprodcosmoseus2`
+- **Account**: `gaitanalysisprodcosmoswus3`
 - **Database**: `gait-analysis-db`
 - **Location**: East US 2
 
@@ -58,13 +58,13 @@ Get connection strings:
 ```bash
 # Storage
 az storage account show-connection-string \
-  --name gaitanalysisprodstoreus2 \
-  --resource-group gait-analysis-rg-eus2
+  --name gaitanalysisprodstorwus3 \
+  --resource-group gait-analysis-rg-wus3
 
 # Cosmos DB
 az cosmosdb keys list \
-  --name gaitanalysisprodcosmoseus2 \
-  --resource-group gait-analysis-rg-eus2
+  --name gaitanalysisprodcosmoswus3 \
+  --resource-group gait-analysis-rg-wus3
 ```
 
 ## Container App Configuration
@@ -102,8 +102,8 @@ The Container App is configured with:
 1. **Get Backend URL**:
    ```bash
    az containerapp show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --query properties.configuration.ingress.fqdn -o tsv
    ```
 
@@ -124,11 +124,11 @@ The Container App is configured with:
 
 | Resource | Name | Location | Status |
 |----------|------|----------|--------|
-| Resource Group | `gait-analysis-rg-eus2` | East US 2 | ✅ |
-| Storage Account | `gaitanalysisprodstoreus2` | East US 2 | ✅ |
-| Cosmos DB | `gaitanalysisprodcosmoseus2` | East US 2 | ✅ |
-| Container App Env | `gait-analysis-env-eus2` | East US 2 | ✅ |
-| Container App | `gait-analysis-api-eus2` | East US 2 | ✅ |
+| Resource Group | `gait-analysis-rg-wus3` | East US 2 | ✅ |
+| Storage Account | `gaitanalysisprodstorwus3` | East US 2 | ✅ |
+| Cosmos DB | `gaitanalysisprodcosmoswus3` | East US 2 | ✅ |
+| Container App Env | `gait-analysis-env-wus3` | East US 2 | ✅ |
+| Container App | `gait-analysis-api-wus3` | East US 2 | ✅ |
 | Static Web App | `gait-analysis-web` | East US 2 | ✅ |
 
 ## Notes
@@ -137,4 +137,5 @@ The Container App is configured with:
 - Container App uses the Docker image from the original ACR (cross-region pull)
 - Static Web App was already in East US 2
 - The application is fully functional and ready to use
+
 

@@ -36,7 +36,7 @@
 
 #### Step 1: Wake Up the Backend (Wait 30-60 seconds)
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 
 **Expected**: After 30-60 seconds, returns:
@@ -47,7 +47,7 @@ curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainera
 #### Step 2: Upload a Video
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@/path/to/your/video.mp4" \
   -F "view_type=front"
 ```
@@ -60,7 +60,7 @@ curl -X POST \
 #### Step 3: Check Analysis Status
 ```bash
 # Replace {analysis_id} with ID from step 2
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/{analysis_id}
 ```
 
 ---
@@ -88,8 +88,8 @@ curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainera
 **Option B: Keep Container Running** (Faster, but costs more)
 ```bash
 az containerapp update \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --min-replicas 1
 ```
 This keeps 1 container always running (faster, but costs ~$0.000012/second)
@@ -112,8 +112,8 @@ This keeps 1 container always running (faster, but costs ~$0.000012/second)
 3. **Check Backend Logs**
    ```bash
    az containerapp logs show \
-     --name gait-analysis-api-eus2 \
-     --resource-group gait-analysis-rg-eus2 \
+     --name gait-analysis-api-wus3 \
+     --resource-group gait-analysis-rg-wus3 \
      --tail 50
    ```
 
@@ -158,12 +158,13 @@ The application is **ready for testing**! 🎉
 ./test-app.sh
 
 # Wake up backend (wait 30-60s)
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 
 # Check container status
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query properties.runningStatus
 ```
+
 

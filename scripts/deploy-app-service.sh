@@ -2,9 +2,9 @@
 # Deploy Backend to Azure App Service - Simple and Reliable
 set -e
 
-RESOURCE_GROUP="gait-analysis-rg-eus2"
+RESOURCE_GROUP="gait-analysis-rg-wus3"
 APP_SERVICE_NAME="gait-analysis-api-appservice"
-REGISTRY="gaitanalysisacreus2"
+REGISTRY="gaitanalysisacrwus3"
 IMAGE="gait-analysis-api:latest"
 
 echo "🚀 Deploying to App Service (Simple & Reliable)"
@@ -63,4 +63,5 @@ else
     echo "⚠️  Backend may still be starting. Check logs:"
     echo "az webapp log tail --name $APP_SERVICE_NAME --resource-group $RESOURCE_GROUP"
 fi
+
 

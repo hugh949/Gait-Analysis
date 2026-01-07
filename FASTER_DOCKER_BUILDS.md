@@ -25,13 +25,13 @@
 
 **Current Status:** Check if enabled
 ```bash
-az acr show --name gaitanalysisacreus2 --query "buildProperties" -o json
+az acr show --name gaitanalysisacrwus3 --query "buildProperties" -o json
 ```
 
 **Enable caching:**
 ```bash
 # ACR automatically caches layers, but ensure it's enabled
-az acr update --name gaitanalysisacreus2 --admin-enabled true
+az acr update --name gaitanalysisacrwus3 --admin-enabled true
 ```
 
 **Benefits:** 
@@ -50,7 +50,7 @@ az acr update --name gaitanalysisacreus2 --admin-enabled true
 
 **Usage:**
 ```bash
-az acr build --registry gaitanalysisacreus2 \
+az acr build --registry gaitanalysisacrwus3 \
   --image gait-analysis-api:latest \
   --file Dockerfile.optimized .
 ```
@@ -59,7 +59,7 @@ az acr build --registry gaitanalysisacreus2 \
 
 **Current:** Check current SKU
 ```bash
-az acr show --name gaitanalysisacreus2 --query "sku.name" -o tsv
+az acr show --name gaitanalysisacrwus3 --query "sku.name" -o tsv
 ```
 
 **Options:**
@@ -69,9 +69,9 @@ az acr show --name gaitanalysisacreus2 --query "sku.name" -o tsv
 
 **Upgrade:**
 ```bash
-az acr update --name gaitanalysisacreus2 --sku Standard
+az acr update --name gaitanalysisacrwus3 --sku Standard
 # or
-az acr update --name gaitanalysisacreus2 --sku Premium
+az acr update --name gaitanalysisacrwus3 --sku Premium
 ```
 
 ### 4. Use ACR Tasks with Better Agents
@@ -79,7 +79,7 @@ az acr update --name gaitanalysisacreus2 --sku Premium
 **Create optimized build task:**
 ```bash
 az acr task create \
-  --registry gaitanalysisacreus2 \
+  --registry gaitanalysisacrwus3 \
   --name build-backend \
   --context . \
   --file backend/Dockerfile.optimized \
@@ -116,7 +116,7 @@ az acr task create \
 ```bash
 # Use the optimized Dockerfile
 cd backend
-az acr build --registry gaitanalysisacreus2 \
+az acr build --registry gaitanalysisacrwus3 \
   --image gait-analysis-api:latest \
   --file Dockerfile.optimized .
 ```
@@ -131,7 +131,7 @@ ACR automatically caches, but ensure:
 
 ```bash
 # Watch build in real-time
-az acr build --registry gaitanalysisacreus2 \
+az acr build --registry gaitanalysisacrwus3 \
   --image gait-analysis-api:latest . \
   --no-logs false
 ```
@@ -158,4 +158,5 @@ az acr build --registry gaitanalysisacreus2 \
 - **Premium SKU**: $50/month, fastest builds
 
 For development, Standard SKU is usually the best balance.
+
 

@@ -8,7 +8,7 @@ from loguru import logger
 from scipy import signal, stats
 from dataclasses import dataclass
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 @dataclass

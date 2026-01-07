@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Optional
 from loguru import logger
 import math
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 class TemporalTransformer(nn.Module):
@@ -311,4 +311,5 @@ class Pose3DLifter:
 
 # Import Path for model loading
 from pathlib import Path
+
 

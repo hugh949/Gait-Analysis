@@ -36,5 +36,5 @@ git push -u origin main
 ## Deployment Token
 
 Get token from Azure Portal:
-- Go to: Resource Groups → gait-analysis-rg-eus2 → gait-analysis-web-eus2
+- Go to: Resource Groups → gait-analysis-rg-wus3 → gait-analysis-web-wus3
 - Click 'Overview' → 'Deployment token'

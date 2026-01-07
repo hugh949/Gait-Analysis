@@ -3,7 +3,7 @@
 ## ✅ Application Status
 
 ### Backend API (Deployed & Running)
-- **URL**: https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
+- **URL**: https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io
 - **Status**: ✅ Healthy
 - **Location**: East US 2
 
@@ -19,7 +19,7 @@
 
 #### Health Check
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health
 ```
 
 Expected response:
@@ -29,13 +29,13 @@ Expected response:
 
 #### Test API Root
 ```bash
-curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
+curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/
 ```
 
 #### Upload Video (Test Endpoint)
 ```bash
 curl -X POST \
-  https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
+  https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/api/v1/analysis/upload \
   -F "file=@/path/to/test-video.mp4" \
   -F "view_type=front"
 ```
@@ -87,7 +87,7 @@ swa deploy ./dist --deployment-token <your-token> --env production
 ### 1. Backend Health Check
 - **Endpoint**: `GET /health`
 - **Expected**: 200 OK with health status
-- **Test**: `curl https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health`
+- **Test**: `curl https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io/health`
 
 ### 2. Video Upload
 - **Endpoint**: `POST /api/v1/analysis/upload`
@@ -119,24 +119,24 @@ swa deploy ./dist --deployment-token <your-token> --env production
 **Check Container App Logs:**
 ```bash
 az containerapp logs show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --follow
 ```
 
 **Check Container App Status:**
 ```bash
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query properties.runningStatus
 ```
 
 **Restart Container App:**
 ```bash
 az containerapp revision restart \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3
 ```
 
 ### Frontend Issues
@@ -151,7 +151,7 @@ az containerapp revision restart \
 **Rebuild Frontend:**
 ```bash
 cd frontend
-VITE_API_URL=https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io npm run build
+VITE_API_URL=https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io npm run build
 ```
 
 ## 📊 Monitoring
@@ -193,4 +193,5 @@ If you encounter issues:
 2. Verify all resources are running
 3. Check network connectivity
 4. Review error messages in browser console (F12)
+
 

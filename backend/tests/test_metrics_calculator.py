@@ -74,3 +74,4 @@ def test_calculate_all_metrics():
     assert metrics.gait_speed_mm_per_s >= 0
     assert metrics.overall_confidence > 0
 
+

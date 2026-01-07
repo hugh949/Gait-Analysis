@@ -5,19 +5,19 @@ echo "Extracting Azure connection strings..."
 
 # Get storage connection string
 STORAGE_CONN=$(az storage account show-connection-string \
-  --name gaitanalysisprodstoreus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodstorwus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query connectionString -o tsv)
 
 # Get Cosmos DB details
 COSMOS_ENDPOINT=$(az cosmosdb show \
-  --name gaitanalysisprodcosmoseus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodcosmoswus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query documentEndpoint -o tsv)
 
 COSMOS_KEY=$(az cosmosdb keys list \
-  --name gaitanalysisprodcosmoseus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gaitanalysisprodcosmoswus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query primaryMasterKey -o tsv)
 
 # Create .env file in backend directory

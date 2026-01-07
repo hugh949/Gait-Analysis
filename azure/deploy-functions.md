@@ -10,13 +10,13 @@ Since App Service Plans require quota that's not available, we can use Azure Fun
 # Create storage account for function app (if not using existing)
 az storage account create \
   --name gaitanalysisfuncstor \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --location eastus2 \
   --sku Standard_LRS
 
 # Create function app
 az functionapp create \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --consumption-plan-location eastus2 \
   --runtime python \
   --runtime-version 3.11 \
@@ -32,22 +32,22 @@ az functionapp create \
 # Get connection strings
 STORAGE_CONN=$(az storage account show-connection-string \
   --name gaitanalysisprodstor \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query connectionString -o tsv)
 
 COSMOS_ENDPOINT=$(az cosmosdb show \
   --name gaitanalysisprodcosmos \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query documentEndpoint -o tsv)
 
 COSMOS_KEY=$(az cosmosdb keys list \
   --name gaitanalysisprodcosmos \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --query primaryMasterKey -o tsv)
 
 # Set app settings
 az functionapp config appsettings set \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --name gait-analysis-api \
   --settings \
     AZURE_STORAGE_CONNECTION_STRING="$STORAGE_CONN" \
@@ -74,7 +74,7 @@ func azure functionapp publish gait-analysis-api --python
 # Create static web app
 az staticwebapp create \
   --name gait-analysis-web \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --location eastus2 \
   --sku Free
 
@@ -83,7 +83,7 @@ cd frontend
 npm run build
 az staticwebapp deploy \
   --name gait-analysis-web \
-  --resource-group gait-analysis-rg-eus2 \
+  --resource-group gait-analysis-rg-wus3 \
   --app-location "./" \
   --output-location "dist"
 ```

@@ -10,7 +10,7 @@ from loguru import logger
 import smplx
 from pathlib import Path
 
-from app.core.config import settings
+from app.core.config_simple import settings
 
 
 class ViewInvariantEncoder(nn.Module):
@@ -300,4 +300,5 @@ class MultiViewFusionService:
         # Higher confidence when views agree
         num_frames = min(len(kp) for kp in view_keypoints.values())
         return np.ones((num_frames, 17)) * 0.9  # Placeholder
+
 

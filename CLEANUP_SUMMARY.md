@@ -16,11 +16,11 @@
 **Infrastructure Templates**:
 - `azure/main.bicep` - Default location: `eastus2`
 - `azure/core-resources.bicep` - Default location: `eastus2`
-- `azure/core-resources-eus2.bicep` - Already using `eastus2`
+- `azure/core-resources-wus3.bicep` - Already using `eastus2`
 
 **Deployment Scripts**:
-- All scripts updated to use `gait-analysis-rg-eus2`
-- All resource names updated to `-eus2` variants
+- All scripts updated to use `gait-analysis-rg-wus3`
+- All resource names updated to `-wus3` variants
 
 ### 3. ✅ Updated Container App
 - CORS_ORIGINS environment variable set
@@ -30,10 +30,10 @@
 ## Current State
 
 ### Active Resources (East US 2 Only)
-- Resource Group: `gait-analysis-rg-eus2`
-- Storage: `gaitanalysisprodstoreus2`
-- Cosmos DB: `gaitanalysisprodcosmoseus2`
-- Container App: `gait-analysis-api-eus2`
+- Resource Group: `gait-analysis-rg-wus3`
+- Storage: `gaitanalysisprodstorwus3`
+- Cosmos DB: `gaitanalysisprodcosmoswus3`
+- Container App: `gait-analysis-api-wus3`
 - Static Web App: `gait-analysis-web`
 
 ### No East US Resources
@@ -66,8 +66,8 @@ az acr task list-runs --registry gaitanalysisacr --output table
 
 # Check Container App CORS config
 az containerapp show \
-  --name gait-analysis-api-eus2 \
-  --resource-group gait-analysis-rg-eus2 \
+  --name gait-analysis-api-wus3 \
+  --resource-group gait-analysis-rg-wus3 \
   --query "properties.template.containers[0].env[?name=='CORS_ORIGINS']"
 ```
 
@@ -79,4 +79,5 @@ az containerapp show \
 ✅ **Application ready for testing**
 
 The application now exclusively uses **East US 2** and the upload functionality should work once the new Docker image is deployed!
+
 

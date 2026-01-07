@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick Test Script for Gait Analysis Application
 
-API_URL="https://gait-analysis-api-eus2.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
+API_URL="https://gait-analysis-api-wus3.jollymeadow-b5f64007.eastus2.azurecontainerapps.io"
 FRONTEND_URL="https://gentle-wave-0d4e1d10f.4.azurestaticapps.net"
 
 echo "🧪 Testing Gait Analysis Application"
@@ -69,4 +69,5 @@ echo "     -F 'file=@your-video.mp4' \\"
 echo "     -F 'view_type=front'"
 echo ""
 echo "💡 Note: First request may take 30-60 seconds (container scales from zero)"
+
 

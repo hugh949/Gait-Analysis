@@ -486,3 +486,4 @@ class ReportingService:
             'generated_at': analysis_date.isoformat()
         }
 
+

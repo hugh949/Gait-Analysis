@@ -1,233 +1,118 @@
 # Deployment Guide
 
-## Prerequisites
+This project uses **GitHub Actions** for automated deployments to Azure. This is the recommended and most reliable deployment method.
 
-- Azure account with appropriate permissions
-- Azure CLI installed and configured
-- Python 3.9+ installed
-- Node.js 18+ installed
-- Git installed
+## Quick Start
 
-## Azure Infrastructure Setup
+1. **Set up GitHub Secrets** (one-time setup)
+   - See [GitHub Actions Setup Guide](.github/GITHUB_ACTIONS_SETUP.md)
+   - Run `./scripts/setup-github-secrets.sh` for help
 
-### 1. Create Resource Group
+2. **Push to main branch**
+   - Workflows automatically trigger on push
+   - Monitor progress in GitHub Actions tab
 
-```bash
-az group create --name gait-analysis-rg-eus2 --location eastus2
-```
+3. **Deploy manually** (optional)
+   - Go to Actions → Select workflow → Run workflow
 
-### 2. Deploy Infrastructure
+## Deployment Methods
 
-```bash
-cd azure
-az deployment group create \
-  --resource-group gait-analysis-rg-eus2 \
-  --template-file core-resources-eus2.bicep \
-  --parameters appName=gaitanalysis environment=prod location=eastus2
-```
+### ✅ Recommended: GitHub Actions (Automated)
 
-### 3. Configure Environment Variables
+**Workflows:**
+- `.github/workflows/deploy-backend.yml` - Backend only
+- `.github/workflows/deploy-frontend.yml` - Frontend only  
+- `.github/workflows/deploy-integrated.yml` - Both together
 
-After deployment, retrieve connection strings and configure:
+**Benefits:**
+- ✅ Automatic on push to main
+- ✅ Reliable and tested
+- ✅ Full visibility in GitHub
+- ✅ No local dependencies
+- ✅ Follows Azure best practices
 
-```bash
-# Get storage connection string
-az storage account show-connection-string \
-  --name <storage-account-name> \
-  --resource-group gait-analysis-rg
+### ⚠️ Alternative: Direct Scripts (Manual)
 
-# Get Cosmos DB keys
-az cosmosdb keys list \
-  --name <cosmos-account-name> \
-  --resource-group gait-analysis-rg
-```
+**Scripts:**
+- `scripts/build-and-deploy-integrated.sh` - Full deployment
+- `scripts/deploy-backend-direct.sh` - Backend only
+- `scripts/deploy-frontend-direct.sh` - Frontend only
 
-Update `.env` file with these values.
+**Use when:**
+- Testing locally before pushing to GitHub
+- Emergency hotfixes
+- Local development
 
-## Backend Deployment
+## Azure Resources
 
-### 1. Prepare Backend
+All resources are in **West US 3**:
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+- **Resource Group**: `gait-analysis-rg-wus3`
+- **App Service**: `gaitanalysisapp` (https://gaitanalysisapp.azurewebsites.net)
+- **Container Registry**: `gaitacr737`
+- **Static Web App**: `gentle-sky-0a498ab1e` (https://gentle-sky-0a498ab1e.4.azurestaticapps.net)
 
-### 2. Deploy to Azure App Service
+## Architecture
 
-```bash
-# Install Azure CLI extension for App Service
-az extension add --name webapp
+### Integrated Application (Current)
 
-# Create deployment package
-zip -r deploy.zip . -x "venv/*" "*.pyc" "__pycache__/*"
+- **Single App Service** hosting both API and React frontend
+- **Single URL**: https://gaitanalysisapp.azurewebsites.net
+- **Docker container** with Python FastAPI + React build
+- **Azure services**: Blob Storage, Computer Vision, SQL Database
 
-# Deploy
-az webapp deployment source config-zip \
-  --resource-group gait-analysis-rg \
-  --name <backend-app-name> \
-  --src deploy.zip
-```
+### Separate Frontend/Backend (Alternative)
 
-### 3. Configure App Settings
-
-```bash
-az webapp config appsettings set \
-  --resource-group gait-analysis-rg \
-  --name <backend-app-name> \
-  --settings \
-    AZURE_STORAGE_CONNECTION_STRING="<connection-string>" \
-    AZURE_COSMOS_ENDPOINT="<endpoint>" \
-    AZURE_COSMOS_KEY="<key>"
-```
-
-## Frontend Deployment
-
-### 1. Build Frontend
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-### 2. Deploy to Azure App Service
-
-```bash
-# Configure for Node.js
-az webapp config set \
-  --resource-group gait-analysis-rg \
-  --name <frontend-app-name> \
-  --linux-fx-version "NODE|18-lts"
-
-# Deploy
-cd dist
-zip -r frontend.zip .
-az webapp deployment source config-zip \
-  --resource-group gait-analysis-rg \
-  --name <frontend-app-name> \
-  --src frontend.zip
-```
-
-## Model Deployment
-
-### 1. Upload Models to Azure Storage
-
-```bash
-az storage blob upload \
-  --account-name <storage-account-name> \
-  --container-name models \
-  --name pose_estimation.pth \
-  --file ./models/pose_estimation.pth
-```
-
-### 2. Configure Model Paths
-
-Update App Service settings to point to blob storage paths.
-
-## Validation Setup
-
-### Phase 1: Verification
-
-1. Set up synchronized trials with IR-marker systems
-2. Run parallel analysis on same videos
-3. Calculate Intraclass Correlation Coefficients (target: ICC ≥ 0.85)
-
-### Phase 2: Robustness Testing
-
-1. Test on "in-the-wild" datasets
-2. Include home-specific artifacts (pets, loose clothing, low lighting)
-3. Validate scale calibration and denoising
-
-### Phase 3: Clinical Validation
-
-1. Prospective study over 6-12 months
-2. Correlate Fall Risk Index with real-world fall incidence
-3. Validate predictive value
+- **Frontend**: Azure Static Web Apps
+- **Backend**: Azure App Service (Docker)
+- **CORS**: Configured for cross-origin requests
 
 ## Monitoring
 
-### Application Insights
+### GitHub Actions
 
-```bash
-az monitor app-insights component create \
-  --app gait-analysis-insights \
-  --location eastus \
-  --resource-group gait-analysis-rg
-```
+1. Go to repository → Actions tab
+2. View workflow runs
+3. Click on a run to see logs
 
-### Log Analytics
+### Azure Portal
 
-Monitor:
-- API response times
-- Error rates
-- Model inference times
-- Quality gate failure rates
-
-## Scaling
-
-### Horizontal Scaling
-
-```bash
-az appservice plan update \
-  --name <plan-name> \
-  --resource-group gait-analysis-rg \
-  --sku S1  # Scale up as needed
-```
-
-### Auto-scaling
-
-Configure auto-scale rules based on:
-- CPU utilization
-- Request queue length
-- Processing time
-
-## Security
-
-1. Enable HTTPS only
-2. Configure CORS properly
-3. Use Key Vault for secrets
-4. Implement authentication/authorization
-5. Enable Azure AD integration
-
-## Backup
-
-### Cosmos DB
-
-```bash
-az cosmosdb sql container create \
-  --account-name <cosmos-account> \
-  --database-name gait-analysis \
-  --name backups \
-  --partition-key-path "/id"
-```
-
-### Storage Account
-
-Enable blob versioning and soft delete.
+- **App Service Logs**: Portal → App Service → Log stream
+- **Container Logs**: Portal → App Service → Container settings
+- **Application Insights**: (if configured)
 
 ## Troubleshooting
 
-### Check Logs
+### Deployment Fails
 
-```bash
-az webapp log tail \
-  --name <app-name> \
-  --resource-group gait-analysis-rg
-```
+1. Check GitHub Actions logs
+2. Verify all secrets are set correctly
+3. Check Azure Portal for resource status
+4. See [GitHub Actions Setup Guide](.github/GITHUB_ACTIONS_SETUP.md)
 
-### Test Endpoints
+### Application Not Starting
 
-```bash
-curl https://<backend-app-name>.azurewebsites.net/health
-```
+1. Check container logs in Azure Portal
+2. Verify `WEBSITES_PORT=8000` is set
+3. Verify ACR authentication (password should not be null)
+4. Check health endpoint: `https://gaitanalysisapp.azurewebsites.net/health`
 
-## Cost Optimization
+### Frontend Not Updating
 
-1. Use Azure Reserved Instances for predictable workloads
-2. Enable auto-pause for development environments
-3. Use Azure Spot VMs for batch processing
-4. Implement caching to reduce compute costs
+1. Check Static Web Apps deployment logs
+2. Clear browser cache
+3. Verify deployment token is correct
+4. Check build logs in GitHub Actions
 
+## Best Practices
+
+1. ✅ **Use GitHub Actions** for all production deployments
+2. ✅ **Test locally** before pushing to main
+3. ✅ **Monitor deployments** in GitHub Actions
+4. ✅ **Review logs** after each deployment
+5. ✅ **Keep secrets secure** - never commit to repository
+
+## Documentation
+
+- [GitHub Actions Setup Guide](.github/GITHUB_ACTIONS_SETUP.md) - Detailed setup instructions
+- [Azure Architecture](MICROSOFT_NATIVE_ARCHITECTURE.md) - Architecture details
