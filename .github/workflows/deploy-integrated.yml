@@ -180,19 +180,83 @@ jobs:
         
         # Verify required files exist
         echo "📋 Verifying required files..."
-        ls -la Dockerfile.integrated || exit 1
-        ls -la frontend-dist/index.html || exit 1
-        ls -la main_integrated.py || exit 1
+        echo ""
+        echo "Checking Dockerfile..."
+        if [ ! -f "Dockerfile.integrated" ]; then
+          echo "❌ Error: Dockerfile.integrated not found!"
+          exit 1
+        fi
+        echo "✅ Dockerfile.integrated exists"
+        
+        echo ""
+        echo "Checking main_integrated.py..."
+        if [ ! -f "main_integrated.py" ]; then
+          echo "❌ Error: main_integrated.py not found!"
+          exit 1
+        fi
+        echo "✅ main_integrated.py exists"
+        
+        echo ""
+        echo "Checking requirements.txt..."
+        if [ ! -f "requirements.txt" ]; then
+          echo "❌ Error: requirements.txt not found!"
+          exit 1
+        fi
+        echo "✅ requirements.txt exists"
+        
+        echo ""
+        echo "Checking frontend build..."
+        if [ ! -d "frontend-dist" ]; then
+          echo "❌ Error: frontend-dist directory not found!"
+          exit 1
+        fi
+        if [ ! -f "frontend-dist/index.html" ]; then
+          echo "❌ Error: frontend-dist/index.html not found!"
+          exit 1
+        fi
+        echo "✅ frontend-dist/index.html exists"
+        
+        if [ -d "frontend-dist/assets" ]; then
+          echo "✅ frontend-dist/assets directory exists"
+          ls -la frontend-dist/assets/ | head -5
+        else
+          echo "⚠️  Warning: frontend-dist/assets directory not found (may be empty)"
+        fi
+        
+        echo ""
+        echo "Checking app directory structure..."
+        if [ ! -d "app" ]; then
+          echo "❌ Error: app directory not found!"
+          exit 1
+        fi
+        echo "✅ app directory exists"
+        
+        echo ""
+        echo "All required files verified!"
         
         # Build image using ACR Tasks (force rebuild with --no-cache)
         echo "🔨 Starting Docker build (no cache to ensure clean build)..."
-        az acr build \
+        echo "   Registry: ${{ env.ACR_NAME }}"
+        echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        echo "   Dockerfile: Dockerfile.integrated"
+        echo ""
+        
+        # Build with logs visible to see actual errors
+        if ! az acr build \
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           --file Dockerfile.integrated \
           . \
-          --no-cache \
-          --no-logs || exit 1
+          --no-cache; then
+          echo ""
+          echo "❌ Docker build failed!"
+          echo "   Check the logs above for the specific error"
+          echo "   Common issues:"
+          echo "   - Missing files (requirements.txt, main_integrated.py, etc.)"
+          echo "   - Frontend build not found (frontend-dist/)"
+          echo "   - Dockerfile syntax errors"
+          exit 1
+        fi
           
         echo "✅ Docker image built and pushed to ACR"
         
