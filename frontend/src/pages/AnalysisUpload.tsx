@@ -226,8 +226,17 @@ export default function AnalysisUpload() {
           reject(new Error('Upload was cancelled'))
         }
 
-        console.log('Opening XHR connection to:', `${API_URL}/api/v1/analysis/upload`)
-        xhr.open('POST', `${API_URL}/api/v1/analysis/upload`)
+        // Construct the full URL
+        const uploadUrl = API_URL === '' 
+          ? '/api/v1/analysis/upload'  // Relative URL
+          : `${API_URL}/api/v1/analysis/upload`  // Absolute URL
+        
+        console.log('Opening XHR connection to:', uploadUrl)
+        console.log('API_URL:', API_URL, '(empty = relative, non-empty = absolute)')
+        console.log('Window origin:', window.location.origin)
+        console.log('Full URL will be:', API_URL === '' ? `${window.location.origin}${uploadUrl}` : uploadUrl)
+        
+        xhr.open('POST', uploadUrl)
         xhr.timeout = 600000 // 10 minutes timeout for large files (increased from 5 minutes)
         xhr.send(formData)
       })
