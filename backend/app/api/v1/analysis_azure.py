@@ -250,7 +250,7 @@ async def process_analysis_azure(
             """Map internal progress (0-100%) to UI steps (pose_estimation, 3d_lifting, metrics_calculation, report_generation)"""
             try:
                 # Map progress to overall steps with clear boundaries
-                if progress_pct < 50:
+                if progress_pct <= 50:
                     # Pose estimation phase: 0-50% internal = 10-60% UI
                     step = 'pose_estimation'
                     mapped_progress = 10 + int(progress_pct * 1.0)  # 10% to 60%
