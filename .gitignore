@@ -8,3 +8,4 @@ frontend/dist/
 # Incremental deployment tracking files
 backend/.last_*
 frontend/.last_*
+GET_DEPLOYMENT_TOKEN.md
