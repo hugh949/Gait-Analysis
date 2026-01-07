@@ -86,6 +86,7 @@ async def upload_video(
     
     # Save uploaded file temporarily
     tmp_path = None
+    video_url = None
     try:
         # Create temp file
         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_ext)
@@ -106,10 +107,25 @@ async def upload_video(
         # Generate analysis ID
         analysis_id = str(uuid.uuid4())
         
-        # Upload to Azure Blob Storage
+        # Upload to Azure Blob Storage (or keep temp file in mock mode)
         logger.info(f"Uploading video to Blob Storage: {file.filename}")
         blob_name = f"{analysis_id}{file_ext}"
         video_url = await storage_service.upload_video(tmp_path, blob_name)
+        
+        # In mock mode, video_url will be "mock://..." - we need to use the temp file directly
+        # Move temp file to a persistent location for background processing
+        if video_url.startswith('mock://'):
+            # Keep the temp file for processing (it will be cleaned up after analysis)
+            # Store the temp path in the video_url field temporarily
+            video_url = tmp_path
+            logger.info(f"Mock mode: Using temp file directly: {video_url}")
+        else:
+            # Real storage - clean up temp file
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+            tmp_path = None  # Don't clean up in finally block
         
         # Store metadata in Azure SQL Database
         analysis_data = {
@@ -148,8 +164,10 @@ async def upload_video(
         raise HTTPException(status_code=500, detail=f"Error processing upload: {str(e)}")
     
     finally:
-        # Clean up temp file
-        if tmp_path and os.path.exists(tmp_path):
+        # Clean up temp file only if it wasn't used for processing
+        # (In mock mode, the temp file is passed to background task and cleaned up there)
+        if tmp_path and os.path.exists(tmp_path) and video_url and not os.path.exists(video_url):
+            # Only clean up if video_url is not the same as tmp_path (i.e., not mock mode)
             try:
                 os.unlink(tmp_path)
             except:
@@ -184,11 +202,17 @@ async def process_analysis_azure(
         
         # Download video from blob storage to temporary file
         if video_url.startswith('http') or video_url.startswith('https'):
+            # Real blob storage URL - download it
             video_path = await gait_service.download_video_from_url(video_url)
         elif os.path.exists(video_url):
+            # Local file path (used in mock mode or if file already exists)
             video_path = video_url
+            logger.info(f"Using existing file: {video_path}")
+        elif video_url.startswith('mock://'):
+            # Mock mode - this shouldn't happen if we fixed the upload, but handle it
+            raise ValueError("Mock storage mode: Video file was not properly saved. Please configure Azure Storage.")
         else:
-            # Try to get video from blob storage
+            # Try to get video from blob storage by blob name
             blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
             # Download from blob storage
             import tempfile
