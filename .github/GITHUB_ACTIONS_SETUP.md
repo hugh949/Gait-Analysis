@@ -18,27 +18,54 @@ You need to configure the following secrets in your GitHub repository:
 
 This is a service principal JSON that allows GitHub Actions to authenticate with Azure.
 
-**How to create:**
+**Required JSON format:**
+```json
+{
+  "clientId": "...",
+  "clientSecret": "...",
+  "subscriptionId": "...",
+  "tenantId": "..."
+}
+```
+
+**How to create (Easiest method):**
+
+```bash
+# Run the helper script
+cd scripts
+./create-azure-service-principal.sh
+
+# The script will output the JSON - copy it entirely
+```
+
+**Or create manually:**
 
 ```bash
 # Login to Azure
 az login
 
 # Create service principal (replace with your subscription ID)
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 az ad sp create-for-rbac --name "gait-analysis-github-actions" \
   --role contributor \
-  --scopes /subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/gait-analysis-rg-wus3 \
+  --scopes /subscriptions/$SUBSCRIPTION_ID/resourceGroups/gait-analysis-rg-wus3 \
   --sdk-auth
 
-# Copy the entire JSON output
+# Copy the ENTIRE JSON output (must include all 4 fields)
 ```
 
 **Add to GitHub:**
-1. Go to your GitHub repository
-2. Settings → Secrets and variables → Actions
-3. Click "New repository secret"
-4. Name: `AZURE_CREDENTIALS`
-5. Value: Paste the entire JSON output from the command above
+1. Go to: https://github.com/hugh949/Gait-Analysis/settings/secrets/actions
+2. Click "New repository secret"
+3. Name: `AZURE_CREDENTIALS` (exact name, case-sensitive)
+4. Value: Paste the **ENTIRE** JSON output (must be valid JSON)
+5. Click "Add secret"
+
+**⚠️ Important:**
+- The JSON must include all 4 fields: `clientId`, `clientSecret`, `subscriptionId`, `tenantId`
+- Copy the ENTIRE JSON output, including the curly braces `{ }`
+- Make sure there are no extra characters or line breaks
+- The secret name must be exactly `AZURE_CREDENTIALS` (case-sensitive)
 
 ### 2. AZURE_STATIC_WEB_APPS_DEPLOYMENT_TOKEN
 
