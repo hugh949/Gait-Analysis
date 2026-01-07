@@ -28,7 +28,8 @@ class AzureSQLService:
     
     # In-memory storage for mock mode (when Azure SQL is not configured)
     _mock_storage: Dict[str, Dict] = {}
-    _mock_storage_file: str = "/tmp/gait_analysis_mock_storage.json"
+    # Use /home directory which persists in Azure App Service
+    _mock_storage_file: str = os.getenv("MOCK_STORAGE_FILE", "/home/gait_analysis_mock_storage.json")
     
     def __init__(self):
         """Initialize Azure SQL Database connection"""
@@ -310,7 +311,13 @@ class AzureSQLService:
             if analysis_id in AzureSQLService._mock_storage:
                 logger.debug(f"Retrieved analysis from mock storage: {analysis_id}")
                 return AzureSQLService._mock_storage[analysis_id].copy()
-            logger.debug(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}")
+            logger.warning(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
+            # Try one more time to load from file (in case it was just written)
+            time.sleep(0.1)
+            self._load_mock_storage()
+            if analysis_id in AzureSQLService._mock_storage:
+                logger.info(f"Found analysis after retry: {analysis_id}")
+                return AzureSQLService._mock_storage[analysis_id].copy()
             return None
         
         try:
