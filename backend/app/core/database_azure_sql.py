@@ -42,13 +42,14 @@ class AzureSQLService:
         )
         
         if not all([self.server, self.username, self.password]):
-            logger.warning("Azure SQL not configured - using in-memory mock storage")
+            logger.warning("Azure SQL not configured - using file-based mock storage")
             self.connection_string = None
             self._use_mock = True
             # Ensure class variable exists (in case it was cleared)
             if not hasattr(AzureSQLService, '_mock_storage') or AzureSQLService._mock_storage is None:
                 AzureSQLService._mock_storage = {}
-                logger.info("Initialized mock storage dictionary")
+            # Load from file if it exists (persist across restarts)
+            self._load_mock_storage()
         else:
             self._use_mock = False
             # Build connection string
@@ -67,6 +68,25 @@ class AzureSQLService:
             
             # Initialize database schema
             self._init_schema()
+    
+    def _load_mock_storage(self):
+        """Load mock storage from file if it exists"""
+        try:
+            if os.path.exists(AzureSQLService._mock_storage_file):
+                with open(AzureSQLService._mock_storage_file, 'r') as f:
+                    AzureSQLService._mock_storage = json.load(f)
+                logger.info(f"Loaded {len(AzureSQLService._mock_storage)} analyses from mock storage file")
+        except Exception as e:
+            logger.warning(f"Failed to load mock storage from file: {e}")
+            AzureSQLService._mock_storage = {}
+    
+    def _save_mock_storage(self):
+        """Save mock storage to file"""
+        try:
+            with open(AzureSQLService._mock_storage_file, 'w') as f:
+                json.dump(AzureSQLService._mock_storage, f)
+        except Exception as e:
+            logger.warning(f"Failed to save mock storage to file: {e}")
     
     def _init_schema(self):
         """Initialize database schema"""
