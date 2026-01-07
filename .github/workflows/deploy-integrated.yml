@@ -298,11 +298,18 @@ jobs:
         echo "⚙️  Configuring App Service settings..."
         
         # Get Azure service credentials
+        echo "🔍 Finding Azure resources..."
         STORAGE_ACCOUNT=$(az storage account list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?contains(name, 'gait')].name" -o tsv | head -1)
         CV_NAME=$(az cognitiveservices account list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?kind=='ComputerVision'].name" -o tsv | head -1)
         SQL_SERVER=$(az sql server list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?contains(name, 'gait')].name" -o tsv | head -1)
         
+        echo "   Storage Account: ${STORAGE_ACCOUNT:-'NOT FOUND'}"
+        echo "   Computer Vision: ${CV_NAME:-'NOT FOUND'}"
+        echo "   SQL Server: ${SQL_SERVER:-'NOT FOUND'}"
+        echo ""
+        
         if [ -n "$STORAGE_ACCOUNT" ] && [ -n "$CV_NAME" ] && [ -n "$SQL_SERVER" ]; then
+          echo "✅ All Azure services found - configuring environment variables..."
           STORAGE_CONN=$(az storage account show-connection-string --name "$STORAGE_ACCOUNT" --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
           CV_KEY=$(az cognitiveservices account keys list --name "$CV_NAME" --resource-group ${{ env.RESOURCE_GROUP }} --query key1 -o tsv)
           CV_ENDPOINT=$(az cognitiveservices account show --name "$CV_NAME" --resource-group ${{ env.RESOURCE_GROUP }} --query properties.endpoint -o tsv)
@@ -323,6 +330,9 @@ jobs:
               AZURE_SQL_PASSWORD="${{ secrets.AZURE_SQL_PASSWORD }}" \
             --output none
         else
+          echo "⚠️  Some Azure services not found - setting basic configuration only"
+          echo "   The app will run with mock services until Azure resources are created"
+          echo ""
           # Set basic settings even if services don't exist
           az webapp config appsettings set \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
