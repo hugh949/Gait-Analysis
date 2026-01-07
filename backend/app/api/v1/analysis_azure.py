@@ -2,7 +2,7 @@
 Analysis API endpoints - Microsoft Native Architecture
 Uses Azure Computer Vision, Blob Storage, and SQL Database
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
