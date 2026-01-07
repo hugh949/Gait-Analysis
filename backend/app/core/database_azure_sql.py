@@ -8,6 +8,14 @@ from contextlib import contextmanager
 from loguru import logger
 import os
 import json
+import time
+
+# File locking (optional - may not be available on all systems)
+try:
+    import fcntl
+    HAS_FCNTL = True
+except ImportError:
+    HAS_FCNTL = False
 
 try:
     from app.core.config_simple import settings
@@ -73,20 +81,60 @@ class AzureSQLService:
         """Load mock storage from file if it exists"""
         try:
             if os.path.exists(AzureSQLService._mock_storage_file):
+                # Use file locking to prevent race conditions (if available)
                 with open(AzureSQLService._mock_storage_file, 'r') as f:
-                    AzureSQLService._mock_storage = json.load(f)
-                logger.info(f"Loaded {len(AzureSQLService._mock_storage)} analyses from mock storage file")
+                    if HAS_FCNTL:
+                        try:
+                            fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock for reading
+                            data = json.load(f)
+                        finally:
+                            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    else:
+                        data = json.load(f)
+                    
+                    AzureSQLService._mock_storage = data
+                    logger.info(f"Loaded {len(AzureSQLService._mock_storage)} analyses from mock storage file: {AzureSQLService._mock_storage_file}")
+            else:
+                logger.debug(f"Mock storage file does not exist yet: {AzureSQLService._mock_storage_file}")
+                if not AzureSQLService._mock_storage:
+                    AzureSQLService._mock_storage = {}
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in mock storage file: {e}. Resetting storage.")
+            AzureSQLService._mock_storage = {}
         except Exception as e:
             logger.warning(f"Failed to load mock storage from file: {e}")
-            AzureSQLService._mock_storage = {}
+            if not AzureSQLService._mock_storage:
+                AzureSQLService._mock_storage = {}
     
     def _save_mock_storage(self):
-        """Save mock storage to file"""
+        """Save mock storage to file with file locking"""
         try:
-            with open(AzureSQLService._mock_storage_file, 'w') as f:
-                json.dump(AzureSQLService._mock_storage, f)
+            # Ensure directory exists
+            storage_dir = os.path.dirname(AzureSQLService._mock_storage_file)
+            if storage_dir:
+                os.makedirs(storage_dir, exist_ok=True)
+            
+            # Use atomic write with file locking (if available)
+            temp_file = AzureSQLService._mock_storage_file + '.tmp'
+            with open(temp_file, 'w') as f:
+                if HAS_FCNTL:
+                    try:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_EX)  # Exclusive lock for writing
+                        json.dump(AzureSQLService._mock_storage, f, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())  # Force write to disk
+                    finally:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                else:
+                    json.dump(AzureSQLService._mock_storage, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+            
+            # Atomic rename
+            os.replace(temp_file, AzureSQLService._mock_storage_file)
+            logger.debug(f"Saved {len(AzureSQLService._mock_storage)} analyses to mock storage file: {list(AzureSQLService._mock_storage.keys())}")
         except Exception as e:
-            logger.warning(f"Failed to save mock storage to file: {e}")
+            logger.error(f"Failed to save mock storage to file: {e}", exc_info=True)
     
     def _init_schema(self):
         """Initialize database schema"""
