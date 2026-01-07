@@ -262,6 +262,20 @@ class GaitAnalysisService:
         
         # Lift 2D keypoints to 3D
         frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
+    
+    def _create_dummy_keypoints(self, width: int, height: int) -> Dict:
+        """Create dummy keypoints for fallback when MediaPipe is not available"""
+        # Create basic keypoint structure based on frame dimensions
+        # This allows the analysis to complete but with limited accuracy
+        center_x, center_y = width / 2, height / 2
+        return {
+            'left_ankle': {'x': center_x - 50, 'y': center_y + 100, 'z': 0, 'visibility': 0.5},
+            'right_ankle': {'x': center_x + 50, 'y': center_y + 100, 'z': 0, 'visibility': 0.5},
+            'left_knee': {'x': center_x - 50, 'y': center_y + 50, 'z': 0, 'visibility': 0.5},
+            'right_knee': {'x': center_x + 50, 'y': center_y + 50, 'z': 0, 'visibility': 0.5},
+            'left_hip': {'x': center_x - 50, 'y': center_y, 'z': 0, 'visibility': 0.5},
+            'right_hip': {'x': center_x + 50, 'y': center_y, 'z': 0, 'visibility': 0.5},
+        }
         
         # Calculate gait metrics
         metrics = self._calculate_gait_metrics(
