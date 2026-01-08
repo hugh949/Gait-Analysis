@@ -464,9 +464,9 @@ class GaitAnalysisService:
                         
                         # Validate keypoint quality before adding
                         if keypoints_2d and self._validate_keypoint_quality(keypoints_2d):
-                        frames_2d_keypoints.append(keypoints_2d)
-                        frame_timestamps.append(timestamp)
-            else:
+                            frames_2d_keypoints.append(keypoints_2d)
+                            frame_timestamps.append(timestamp)
+                        else:
                             logger.debug(f"Frame {frame_count}: Keypoints failed quality validation")
                     else:
                         if frame_count % 50 == 0:  # Log every 50 frames to avoid spam
