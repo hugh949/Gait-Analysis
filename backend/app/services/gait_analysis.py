@@ -51,15 +51,15 @@ try:
                     VisionImage = None
                     logger.warning("Could not import MediaPipe Image class - will use alternative method")
     
-    MEDIAPIPE_AVAILABLE = True
+        MEDIAPIPE_AVAILABLE = True
     logger.info(f"MediaPipe 0.10.x imported successfully with tasks API (version: {getattr(mp, '__version__', 'unknown')})")
     if VisionImage:
         logger.info(f"MediaPipe Image class available: {VisionImage}")
     else:
         logger.warning("MediaPipe Image class not found - will use numpy array directly")
 except ImportError as e:
-    MEDIAPIPE_AVAILABLE = False
-    mp = None
+        MEDIAPIPE_AVAILABLE = False
+        mp = None
     python = None
     vision = None
     VisionImage = None
@@ -149,9 +149,11 @@ class GaitAnalysisService:
         """Initialize gait analysis service with MediaPipe 0.10.x"""
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.pose_landmarker = None
-        self.running_mode = RunningMode.VIDEO
+        self.running_mode = RunningMode.VIDEO if RunningMode else None
         
-        if MEDIAPIPE_AVAILABLE and python is not None and PoseLandmarker is not None:
+        # CRITICAL: Always initialize the service, even if MediaPipe fails
+        # This allows the service to work in fallback mode
+        if MEDIAPIPE_AVAILABLE and python is not None and PoseLandmarker is not None and RunningMode is not None:
             try:
                 # Initialize MediaPipe 0.10.x PoseLandmarker
                 # MediaPipe 0.10.x requires explicit model - try multiple initialization methods
@@ -374,7 +376,7 @@ class GaitAnalysisService:
             if self.pose_landmarker and MEDIAPIPE_AVAILABLE:
                 try:
                     # Convert BGR to RGB
-                    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     
                     # Create MediaPipe Image - use VisionImage if available, otherwise use numpy array directly
                     if VisionImage and ImageFormat:
@@ -400,9 +402,9 @@ class GaitAnalysisService:
                         
                         # Validate keypoint quality before adding
                         if keypoints_2d and self._validate_keypoint_quality(keypoints_2d):
-                            frames_2d_keypoints.append(keypoints_2d)
-                            frame_timestamps.append(timestamp)
-                        else:
+                        frames_2d_keypoints.append(keypoints_2d)
+                        frame_timestamps.append(timestamp)
+            else:
                             logger.debug(f"Frame {frame_count}: Keypoints failed quality validation")
                     else:
                         if frame_count % 50 == 0:  # Log every 50 frames to avoid spam
@@ -421,10 +423,10 @@ class GaitAnalysisService:
             frame_count += 1
             
             if progress_callback and frame_count % 5 == 0:
-                progress = min(50, int((frame_count / total_frames) * 50))
-                try:
-                    progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
-                except Exception as e:
+                    progress = min(50, int((frame_count / total_frames) * 50))
+                    try:
+                        progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                    except Exception as e:
                     # CRITICAL: Progress callback errors must never stop processing
                     logger.warning(f"Error calling progress_callback (non-critical): {e}")
                     # Don't re-raise - continue processing
@@ -442,7 +444,7 @@ class GaitAnalysisService:
         # STEP 1 (continued): Apply advanced signal processing for maximum accuracy
         # CRITICAL: Wrap in try-except to ensure processing continues even if filtering fails
         try:
-            if progress_callback:
+        if progress_callback:
                 try:
                     progress_callback(52, "Applying error correction and outlier detection...")
                 except Exception as e:
@@ -515,7 +517,7 @@ class GaitAnalysisService:
         # STEP 3: Calculate gait metrics - with comprehensive error handling and fallback
         if progress_callback:
             try:
-                progress_callback(75, "Calculating gait parameters...")
+            progress_callback(75, "Calculating gait parameters...")
             except Exception as e:
                 logger.warning(f"Error in progress callback during metrics calculation: {e}")
         
@@ -642,12 +644,12 @@ class GaitAnalysisService:
         for name, landmark_idx in landmark_map.items():
             if landmark_idx < len(pose_landmarks):
                 landmark = pose_landmarks[landmark_idx]
-                keypoints[name] = {
-                    'x': landmark.x * width,
-                    'y': landmark.y * height,
-                    'z': landmark.z * width,  # MediaPipe provides depth estimate
+            keypoints[name] = {
+                'x': landmark.x * width,
+                'y': landmark.y * height,
+                'z': landmark.z * width,  # MediaPipe provides depth estimate
                     'visibility': landmark.visibility if hasattr(landmark, 'visibility') else 1.0
-                }
+            }
         
         return keypoints
     

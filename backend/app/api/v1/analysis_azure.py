@@ -79,15 +79,37 @@ def get_gait_analysis_service() -> Optional[GaitAnalysisService]:
     global _gait_analysis_service
     if _gait_analysis_service is None:
         try:
-            logger.debug("Initializing GaitAnalysisService...")
+            logger.info("🔧 Initializing GaitAnalysisService...")
             _gait_analysis_service = GaitAnalysisService()
-            logger.info("✓ GaitAnalysisService initialized successfully")
+            # CRITICAL: Service should always be created, even if MediaPipe fails
+            # It will work in fallback mode
+            if _gait_analysis_service:
+                logger.info("✓ GaitAnalysisService initialized successfully (may be in fallback mode)")
+            else:
+                logger.error("❌ GaitAnalysisService initialization returned None - this should not happen")
+                _gait_analysis_service = None
         except ImportError as e:
-            logger.error(f"Import error initializing GaitAnalysisService: {e}", exc_info=True)
-            _gait_analysis_service = None
+            logger.error(f"❌ Import error initializing GaitAnalysisService: {e}", exc_info=True)
+            # Try to create service anyway - it might work in fallback mode
+            try:
+                logger.warning("⚠ Attempting to create GaitAnalysisService in fallback mode...")
+                _gait_analysis_service = GaitAnalysisService()
+                if _gait_analysis_service:
+                    logger.info("✓ GaitAnalysisService created in fallback mode after import error")
+            except Exception as e2:
+                logger.error(f"❌ Failed to create GaitAnalysisService even in fallback mode: {e2}", exc_info=True)
+                _gait_analysis_service = None
         except Exception as e:
-            logger.error(f"Failed to initialize GaitAnalysisService: {e}", exc_info=True)
-            _gait_analysis_service = None
+            logger.error(f"❌ Failed to initialize GaitAnalysisService: {e}", exc_info=True)
+            # Try to create service anyway - it might work in fallback mode
+            try:
+                logger.warning("⚠ Attempting to create GaitAnalysisService in fallback mode...")
+                _gait_analysis_service = GaitAnalysisService()
+                if _gait_analysis_service:
+                    logger.info("✓ GaitAnalysisService created in fallback mode after error")
+            except Exception as e2:
+                logger.error(f"❌ Failed to create GaitAnalysisService even in fallback mode: {e2}", exc_info=True)
+                _gait_analysis_service = None
     return _gait_analysis_service
 
 # Validate db_service is initialized
