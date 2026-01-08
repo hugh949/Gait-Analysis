@@ -217,7 +217,22 @@ class GaitAnalysisService:
                 self.pose_landmarker = None
                 logger.warning("Gait analysis will continue in fallback mode (reduced accuracy)")
         else:
-            logger.warning("MediaPipe not available - gait analysis will use fallback mode")
+            if not MEDIAPIPE_AVAILABLE:
+                logger.warning("MediaPipe not available - gait analysis will use fallback mode")
+            elif python is None:
+                logger.warning("MediaPipe python module not available - gait analysis will use fallback mode")
+            elif PoseLandmarker is None:
+                logger.warning("MediaPipe PoseLandmarker not available - gait analysis will use fallback mode")
+            elif self.running_mode is None:
+                logger.warning("MediaPipe RunningMode not available - gait analysis will use fallback mode")
+            else:
+                logger.warning("MediaPipe initialization incomplete - gait analysis will use fallback mode")
+        
+        # CRITICAL: Always log service initialization status
+        if self.pose_landmarker:
+            logger.info("✓ GaitAnalysisService initialized with MediaPipe pose estimation")
+        else:
+            logger.warning("⚠ GaitAnalysisService initialized in fallback mode (no MediaPipe pose estimation)")
     
     async def analyze_video(
         self,
