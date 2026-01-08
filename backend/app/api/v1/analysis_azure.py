@@ -47,14 +47,14 @@ def initialize_services():
     global storage_service, vision_service, db_service
     
     try:
-        storage_service = AzureStorageService()
+storage_service = AzureStorageService()
         logger.info("✓ AzureStorageService initialized")
     except Exception as e:
         logger.error(f"Failed to initialize AzureStorageService: {e}", exc_info=True)
         storage_service = None
     
     try:
-        vision_service = AzureVisionService()
+vision_service = AzureVisionService()
         logger.info("✓ AzureVisionService initialized")
     except Exception as e:
         logger.error(f"Failed to initialize AzureVisionService: {e}", exc_info=True)
@@ -191,8 +191,8 @@ async def upload_video(
     
         # Create temp file with proper error handling
         try:
-            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_ext)
-            tmp_path = tmp_file.name
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_ext)
+        tmp_path = tmp_file.name
             logger.debug(f"[{request_id}] Created temp file: {tmp_path}")
         except OSError as e:
             logger.error(f"[{request_id}] Failed to create temp file: {e}", exc_info=True)
@@ -201,10 +201,10 @@ async def upload_video(
         # Read file in chunks with size validation
         chunk_size = 1024 * 1024  # 1MB chunks
         try:
-            while True:
-                chunk = await file.read(chunk_size)
-                if not chunk:
-                    break
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
                 file_size += len(chunk)
                 
                 # Check file size limit
@@ -221,9 +221,9 @@ async def upload_video(
                         details={"file_size": file_size, "max_size": MAX_FILE_SIZE}
                     )
                 
-                tmp_file.write(chunk)
-            
-            tmp_file.close()
+            tmp_file.write(chunk)
+        
+        tmp_file.close()
             logger.info(
                 f"[{request_id}] File uploaded successfully",
                 extra={"filename": file.filename, "size": file_size, "path": tmp_path}
@@ -257,16 +257,16 @@ async def upload_video(
                 logger.warning(f"[{request_id}] Storage service not available, using mock mode")
                 video_url = tmp_path  # Use temp file directly in mock mode
             else:
-                blob_name = f"{analysis_id}{file_ext}"
+        blob_name = f"{analysis_id}{file_ext}"
                 logger.debug(f"[{request_id}] Uploading to blob storage: {blob_name}")
-                video_url = await storage_service.upload_video(tmp_path, blob_name)
-                
+        video_url = await storage_service.upload_video(tmp_path, blob_name)
+        
                 # In mock mode, video_url will be "mock://..." - use temp file directly
                 if video_url and video_url.startswith('mock://'):
-                    video_url = tmp_path
+            video_url = tmp_path
                     logger.info(f"[{request_id}] Mock mode: Using temp file directly")
                 elif video_url:
-                    # Real storage - clean up temp file
+            # Real storage - clean up temp file
                     try:
                         os.unlink(tmp_path)
                         tmp_path = None
@@ -276,25 +276,25 @@ async def upload_video(
         except Exception as e:
             logger.error(f"[{request_id}] Error uploading to storage: {e}", exc_info=True)
             if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
             raise StorageError("Failed to upload file to storage", details={"error": str(e)})
         
         # Store metadata in Azure SQL Database
         try:
-            analysis_data = {
-                'id': analysis_id,
-                'patient_id': patient_id,
-                'filename': file.filename,
-                'video_url': video_url,
-                'status': 'processing',
-                'current_step': 'pose_estimation',
-                'step_progress': 0,
-                'step_message': 'Upload complete. Starting analysis...'
-            }
-            
+        analysis_data = {
+            'id': analysis_id,
+            'patient_id': patient_id,
+            'filename': file.filename,
+            'video_url': video_url,
+            'status': 'processing',
+            'current_step': 'pose_estimation',
+            'step_progress': 0,
+            'step_message': 'Upload complete. Starting analysis...'
+        }
+        
             # Create analysis record - this will save to file and verify it's readable
             creation_success = await db_service.create_analysis(analysis_data)
             if not creation_success:
@@ -345,15 +345,15 @@ async def upload_video(
             # Convert ViewType enum to string if needed
             view_type_str = view_type.value if isinstance(view_type, ViewType) else str(view_type)
             
-            background_tasks.add_task(
-                process_analysis_azure,
-                analysis_id,
-                video_url,
-                patient_id,
+        background_tasks.add_task(
+            process_analysis_azure,
+            analysis_id,
+            video_url,
+            patient_id,
                 view_type_str,
-                reference_length_mm,
-                fps
-            )
+            reference_length_mm,
+            fps
+        )
             # CRITICAL: Start keep-alive heartbeat IMMEDIATELY after scheduling
             # This ensures the analysis stays alive even before processing starts
             # This is especially important in multi-worker environments
@@ -534,12 +534,12 @@ async def process_analysis_azure(
         # Update progress: Starting - with retry logic
         for retry in range(5):
             try:
-                await db_service.update_analysis(analysis_id, {
-                    'status': 'processing',
-                    'current_step': 'pose_estimation',
-                    'step_progress': 5,
-                    'step_message': 'Downloading video for analysis...'
-                })
+        await db_service.update_analysis(analysis_id, {
+            'status': 'processing',
+            'current_step': 'pose_estimation',
+            'step_progress': 5,
+            'step_message': 'Downloading video for analysis...'
+        })
                 break  # Success
             except Exception as e:
                 if retry < 4:
@@ -556,10 +556,10 @@ async def process_analysis_azure(
         
         # Get gait analysis service with error handling
         try:
-            gait_service = get_gait_analysis_service()
-            if not gait_service:
-                error_msg = (
-                    "Gait analysis service is not available. "
+        gait_service = get_gait_analysis_service()
+        if not gait_service:
+            error_msg = (
+                "Gait analysis service is not available. "
                     "Required dependencies (OpenCV, MediaPipe) may not be installed."
                 )
                 logger.error(
@@ -585,37 +585,37 @@ async def process_analysis_azure(
         
         # Download video from blob storage to temporary file with comprehensive error handling
         try:
-            if video_url.startswith('http') or video_url.startswith('https'):
-                # Real blob storage URL - download it
+        if video_url.startswith('http') or video_url.startswith('https'):
+            # Real blob storage URL - download it
                 logger.debug(f"[{request_id}] Downloading video from URL: {video_url}")
-                video_path = await gait_service.download_video_from_url(video_url)
-            elif os.path.exists(video_url):
-                # Local file path (used in mock mode or if file already exists)
-                video_path = video_url
+            video_path = await gait_service.download_video_from_url(video_url)
+        elif os.path.exists(video_url):
+            # Local file path (used in mock mode or if file already exists)
+            video_path = video_url
                 logger.info(
                     f"[{request_id}] Using existing file",
                     extra={"video_path": video_path, "analysis_id": analysis_id}
                 )
-            elif video_url.startswith('mock://'):
-                # Mock mode - this shouldn't happen if we fixed the upload, but handle it
+        elif video_url.startswith('mock://'):
+            # Mock mode - this shouldn't happen if we fixed the upload, but handle it
                 raise StorageError(
                     "Mock storage mode: Video file was not properly saved",
                     details={"video_url": video_url, "analysis_id": analysis_id}
                 )
-            else:
-                # Try to get video from blob storage by blob name
+        else:
+            # Try to get video from blob storage by blob name
                 if storage_service is None:
                     raise StorageError(
                         "Storage service not available and video URL is not a local file",
                         details={"video_url": video_url, "analysis_id": analysis_id}
                     )
                 
-                blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
+            blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
                 logger.debug(f"[{request_id}] Downloading blob: {blob_name}")
                 
-                import tempfile
-                video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
-                blob_data = await storage_service.download_blob(blob_name)
+            import tempfile
+            video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
+            blob_data = await storage_service.download_blob(blob_name)
                 
                 if not blob_data:
                     raise StorageError(
@@ -624,8 +624,8 @@ async def process_analysis_azure(
                     )
                 
                 try:
-                    with open(video_path, 'wb') as f:
-                        f.write(blob_data)
+                with open(video_path, 'wb') as f:
+                    f.write(blob_data)
                     logger.debug(f"[{request_id}] Blob downloaded and saved: {video_path}")
                 except OSError as e:
                     raise StorageError(
@@ -667,7 +667,7 @@ async def process_analysis_azure(
             )
         
         try:
-            file_size = os.path.getsize(video_path)
+        file_size = os.path.getsize(video_path)
         except OSError as e:
             logger.error(
                 f"[{request_id}] Error getting file size: {e}",
@@ -702,6 +702,8 @@ async def process_analysis_azure(
         
         # CRITICAL: Add periodic heartbeat to keep analysis alive during long processing
         # This is especially important for long-running video processing (3+ minutes)
+        # NOTE: There's also an immediate keep-alive that starts right after analysis creation
+        # This heartbeat runs during actual processing and is more aggressive
         heartbeat_task = None
         last_known_progress = {'step': 'pose_estimation', 'progress': 0, 'message': 'Starting analysis...'}
         
@@ -710,7 +712,8 @@ async def process_analysis_azure(
             heartbeat_count = 0
             try:
                 while True:
-                    await asyncio.sleep(5)  # More frequent updates: every 5 seconds (was 10)
+                    # Very frequent updates: every 3 seconds for first minute, then every 5 seconds
+                    await asyncio.sleep(3 if heartbeat_count < 20 else 5)
                     heartbeat_count += 1
                     try:
                         # CRITICAL: Always verify analysis exists and update it
@@ -729,20 +732,20 @@ async def process_analysis_azure(
                             last_known_progress['progress'] = progress
                             last_known_progress['message'] = message
                             
-                            # Force update to keep analysis alive
+                            # Force update to keep analysis alive (remove heartbeat suffix to avoid clutter)
                             await db_service.update_analysis(analysis_id, {
                                 'status': 'processing',
                                 'current_step': step,
                                 'step_progress': progress,
-                                'step_message': f"{message} (heartbeat #{heartbeat_count})"
+                                'step_message': message  # Keep original message
                             })
                             
-                            if heartbeat_count % 12 == 0:  # Log every 60 seconds (12 * 5s)
-                                logger.info(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
+                            if heartbeat_count % 20 == 0:  # Log every 60-100 seconds
+                                logger.info(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
                             else:
-                                logger.debug(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count})")
+                                logger.debug(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count})")
                         else:
-                            logger.warning(f"[{request_id}] Heartbeat: Analysis {analysis_id} not found - recreating (heartbeat #{heartbeat_count})")
+                            logger.warning(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} not found - recreating (heartbeat #{heartbeat_count})")
                             # CRITICAL: Recreate with last known progress
                             await db_service.create_analysis({
                                 'id': analysis_id,
@@ -752,11 +755,11 @@ async def process_analysis_azure(
                                 'status': 'processing',
                                 'current_step': last_known_progress['step'],
                                 'step_progress': last_known_progress['progress'],
-                                'step_message': f"{last_known_progress['message']} (recreated by heartbeat #{heartbeat_count})"
+                                'step_message': f"{last_known_progress['message']} (recreated by processing heartbeat #{heartbeat_count})"
                             })
-                            logger.info(f"[{request_id}] Heartbeat: Recreated analysis {analysis_id} with progress: {last_known_progress['step']} {last_known_progress['progress']}%")
+                            logger.info(f"[{request_id}] Processing heartbeat: Recreated analysis {analysis_id} with progress: {last_known_progress['step']} {last_known_progress['progress']}%")
                     except Exception as heartbeat_error:
-                        logger.error(f"[{request_id}] Heartbeat update failed (heartbeat #{heartbeat_count}): {heartbeat_error}", exc_info=True)
+                        logger.error(f"[{request_id}] Processing heartbeat update failed (heartbeat #{heartbeat_count}): {heartbeat_error}", exc_info=True)
                         # CRITICAL: Try to recreate even if update failed
                         try:
                             await db_service.create_analysis({
@@ -767,19 +770,19 @@ async def process_analysis_azure(
                                 'status': 'processing',
                                 'current_step': last_known_progress['step'],
                                 'step_progress': last_known_progress['progress'],
-                                'step_message': f"{last_known_progress['message']} (recreated after heartbeat error)"
+                                'step_message': f"{last_known_progress['message']} (recreated after processing heartbeat error)"
                             })
-                            logger.warning(f"[{request_id}] Heartbeat: Recreated analysis after error")
+                            logger.warning(f"[{request_id}] Processing heartbeat: Recreated analysis after error")
                         except Exception as recreate_error:
-                            logger.error(f"[{request_id}] Heartbeat: Failed to recreate analysis: {recreate_error}")
+                            logger.error(f"[{request_id}] Processing heartbeat: Failed to recreate analysis: {recreate_error}")
             except asyncio.CancelledError:
-                logger.info(f"[{request_id}] Heartbeat cancelled after {heartbeat_count} heartbeats")
+                logger.info(f"[{request_id}] Processing heartbeat cancelled after {heartbeat_count} heartbeats")
             except Exception as e:
-                logger.error(f"[{request_id}] Heartbeat error: {e}", exc_info=True)
+                logger.error(f"[{request_id}] Processing heartbeat error: {e}", exc_info=True)
         
-        # Start heartbeat task
+        # Start heartbeat task IMMEDIATELY - before any processing starts
         heartbeat_task = asyncio.create_task(heartbeat_update())
-        logger.info(f"[{request_id}] Started heartbeat task for analysis {analysis_id}")
+        logger.info(f"[{request_id}] Started processing heartbeat task for analysis {analysis_id}")
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -851,11 +854,11 @@ async def process_analysis_azure(
                                 })
                                 break  # Success after recreation
                             
-                            await db_service.update_analysis(analysis_id, {
-                                'current_step': step,
-                                'step_progress': mapped_progress,
-                                'step_message': message
-                            })
+                await db_service.update_analysis(analysis_id, {
+                    'current_step': step,
+                    'step_progress': mapped_progress,
+                    'step_message': message
+                })
                             # CRITICAL: Update last known progress for heartbeat
                             last_known_progress['step'] = step
                             last_known_progress['progress'] = mapped_progress
@@ -930,14 +933,14 @@ async def process_analysis_azure(
             except Exception as e:
                 logger.warning(f"[{request_id}] Failed to update progress at start: {e}")
             
-            analysis_result = await gait_service.analyze_video(
-                video_path,
-                fps=fps,
-                reference_length_mm=reference_length_mm,
-                view_type=view_type,
-                progress_callback=progress_callback
-            )
-            
+        analysis_result = await gait_service.analyze_video(
+            video_path,
+            fps=fps,
+            reference_length_mm=reference_length_mm,
+            view_type=view_type,
+            progress_callback=progress_callback
+        )
+        
             if not analysis_result:
                 logger.warning(
                     f"[{request_id}] Analysis returned empty result, creating fallback result",
@@ -1053,8 +1056,8 @@ async def process_analysis_azure(
             if not analysis_result:
                 raise ValueError("Analysis result is None")
             
-            raw_metrics = analysis_result.get('metrics', {})
-            
+        raw_metrics = analysis_result.get('metrics', {})
+        
             if not raw_metrics:
                 logger.warning(
                     f"[{request_id}] Analysis result has no metrics, using fallback",
@@ -1085,7 +1088,7 @@ async def process_analysis_azure(
                     )
                     return default
             
-            metrics = {
+        metrics = {
                 'cadence': safe_get_metric('cadence', 0.0),
                 'step_length': safe_get_metric('step_length', 0.0),  # in mm
                 'walking_speed': safe_get_metric('walking_speed', 0.0),  # in mm/s
@@ -1135,11 +1138,11 @@ async def process_analysis_azure(
         max_db_retries = 5
         for retry in range(max_db_retries):
             try:
-                await db_service.update_analysis(analysis_id, {
-                    'current_step': 'report_generation',
-                    'step_progress': 95,
-                    'step_message': 'Generating analysis report...'
-                })
+        await db_service.update_analysis(analysis_id, {
+            'current_step': 'report_generation',
+            'step_progress': 95,
+            'step_message': 'Generating analysis report...'
+        })
                 break  # Success
             except Exception as e:
                 if retry < max_db_retries - 1:
@@ -1205,13 +1208,13 @@ async def process_analysis_azure(
         max_db_retries = 10  # Increased retries for critical final update
         for retry in range(max_db_retries):
             try:
-                await db_service.update_analysis(analysis_id, {
-                    'status': 'completed',
-                    'current_step': 'report_generation',
-                    'step_progress': 100,
-                    'step_message': 'Analysis complete!',
-                    'metrics': metrics
-                })
+        await db_service.update_analysis(analysis_id, {
+            'status': 'completed',
+            'current_step': 'report_generation',
+            'step_progress': 100,
+            'step_message': 'Analysis complete!',
+            'metrics': metrics
+        })
                 completion_success = True
                 logger.info(
                     f"[{request_id}] Analysis completed successfully",
@@ -1292,10 +1295,10 @@ async def process_analysis_azure(
             exc_info=True
         )
         try:
-            await db_service.update_analysis(analysis_id, {
-                'status': 'failed',
-                'step_message': error_msg
-            })
+        await db_service.update_analysis(analysis_id, {
+            'status': 'failed',
+            'step_message': error_msg
+        })
         except Exception as db_err:
             logger.error(f"[{request_id}] Failed to update analysis status after timeout: {db_err}")
     
@@ -1337,10 +1340,10 @@ async def process_analysis_azure(
             exc_info=True
         )
         try:
-            await db_service.update_analysis(analysis_id, {
-                'status': 'failed',
-                'step_message': error_msg
-            })
+        await db_service.update_analysis(analysis_id, {
+            'status': 'failed',
+            'step_message': error_msg
+        })
         except Exception as db_err:
             logger.error(f"[{request_id}] Failed to update analysis status: {db_err}")
     
