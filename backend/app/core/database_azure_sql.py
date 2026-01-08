@@ -136,10 +136,19 @@ class AzureSQLService:
                                 logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite invalid file data")
                             return
                         
-                        AzureSQLService._mock_storage = data
-                        logger.info(f"LOAD: Loaded {len(AzureSQLService._mock_storage)} analyses from mock storage file: {file_path} ({file_size} bytes) (attempt {attempt + 1})")
-                        if len(AzureSQLService._mock_storage) > 0:
-                            logger.debug(f"LOAD: Analysis IDs in storage: {list(AzureSQLService._mock_storage.keys())}")
+                        # CRITICAL: MERGE file data with in-memory data, don't replace it
+                        # This ensures analyses in memory (being processed) are never lost
+                        if isinstance(data, dict):
+                            # Merge file data into in-memory storage (file data takes precedence for conflicts)
+                            # But preserve any analyses that exist only in memory
+                            for key, value in data.items():
+                                AzureSQLService._mock_storage[key] = value
+                            logger.info(f"LOAD: Merged {len(data)} analyses from file into memory. Total in memory: {len(AzureSQLService._mock_storage)} (attempt {attempt + 1})")
+                            if len(AzureSQLService._mock_storage) > 0:
+                                logger.debug(f"LOAD: Analysis IDs in storage: {list(AzureSQLService._mock_storage.keys())}")
+                        else:
+                            # Invalid data type - preserve in-memory storage
+                            logger.warning(f"LOAD: File contains invalid data type, preserving in-memory storage")
                         return  # Success - exit retry loop
                 else:
                     if attempt == 0:  # Only log on first attempt
@@ -502,51 +511,50 @@ class AzureSQLService:
             return False
     
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
-        """Update analysis record with extensive logging"""
+        """
+        Update analysis record with extensive logging.
+        CRITICAL: During active processing, NEVER reload from file - it can overwrite in-memory data.
+        In-memory storage is the source of truth during active processing.
+        """
         logger.info(f"📝 UPDATE: Updating analysis {analysis_id} with fields: {list(updates.keys())}")
         if self._use_mock:
-            # CRITICAL: Preserve existing analysis in memory before reloading
-            # This ensures we never lose data even if file is temporarily unavailable
-            existing_analysis = AzureSQLService._mock_storage.get(analysis_id) if analysis_id in AzureSQLService._mock_storage else None
+            # CRITICAL: Check in-memory storage FIRST (source of truth during processing)
+            # Only reload from file if analysis is NOT in memory (for cross-worker updates)
+            if analysis_id not in AzureSQLService._mock_storage:
+                logger.info(f"UPDATE: Analysis {analysis_id} not in memory, reloading from file...")
+                # Only reload if not in memory - this handles cross-worker scenarios
+                self._load_mock_storage()
             
-            # Reload from file first to ensure we have latest data
-            # This handles cases where another process/thread might have updated it
+            # Update in-memory mock storage IMMEDIATELY (source of truth)
+            if analysis_id in AzureSQLService._mock_storage:
+                from datetime import datetime
+                # CRITICAL: Update in-memory FIRST (immediate visibility)
+                AzureSQLService._mock_storage[analysis_id].update(updates)
+                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
+                logger.info(f"📝 UPDATE: Updated analysis {analysis_id} in memory. Status: {updates.get('status')}, step: {updates.get('current_step')}, progress: {updates.get('step_progress')}%")
+                
+                # CRITICAL: Save to file AFTER memory update (for persistence and cross-worker visibility)
+                try:
+                    self._save_mock_storage()  # Persist to file
+                    logger.info(f"✅ UPDATE: Successfully saved analysis {analysis_id} to file. Total analyses: {len(AzureSQLService._mock_storage)}")
+                except Exception as save_error:
+                    # CRITICAL: Even if file save fails, the update is in memory
+                    # Don't fail the update - in-memory storage is the source of truth
+                    logger.error(f"UPDATE: Failed to save to file, but update is in memory: {save_error}. Analysis {analysis_id} is still available in memory.")
+                    # Continue - the update is successful in memory
+                return True
+            
+            # Analysis not found - this should not happen during active processing
+            logger.error(f"UPDATE: Analysis {analysis_id} not found in mock storage. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
+            
+            # CRITICAL: Try one more time to reload from file (in case it was just created)
             self._load_mock_storage()
-            
-            # CRITICAL: If analysis was in memory before reload but not after, restore it
-            # This handles cases where file reload cleared it (shouldn't happen with our fixes, but safety net)
-            if existing_analysis and analysis_id not in AzureSQLService._mock_storage:
-                logger.warning(f"UPDATE: Analysis {analysis_id} was in memory before reload but disappeared after. Restoring from memory backup.")
-                AzureSQLService._mock_storage[analysis_id] = existing_analysis
-            
-            # Update in-memory mock storage (use class variable to ensure persistence)
             if analysis_id in AzureSQLService._mock_storage:
                 from datetime import datetime
                 AzureSQLService._mock_storage[analysis_id].update(updates)
                 AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
-                logger.info(f"📝 UPDATE: About to save mock storage after update. Total analyses: {len(AzureSQLService._mock_storage)}. IDs: {list(AzureSQLService._mock_storage.keys())}")
-                try:
-                    self._save_mock_storage()  # Persist to file
-                    logger.info(f"✅ UPDATE: Successfully updated and saved analysis {analysis_id} - status: {updates.get('status')}, step: {updates.get('current_step')}, progress: {updates.get('step_progress')}%")
-                except Exception as save_error:
-                    # CRITICAL: Even if file save fails, the update is in memory
-                    # Don't fail the update - in-memory storage is the source of truth
-                    logger.error(f"UPDATE: Failed to save to file, but update is in memory: {save_error}. Analysis {analysis_id} is still available.")
-                    # Continue - the update is successful in memory
-                return True
-            
-            # Analysis not found - log detailed information
-            logger.error(f"UPDATE: Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
-            
-            # CRITICAL: If we had it in memory before, restore it and try again
-            if existing_analysis:
-                logger.warning(f"UPDATE: Restoring analysis {analysis_id} from memory backup and retrying update")
-                AzureSQLService._mock_storage[analysis_id] = existing_analysis
-                from datetime import datetime
-                AzureSQLService._mock_storage[analysis_id].update(updates)
-                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
                 self._save_mock_storage()
-                logger.info(f"UPDATE: Successfully updated analysis {analysis_id} after restore from memory")
+                logger.warning(f"UPDATE: Found and updated analysis {analysis_id} after second reload")
                 return True
             
             return False

@@ -886,67 +886,58 @@ async def process_analysis_azure(
                     }
                 )
                 
-                # CRITICAL: Update database with retry logic - never fail the process
+                # CRITICAL: Update database - NEVER fail, always update in-memory first
                 if db_service:
-                    max_retries = 5  # Increased retries for progress updates
-                    for retry in range(max_retries):
-                        try:
-                            # CRITICAL: Verify analysis exists before updating
-                            analysis_check = await db_service.get_analysis(analysis_id)
-                            if not analysis_check:
-                                logger.warning(f"[{request_id}] Analysis not found during progress update. Recreating...")
-                                # Recreate if lost
-                                await db_service.create_analysis({
-                                    'id': analysis_id,
-                                    'patient_id': patient_id,
-                                    'filename': 'unknown',
-                                    'video_url': video_url,
-                                    'status': 'processing',
-                                    'current_step': step,
-                                    'step_progress': mapped_progress,
-                                    'step_message': message
-                                })
-                                break  # Success after recreation
-                            
-                            logger.info(f"[{request_id}] 📝 Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
-                            await db_service.update_analysis(analysis_id, {
-                                'current_step': step,
-                                'step_progress': mapped_progress,
-                                'step_message': message
-                            })
+                    # CRITICAL: Update directly without checking first - in-memory is source of truth
+                    # This prevents race conditions and ensures updates always succeed during processing
+                    try:
+                        logger.info(f"[{request_id}] 📝 Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
+                        update_success = await db_service.update_analysis(analysis_id, {
+                            'current_step': step,
+                            'step_progress': mapped_progress,
+                            'step_message': message
+                        })
+                        
+                        if update_success:
                             logger.info(f"[{request_id}] ✅ Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
                             # CRITICAL: Update last known progress for heartbeat
                             last_known_progress['step'] = step
                             last_known_progress['progress'] = mapped_progress
                             last_known_progress['message'] = message
-                            break  # Success - exit retry loop
-                        except Exception as update_error:
-                            if retry < max_retries - 1:
-                                logger.warning(
-                                    f"[{request_id}] Progress update failed (attempt {retry + 1}/{max_retries}): {update_error}. Retrying...",
-                                    extra={"analysis_id": analysis_id, "step": step}
-                                )
-                                await asyncio.sleep(0.2 * (retry + 1))  # Progressive delay
-                                continue
-                            else:
-                                # Final retry failed - log but don't raise
-                                logger.error(
-                                    f"[{request_id}] Progress update failed after {max_retries} attempts: {update_error}",
-                                    extra={"analysis_id": analysis_id, "step": step},
-                                    exc_info=True
-                                )
-                                # CRITICAL: Try to recreate analysis if update failed completely
-                                try:
-                                    await db_service.create_analysis({
-                                        'id': analysis_id,
-                                        'patient_id': patient_id,
-                                        'filename': 'unknown',
-                                        'video_url': video_url,
-                                        'status': 'processing',
-                                        'current_step': step,
-                                        'step_progress': mapped_progress,
-                                        'step_message': message
-                                    })
+                        else:
+                            # Update failed - recreate analysis immediately
+                            logger.warning(f"[{request_id}] Update returned False - recreating analysis {analysis_id}")
+                            await db_service.create_analysis({
+                                'id': analysis_id,
+                                'patient_id': patient_id,
+                                'filename': 'unknown',
+                                'video_url': video_url,
+                                'status': 'processing',
+                                'current_step': step,
+                                'step_progress': mapped_progress,
+                                'step_message': message
+                            })
+                            last_known_progress['step'] = step
+                            last_known_progress['progress'] = mapped_progress
+                            last_known_progress['message'] = message
+                    except Exception as update_error:
+                        # CRITICAL: On any error, recreate analysis immediately
+                        logger.error(
+                            f"[{request_id}] Progress update error: {update_error}. Recreating analysis...",
+                            extra={"analysis_id": analysis_id, "step": step},
+                            exc_info=True
+                        )
+                        try:
+                            await db_service.create_analysis({
+                                'id': analysis_id,
+                                'patient_id': patient_id,
+                                'filename': 'unknown',
+                                'video_url': video_url,
+                                'status': 'processing',
+                                'current_step': step,
+                                'step_progress': mapped_progress,
+                                'step_message': message
+                            })
                                     logger.warning(f"[{request_id}] Recreated analysis after progress update failure")
                                 except Exception as recreate_error:
                                     logger.error(f"[{request_id}] Failed to recreate analysis: {recreate_error}")
