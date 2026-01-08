@@ -354,6 +354,53 @@ async def upload_video(
                 reference_length_mm,
                 fps
             )
+            # CRITICAL: Start keep-alive heartbeat IMMEDIATELY after scheduling
+            # This ensures the analysis stays alive even before processing starts
+            # This is especially important in multi-worker environments
+            async def immediate_keepalive():
+                """Immediate keep-alive that starts right after analysis creation"""
+                keepalive_count = 0
+                try:
+                    # Start with very frequent updates (every 2 seconds) for first 30 seconds
+                    # Then switch to every 5 seconds
+                    while True:
+                        await asyncio.sleep(2 if keepalive_count < 15 else 5)  # 2s for first 30s, then 5s
+                        keepalive_count += 1
+                        try:
+                            # Verify and update analysis to keep it alive
+                            current_analysis = await db_service.get_analysis(analysis_id)
+                            if current_analysis:
+                                await db_service.update_analysis(analysis_id, {
+                                    'status': 'processing',
+                                    'current_step': current_analysis.get('current_step', 'pose_estimation'),
+                                    'step_progress': current_analysis.get('step_progress', 0),
+                                    'step_message': current_analysis.get('step_message', 'Initializing analysis...')
+                                })
+                                if keepalive_count % 5 == 0:  # Log every 10 seconds
+                                    logger.debug(f"[{request_id}] Keep-alive: Analysis {analysis_id} is alive (count: {keepalive_count})")
+                            else:
+                                logger.warning(f"[{request_id}] Keep-alive: Analysis {analysis_id} not found - recreating")
+                                await db_service.create_analysis({
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': file.filename or 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': 'pose_estimation',
+                                    'step_progress': 0,
+                                    'step_message': 'Initializing analysis...'
+                                })
+                        except Exception as keepalive_error:
+                            logger.warning(f"[{request_id}] Keep-alive error (non-critical): {keepalive_error}")
+                except asyncio.CancelledError:
+                    logger.info(f"[{request_id}] Keep-alive cancelled after {keepalive_count} updates")
+                except Exception as e:
+                    logger.error(f"[{request_id}] Keep-alive fatal error: {e}", exc_info=True)
+            
+            # Start immediate keep-alive task
+            keepalive_task = asyncio.create_task(immediate_keepalive())
+            logger.info(f"[{request_id}] Started immediate keep-alive for analysis {analysis_id}")
+            
             logger.info(f"[{request_id}] Background processing task scheduled", extra={"analysis_id": analysis_id})
         except Exception as e:
             logger.error(f"[{request_id}] Error scheduling background task: {e}", exc_info=True)
