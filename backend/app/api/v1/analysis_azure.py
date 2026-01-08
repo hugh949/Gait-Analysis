@@ -854,11 +854,11 @@ async def process_analysis_azure(
                                 })
                                 break  # Success after recreation
                             
-                await db_service.update_analysis(analysis_id, {
-                    'current_step': step,
-                    'step_progress': mapped_progress,
-                    'step_message': message
-                })
+                            await db_service.update_analysis(analysis_id, {
+                                'current_step': step,
+                                'step_progress': mapped_progress,
+                                'step_message': message
+                            })
                             # CRITICAL: Update last known progress for heartbeat
                             last_known_progress['step'] = step
                             last_known_progress['progress'] = mapped_progress
