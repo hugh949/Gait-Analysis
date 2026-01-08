@@ -1246,12 +1246,10 @@ async def process_analysis_azure(
                     # Continue anyway - not critical
         
         # CRITICAL: Stop heartbeat before final updates
-        if heartbeat_task:
-            heartbeat_task.cancel()
-            try:
-                await heartbeat_task
-            except asyncio.CancelledError:
-                pass
+        if heartbeat_stop_event:
+            heartbeat_stop_event.set()
+            if heartbeat_thread and heartbeat_thread.is_alive():
+                heartbeat_thread.join(timeout=2.0)
         
         # CRITICAL: Verify analysis exists before final update
         analysis_verified = False
