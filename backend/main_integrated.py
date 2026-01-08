@@ -361,21 +361,41 @@ if FRONTEND_DIR.exists():
         2. FastAPI matches routes in registration order
         3. If an API route doesn't match, this will catch it (which is fine for 404s)
         """
+        request_id = getattr(request.state, 'request_id', 'unknown')
+        logger.debug(f"[{request_id}] SPA route called: {full_path}")
+        
         # Double-check: if this somehow matches an API route, return 404
         # (This shouldn't happen due to route ordering, but safety check)
         if full_path.startswith("api/"):
-            logger.warning(f"API route caught by catch-all: {full_path} - this shouldn't happen!")
-            return {"error": "API route not found", "path": full_path}
+            logger.warning(f"[{request_id}] API route caught by catch-all: {full_path} - this shouldn't happen!")
+            return JSONResponse(
+                status_code=404,
+                content={"error": "API route not found", "path": full_path}
+            )
         
         # Serve index.html for all other routes (React SPA routing)
         index_path = FRONTEND_DIR / "index.html"
         if index_path.exists():
-            return FileResponse(
-                index_path,
-                media_type="text/html",
-                headers={"Cache-Control": "no-cache"}
-            )
-        logger.error(f"Frontend index.html not found at {index_path}")
+            try:
+                file_size = index_path.stat().st_size
+                logger.debug(f"[{request_id}] Serving index.html for SPA route {full_path} (size: {file_size} bytes)")
+                return FileResponse(
+                    index_path,
+                    media_type="text/html; charset=utf-8",
+                    headers={
+                        "Cache-Control": "no-cache, no-store, must-revalidate",
+                        "Pragma": "no-cache",
+                        "Expires": "0"
+                    }
+                )
+            except Exception as e:
+                logger.error(f"[{request_id}] Error serving index.html for SPA route: {e}", exc_info=True)
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": "Failed to serve frontend", "message": str(e)}
+                )
+        
+        logger.error(f"[{request_id}] Frontend index.html not found at {index_path}")
         return JSONResponse(
             status_code=404,
             content={"error": "Frontend not found", "path": str(index_path)}
