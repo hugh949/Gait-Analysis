@@ -504,6 +504,15 @@ class AzureSQLService:
             
             # Check if file exists but wasn't loaded (for debugging)
             file_path = os.path.abspath(AzureSQLService._mock_storage_file)
+            storage_dir = os.path.dirname(file_path)
+            
+            # List directory contents for debugging
+            try:
+                dir_contents = os.listdir(storage_dir) if os.path.exists(storage_dir) else []
+                logger.warning(f"Storage directory contents: {dir_contents}. Looking for: {os.path.basename(file_path)}")
+            except Exception as e:
+                logger.warning(f"Could not list storage directory: {e}")
+            
             if os.path.exists(file_path):
                 file_size = os.path.getsize(file_path)
                 logger.warning(f"Storage file exists ({file_size} bytes) but analysis not found. File may be corrupted or have permission issues.")
@@ -511,10 +520,22 @@ class AzureSQLService:
                 try:
                     with open(file_path, 'r') as f:
                         file_data = json.load(f)
-                        logger.warning(f"File contains {len(file_data)} analyses. IDs: {list(file_data.keys())}")
-                        # If the analysis ID is in the file but not in memory, there's a sync issue
-                        if analysis_id in file_data:
-                            logger.error(f"CRITICAL: Analysis {analysis_id} exists in file but not loaded into memory! This indicates a file loading issue.")
+                        if isinstance(file_data, dict):
+                            logger.warning(f"File contains {len(file_data)} analyses. IDs: {list(file_data.keys())}")
+                            # If the analysis ID is in the file but not in memory, there's a sync issue
+                            if analysis_id in file_data:
+                                logger.error(f"CRITICAL: Analysis {analysis_id} exists in file but not loaded into memory! This indicates a file loading issue. Forcing reload.")
+                                # Force reload and return the data directly
+                                AzureSQLService._mock_storage = file_data
+                                return file_data[analysis_id].copy()
+                        else:
+                            logger.error(f"CRITICAL: File contains invalid data type: {type(file_data)}. Expected dict.")
+                except json.JSONDecodeError as e:
+                    logger.error(f"CRITICAL: File exists but contains invalid JSON: {e}")
+                except Exception as e:
+                    logger.error(f"CRITICAL: Error reading file: {e}", exc_info=True)
+            else:
+                logger.warning(f"Storage file does not exist: {file_path}. Directory: {storage_dir}")
                 except Exception as e:
                     logger.error(f"Could not read storage file for debugging: {e}")
             return None
