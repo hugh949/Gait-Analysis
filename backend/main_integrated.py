@@ -31,8 +31,18 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 import os
 
-from app.core.config_simple import settings
-from app.api.v1.analysis_azure import router as analysis_router
+# Import app modules with error handling
+try:
+    from app.core.config_simple import settings
+except Exception as e:
+    logger.error(f"Failed to import settings: {e}", exc_info=True)
+    raise
+
+try:
+    from app.api.v1.analysis_azure import router as analysis_router
+except Exception as e:
+    logger.error(f"Failed to import analysis router: {e}", exc_info=True)
+    raise
 
 # Get paths
 # In Docker, frontend is at /app/frontend/dist (copied from backend/frontend-dist)
@@ -76,8 +86,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.error(f"Validation error on {request.method} {request.url.path}")
     logger.error(f"Validation errors: {exc.errors()}")
     logger.error(f"Request URL: {request.url}")
-    logger.error(f"Request headers: {dict(request.headers)}")
-    logger.error(f"Query params: {dict(request.query_params)}")
     return JSONResponse(
         status_code=422,
         content={
