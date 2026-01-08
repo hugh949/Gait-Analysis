@@ -187,12 +187,15 @@ class AzureSQLService:
                     logger.info(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory")
                     return
             except Exception as e:
-                logger.warning(f"LOAD: Unexpected error loading mock storage (attempt {attempt + 1}): {e}")
+                logger.error(f"LOAD: Unexpected error loading mock storage (attempt {attempt + 1}): {e}", exc_info=True)
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay * (attempt + 1))
                     continue
+                # CRITICAL: On final failure, preserve in-memory storage - never clear it
                 if not AzureSQLService._mock_storage:
-                    AzureSQLService._mock_storage = {}
+                    logger.warning(f"LOAD: In-memory storage is empty, keeping it empty")
+                else:
+                    logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite load error")
                 return
     
     def _save_mock_storage(self):
