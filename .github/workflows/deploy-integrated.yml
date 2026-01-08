@@ -108,15 +108,36 @@ jobs:
         cp -r frontend/dist backend/frontend-dist
         echo "✅ Frontend copied to backend/frontend-dist"
     
-    - name: Use cached frontend build
+    - name: Use cached frontend build or rebuild
       if: steps.frontend-changed.outputs.changed == 'false'
       run: |
         echo "⏭️  Frontend unchanged - checking for existing build..."
         if [ -d "backend/frontend-dist" ] && [ -f "backend/frontend-dist/index.html" ]; then
           echo "✅ Using existing frontend build in backend/frontend-dist"
         else
-          echo "⚠️  No cached frontend build found - will need to build"
-          echo "   This shouldn't happen, but continuing..."
+          echo "⚠️  No cached frontend build found - rebuilding frontend..."
+          echo "   This can happen on first run or if cache was cleared"
+          
+          # Set up Node.js if not already done
+          if ! command -v npm &> /dev/null; then
+            echo "📦 Setting up Node.js..."
+            # Node.js setup would be here, but it should already be set up
+          fi
+          
+          cd frontend
+          
+          # Quick install and build
+          echo "📥 Installing dependencies..."
+          npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
+          
+          echo "🔨 Building frontend..."
+          npm run build
+          
+          # Copy to backend
+          cd ..
+          rm -rf backend/frontend-dist
+          cp -r frontend/dist backend/frontend-dist
+          echo "✅ Frontend rebuilt and copied"
         fi
         
     - name: Set up Python
