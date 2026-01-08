@@ -11,6 +11,7 @@ import tempfile
 import os
 from pathlib import Path
 import uuid
+import asyncio
 
 from app.services.azure_storage import AzureStorageService
 from app.services.azure_vision import AzureVisionService
@@ -326,11 +327,20 @@ async def process_analysis_azure(
         logger.info(f"Analysis completed: {analysis_id}")
         logger.info(f"Metrics: {metrics}")
     
-    except Exception as e:
-        logger.error(f"Error processing analysis {analysis_id}: {e}", exc_info=True)
+    except asyncio.TimeoutError as e:
+        error_msg = f"Analysis timed out after 10 minutes. Video may be too long or processing is taking longer than expected."
+        logger.error(f"Timeout processing analysis {analysis_id}: {e}", exc_info=True)
         await db_service.update_analysis(analysis_id, {
             'status': 'failed',
-            'step_message': f'Analysis failed: {str(e)}'
+            'step_message': error_msg
+        })
+    except Exception as e:
+        error_msg = f"Analysis failed: {str(e)}"
+        logger.error(f"Error processing analysis {analysis_id}: {error_msg}", exc_info=True)
+        logger.error(f"Exception type: {type(e).__name__}", exc_info=True)
+        await db_service.update_analysis(analysis_id, {
+            'status': 'failed',
+            'step_message': error_msg
         })
     
     finally:
