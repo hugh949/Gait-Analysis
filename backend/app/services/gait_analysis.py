@@ -690,26 +690,43 @@ class GaitAnalysisService:
             progress_callback(95, "Finalizing analysis results...")
         
         # Calculate processing statistics
+        frames_processed_count = len(frames_2d_keypoints)
         processing_stats = {
             "total_frames": total_frames,
-            "frames_processed": len(frames_2d_keypoints),
-            "processing_rate": f"{(len(frames_2d_keypoints) / total_frames * 100):.1f}%",
+            "frames_processed": frames_processed_count,
+            "processing_rate": f"{(frames_processed_count / total_frames * 100):.1f}%" if total_frames > 0 else "0%",
             "keypoints_per_frame": len(frames_2d_keypoints[0]) if frames_2d_keypoints else 0,
-            "analysis_duration_estimate": f"{total_frames / video_fps:.1f}s"
+            "analysis_duration_estimate": f"{total_frames / video_fps:.1f}s" if video_fps > 0 else "unknown"
         }
         
-        logger.info(f"Processing complete - Statistics: {processing_stats}")
+        logger.info(f"✅ Processing complete - Statistics: {processing_stats}")
+        logger.info(f"✅ Frames processed: {frames_processed_count}/{total_frames} ({processing_stats['processing_rate']})")
+        logger.info(f"✅ Keypoints extracted: {frames_processed_count} frames with 2D keypoints, {len(frames_3d_keypoints)} frames with 3D keypoints")
+        logger.info(f"✅ Metrics calculated: {len(metrics)} metrics")
+        
+        # CRITICAL: Validate that processing actually happened
+        if frames_processed_count == 0:
+            error_msg = f"CRITICAL: No frames were processed! Video may be invalid or processing failed. Total frames in video: {total_frames}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        if total_frames == 0:
+            error_msg = "CRITICAL: Video has 0 frames - video file is invalid or empty"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         result = {
             "status": "completed",
             "analysis_type": "advanced_gait_analysis_v2_professional",
-            "frames_processed": len(frames_2d_keypoints),
+            "frames_processed": frames_processed_count,
             "total_frames": total_frames,
             "processing_stats": processing_stats,
             "keypoints_2d": frames_2d_keypoints[:10],  # Sample for debugging
             "keypoints_3d": frames_3d_keypoints[:10],  # Sample for debugging
             "metrics": metrics
         }
+        
+        logger.info(f"✅ Result prepared: {frames_processed_count} frames processed, {len(metrics)} metrics calculated")
         
         if progress_callback:
             progress_callback(100, "Analysis complete!")
