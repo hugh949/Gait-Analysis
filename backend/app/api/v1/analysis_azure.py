@@ -328,7 +328,7 @@ async def process_analysis_azure(
         logger.info(f"Metrics: {metrics}")
     
     except asyncio.TimeoutError as e:
-        error_msg = f"Analysis timed out after 10 minutes. Video may be too long or processing is taking longer than expected."
+        error_msg = f"Analysis timed out after 60 minutes. Video may be extremely long or processing is taking longer than expected. For accuracy, all frames are processed thoroughly."
         logger.error(f"Timeout processing analysis {analysis_id}: {e}", exc_info=True)
         await db_service.update_analysis(analysis_id, {
             'status': 'failed',

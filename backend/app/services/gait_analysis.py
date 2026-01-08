@@ -162,7 +162,9 @@ class GaitAnalysisService:
         try:
             logger.info("Waiting for video processing to complete...")
             # Wait for processing to complete (with timeout protection)
-            result = await asyncio.wait_for(process_task, timeout=600.0)  # 10 minute timeout
+            # Use a generous timeout (60 minutes) to allow complete, accurate processing
+            # Accuracy is prioritized over speed - processing all frames thoroughly is important
+            result = await asyncio.wait_for(process_task, timeout=3600.0)  # 60 minute timeout for thorough processing
             processing_done.set()
             logger.info("Video processing completed successfully")
             
@@ -179,9 +181,9 @@ class GaitAnalysisService:
                 await progress_callback(80, "Calculating gait parameters...")
             
         except asyncio.TimeoutError:
-            logger.error("Video processing timed out after 10 minutes")
+            logger.error("Video processing timed out after 60 minutes")
             processing_done.set()
-            raise ValueError("Video processing timed out - video may be too long or corrupted")
+            raise ValueError("Video processing timed out after 60 minutes - video may be extremely long or processing is taking longer than expected. For accuracy, all frames are processed thoroughly.")
         except Exception as e:
             logger.error(f"Error during video processing: {e}", exc_info=True)
             processing_done.set()
@@ -326,8 +328,12 @@ class GaitAnalysisService:
             logger.info(f"Progress: 55% - Lifting 2D keypoints to 3D... ({len(frames_2d_keypoints)} frames)")
         
         # Lift 2D keypoints to 3D
-        frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
-        logger.info(f"3D lifting complete: {len(frames_3d_keypoints)} frames")
+        try:
+            frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
+            logger.info(f"3D lifting complete: {len(frames_3d_keypoints)} frames")
+        except Exception as e:
+            logger.error(f"Error during 3D lifting: {e}", exc_info=True)
+            raise ValueError(f"Failed to lift 2D keypoints to 3D: {str(e)}")
         
         # Progress: Moving to metrics calculation
         if progress_callback:
@@ -335,13 +341,17 @@ class GaitAnalysisService:
             logger.info("Progress: 75% - Calculating gait parameters...")
         
         # Calculate gait metrics
-        metrics = self._calculate_gait_metrics(
-            frames_3d_keypoints,
-            frame_timestamps,
-            video_fps,
-            reference_length_mm
-        )
-        logger.info(f"Gait metrics calculated: {metrics}")
+        try:
+            metrics = self._calculate_gait_metrics(
+                frames_3d_keypoints,
+                frame_timestamps,
+                video_fps,
+                reference_length_mm
+            )
+            logger.info(f"Gait metrics calculated: {metrics}")
+        except Exception as e:
+            logger.error(f"Error during gait metrics calculation: {e}", exc_info=True)
+            raise ValueError(f"Failed to calculate gait metrics: {str(e)}")
         
         # Progress: Finalizing
         if progress_callback:
