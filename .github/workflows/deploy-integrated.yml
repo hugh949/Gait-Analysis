@@ -193,15 +193,17 @@ jobs:
         
     - name: Verify frontend build exists
       run: |
-        if [ ! -d "backend/frontend-dist" ]; then
-          echo "❌ Error: frontend-dist directory not found!"
-          exit 1
-        fi
-        if [ ! -f "backend/frontend-dist/index.html" ]; then
-          echo "❌ Error: frontend-dist/index.html not found!"
+        echo "🔍 Verifying frontend build..."
+        if [ ! -d "backend/frontend-dist" ] || [ ! -f "backend/frontend-dist/index.html" ]; then
+          echo "❌ Error: frontend-dist directory or index.html not found!"
+          echo "   This should not happen - frontend should have been built in previous steps"
+          echo "   Checking what exists:"
+          ls -la backend/ | grep frontend || echo "   No frontend-related files found"
           exit 1
         fi
         echo "✅ Frontend build verified"
+        echo "   Location: backend/frontend-dist/"
+        echo "   Files: $(ls -la backend/frontend-dist/ | head -5)"
         
     - name: Verify cleaned code before build
       continue-on-error: true
