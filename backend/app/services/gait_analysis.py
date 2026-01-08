@@ -350,7 +350,13 @@ class GaitAnalysisService:
                 try:
                     # Convert BGR to RGB
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+                    # Create MediaPipe Image with explicit dimensions to avoid NORM_RECT warning
+                    mp_image = mp.Image(
+                        image_format=mp.ImageFormat.SRGB,
+                        data=rgb_frame,
+                        width=width,
+                        height=height
+                    )
                     
                     # Process frame with error handling
                     detection_result = self.pose_landmarker.detect_for_video(mp_image, timestamp_ms)
