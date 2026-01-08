@@ -100,20 +100,34 @@ class GaitAnalysisService:
         if MEDIAPIPE_AVAILABLE and python is not None and PoseLandmarker is not None:
             try:
                 # Initialize MediaPipe 0.10.x PoseLandmarker with high accuracy settings
-                # Use default model by not specifying model_asset_path
-                base_options = python.BaseOptions(
-                    delegate=python.BaseOptions.Delegate.CPU  # CPU for compatibility
-                )
-                options = PoseLandmarkerOptions(
-                    base_options=base_options,
-                    running_mode=self.running_mode,
-                    min_pose_detection_confidence=0.5,
-                    min_pose_presence_confidence=0.5,
-                    min_tracking_confidence=0.5,
-                    output_segmentation_masks=False
-                )
-                self.pose_landmarker = PoseLandmarker.create_from_options(options)
-                logger.info("MediaPipe 0.10.x PoseLandmarker initialized successfully with high accuracy settings")
+                # MediaPipe 0.10.x requires explicit model specification or uses bundled default
+                # Try without base_options first (uses default bundled model)
+                try:
+                    options = PoseLandmarkerOptions(
+                        running_mode=self.running_mode,
+                        min_pose_detection_confidence=0.5,
+                        min_pose_presence_confidence=0.5,
+                        min_tracking_confidence=0.5,
+                        output_segmentation_masks=False
+                    )
+                    self.pose_landmarker = PoseLandmarker.create_from_options(options)
+                    logger.info("MediaPipe 0.10.x PoseLandmarker initialized successfully (default model)")
+                except Exception as e1:
+                    # Fallback: try with explicit BaseOptions
+                    logger.debug(f"Initialization without base_options failed: {e1}, trying with BaseOptions")
+                    base_options = python.BaseOptions(
+                        delegate=python.BaseOptions.Delegate.CPU
+                    )
+                    options = PoseLandmarkerOptions(
+                        base_options=base_options,
+                        running_mode=self.running_mode,
+                        min_pose_detection_confidence=0.5,
+                        min_pose_presence_confidence=0.5,
+                        min_tracking_confidence=0.5,
+                        output_segmentation_masks=False
+                    )
+                    self.pose_landmarker = PoseLandmarker.create_from_options(options)
+                    logger.info("MediaPipe 0.10.x PoseLandmarker initialized successfully (with BaseOptions)")
             except Exception as e:
                 logger.error(f"Failed to initialize MediaPipe PoseLandmarker: {e}", exc_info=True)
                 self.pose_landmarker = None
