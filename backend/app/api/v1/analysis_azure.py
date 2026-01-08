@@ -284,7 +284,7 @@ async def upload_video(
         
         # Store metadata in Azure SQL Database
         try:
-        analysis_data = {
+            analysis_data = {
             'id': analysis_id,
             'patient_id': patient_id,
             'filename': file.filename,
