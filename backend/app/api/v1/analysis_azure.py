@@ -1073,7 +1073,7 @@ async def process_analysis_azure(
             
             logger.info(f"[{request_id}] 🎬 STARTING VIDEO ANALYSIS: video_path={video_path}, fps={fps}, view_type={view_type}")
             logger.info(f"[{request_id}] 🎬 Analysis will call progress_callback during processing")
-            logger.info(f"[{request_id}] 🎬 Heartbeat task is running: {heartbeat_task and not heartbeat_task.done()}")
+            logger.info(f"[{request_id}] 🎬 Heartbeat thread is running: {heartbeat_thread and heartbeat_thread.is_alive() if heartbeat_thread else False}")
             analysis_result = await gait_service.analyze_video(
                 video_path,
                 fps=fps,
