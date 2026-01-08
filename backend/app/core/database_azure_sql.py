@@ -521,8 +521,14 @@ class AzureSQLService:
                 AzureSQLService._mock_storage[analysis_id].update(updates)
                 AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
                 logger.debug(f"UPDATE: About to save mock storage after update. Total analyses: {len(AzureSQLService._mock_storage)}. IDs: {list(AzureSQLService._mock_storage.keys())}")
-                self._save_mock_storage()  # Persist to file
-                logger.debug(f"UPDATE: Updated analysis in mock storage: {analysis_id}")
+                try:
+                    self._save_mock_storage()  # Persist to file
+                    logger.debug(f"UPDATE: Updated analysis in mock storage: {analysis_id}")
+                except Exception as save_error:
+                    # CRITICAL: Even if file save fails, the update is in memory
+                    # Don't fail the update - in-memory storage is the source of truth
+                    logger.error(f"UPDATE: Failed to save to file, but update is in memory: {save_error}. Analysis {analysis_id} is still available.")
+                    # Continue - the update is successful in memory
                 return True
             
             # Analysis not found - log detailed information
