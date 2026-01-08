@@ -33,7 +33,21 @@ try:
     import mediapipe as mp
     from mediapipe.tasks import python
     from mediapipe.tasks.python import vision
-    from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode, ImageFormat
+    from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
+    # Try to import ImageFormat - it might not be available in all versions
+    try:
+        from mediapipe.tasks.python.vision import ImageFormat
+    except ImportError:
+        try:
+            from mediapipe.tasks.python.core.vision import ImageFormat
+        except ImportError:
+            try:
+                ImageFormat = vision.ImageFormat
+            except AttributeError:
+                # ImageFormat might not be available - we'll use a fallback
+                ImageFormat = None
+                logger.warning("ImageFormat not available - will use alternative method for image creation")
+    
     # Try to import Image class - it might be in different locations in different versions
     try:
         from mediapipe.tasks.python.vision import Image as VisionImage
@@ -51,15 +65,19 @@ try:
                     VisionImage = None
                     logger.warning("Could not import MediaPipe Image class - will use alternative method")
     
-        MEDIAPIPE_AVAILABLE = True
+    MEDIAPIPE_AVAILABLE = True
     logger.info(f"MediaPipe 0.10.x imported successfully with tasks API (version: {getattr(mp, '__version__', 'unknown')})")
     if VisionImage:
         logger.info(f"MediaPipe Image class available: {VisionImage}")
     else:
         logger.warning("MediaPipe Image class not found - will use numpy array directly")
+    if ImageFormat:
+        logger.info(f"MediaPipe ImageFormat available: {ImageFormat}")
+    else:
+        logger.warning("MediaPipe ImageFormat not found - will use alternative method")
 except ImportError as e:
-        MEDIAPIPE_AVAILABLE = False
-        mp = None
+    MEDIAPIPE_AVAILABLE = False
+    mp = None
     python = None
     vision = None
     VisionImage = None
