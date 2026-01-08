@@ -499,7 +499,8 @@ class AzureSQLService:
             return False
     
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
-        """Update analysis record"""
+        """Update analysis record with extensive logging"""
+        logger.info(f"📝 UPDATE: Updating analysis {analysis_id} with fields: {list(updates.keys())}")
         if self._use_mock:
             # CRITICAL: Preserve existing analysis in memory before reloading
             # This ensures we never lose data even if file is temporarily unavailable

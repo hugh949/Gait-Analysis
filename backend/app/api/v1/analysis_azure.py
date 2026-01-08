@@ -360,16 +360,20 @@ async def upload_video(
             async def immediate_keepalive():
                 """Immediate keep-alive that starts right after analysis creation"""
                 keepalive_count = 0
+                logger.info(f"[{request_id}] 🔄 IMMEDIATE KEEP-ALIVE STARTED for analysis {analysis_id}")
                 try:
                     # Start with very frequent updates (every 2 seconds) for first 30 seconds
                     # Then switch to every 5 seconds
                     while True:
-                        await asyncio.sleep(2 if keepalive_count < 15 else 5)  # 2s for first 30s, then 5s
+                        sleep_time = 2 if keepalive_count < 15 else 5
+                        await asyncio.sleep(sleep_time)
                         keepalive_count += 1
                         try:
                             # Verify and update analysis to keep it alive
+                            logger.debug(f"[{request_id}] 🔄 Keep-alive heartbeat #{keepalive_count} - checking analysis {analysis_id}")
                             current_analysis = await db_service.get_analysis(analysis_id)
                             if current_analysis:
+                                logger.debug(f"[{request_id}] 🔄 Keep-alive: Analysis {analysis_id} found - updating to keep alive")
                                 await db_service.update_analysis(analysis_id, {
                                     'status': 'processing',
                                     'current_step': current_analysis.get('current_step', 'pose_estimation'),
@@ -377,9 +381,9 @@ async def upload_video(
                                     'step_message': current_analysis.get('step_message', 'Initializing analysis...')
                                 })
                                 if keepalive_count % 5 == 0:  # Log every 10 seconds
-                                    logger.debug(f"[{request_id}] Keep-alive: Analysis {analysis_id} is alive (count: {keepalive_count})")
+                                    logger.info(f"[{request_id}] ✅ Keep-alive: Analysis {analysis_id} is alive (heartbeat #{keepalive_count})")
                             else:
-                                logger.warning(f"[{request_id}] Keep-alive: Analysis {analysis_id} not found - recreating")
+                                logger.warning(f"[{request_id}] ⚠️ Keep-alive: Analysis {analysis_id} NOT FOUND - recreating (heartbeat #{keepalive_count})")
                                 await db_service.create_analysis({
                                     'id': analysis_id,
                                     'patient_id': patient_id,
@@ -388,20 +392,23 @@ async def upload_video(
                                     'status': 'processing',
                                     'current_step': 'pose_estimation',
                                     'step_progress': 0,
-                                    'step_message': 'Initializing analysis...'
+                                    'step_message': f'Analysis recreated by keep-alive (heartbeat #{keepalive_count})'
                                 })
+                                logger.info(f"[{request_id}] ✅ Keep-alive: Recreated analysis {analysis_id} (heartbeat #{keepalive_count})")
                         except Exception as keepalive_error:
-                            logger.warning(f"[{request_id}] Keep-alive error (non-critical): {keepalive_error}")
+                            logger.error(f"[{request_id}] ❌ Keep-alive error on heartbeat #{keepalive_count}: {keepalive_error}", exc_info=True)
                 except asyncio.CancelledError:
-                    logger.info(f"[{request_id}] Keep-alive cancelled after {keepalive_count} updates")
+                    logger.info(f"[{request_id}] 🛑 Keep-alive cancelled after {keepalive_count} heartbeats")
                 except Exception as e:
-                    logger.error(f"[{request_id}] Keep-alive fatal error: {e}", exc_info=True)
+                    logger.error(f"[{request_id}] ❌ Keep-alive fatal error after {keepalive_count} heartbeats: {e}", exc_info=True)
             
             # Start immediate keep-alive task
             keepalive_task = asyncio.create_task(immediate_keepalive())
-            logger.info(f"[{request_id}] Started immediate keep-alive for analysis {analysis_id}")
+            logger.info(f"[{request_id}] ✅ Started immediate keep-alive task for analysis {analysis_id} (task ID: {id(keepalive_task)})")
+            logger.info(f"[{request_id}] ✅ Keep-alive task is running: {not keepalive_task.done()}")
             
-            logger.info(f"[{request_id}] Background processing task scheduled", extra={"analysis_id": analysis_id})
+            logger.info(f"[{request_id}] ✅ Background processing task scheduled for analysis {analysis_id}", extra={"analysis_id": analysis_id})
+            logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
         except Exception as e:
             logger.error(f"[{request_id}] Error scheduling background task: {e}", exc_info=True)
             # Update analysis status to failed
@@ -486,7 +493,7 @@ async def process_analysis_azure(
     
     try:
         logger.info(
-            f"[{request_id}] Starting advanced gait analysis",
+            f"[{request_id}] 🚀 PROCESSING TASK STARTED for analysis {analysis_id}",
             extra={
                 "request_id": request_id,
                 "analysis_id": analysis_id,
@@ -495,6 +502,7 @@ async def process_analysis_azure(
                 "fps": fps
             }
         )
+        logger.info(f"[{request_id}] 📋 Processing parameters: view_type={view_type}, fps={fps}, reference_length_mm={reference_length_mm}")
         
         # CRITICAL: Ensure analysis exists before starting processing
         # This prevents "Analysis not found" errors during processing
@@ -710,14 +718,17 @@ async def process_analysis_azure(
         async def heartbeat_update():
             """Periodic heartbeat to ensure analysis stays alive during processing"""
             heartbeat_count = 0
+            logger.info(f"[{request_id}] 🔄 PROCESSING HEARTBEAT STARTED for analysis {analysis_id}")
             try:
                 while True:
                     # Very frequent updates: every 3 seconds for first minute, then every 5 seconds
-                    await asyncio.sleep(3 if heartbeat_count < 20 else 5)
+                    sleep_time = 3 if heartbeat_count < 20 else 5
+                    await asyncio.sleep(sleep_time)
                     heartbeat_count += 1
                     try:
                         # CRITICAL: Always verify analysis exists and update it
                         # This prevents the analysis from disappearing during long processing
+                        logger.debug(f"[{request_id}] 🔄 Processing heartbeat #{heartbeat_count} - checking analysis {analysis_id}")
                         current_analysis = await db_service.get_analysis(analysis_id)
                         
                         if current_analysis:
@@ -740,10 +751,10 @@ async def process_analysis_azure(
                                 'step_message': message  # Keep original message
                             })
                             
-                            if heartbeat_count % 20 == 0:  # Log every 60-100 seconds
-                                logger.info(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
+                            if heartbeat_count % 10 == 0:  # Log every 30-50 seconds
+                                logger.info(f"[{request_id}] ✅ Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
                             else:
-                                logger.debug(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count})")
+                                logger.debug(f"[{request_id}] 🔄 Processing heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
                         else:
                             logger.warning(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} not found - recreating (heartbeat #{heartbeat_count})")
                             # CRITICAL: Recreate with last known progress
@@ -782,7 +793,8 @@ async def process_analysis_azure(
         
         # Start heartbeat task IMMEDIATELY - before any processing starts
         heartbeat_task = asyncio.create_task(heartbeat_update())
-        logger.info(f"[{request_id}] Started processing heartbeat task for analysis {analysis_id}")
+        logger.info(f"[{request_id}] ✅ Started processing heartbeat task for analysis {analysis_id} (task ID: {id(heartbeat_task)})")
+        logger.info(f"[{request_id}] ✅ Heartbeat task is running: {not heartbeat_task.done()}")
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -796,6 +808,7 @@ async def process_analysis_azure(
             """
             # CRITICAL: Wrap everything in try-except to ensure this never fails
             try:
+                logger.info(f"[{request_id}] 📊 PROGRESS CALLBACK: {progress_pct}% - {message}")
                 # Validate progress percentage
                 if not isinstance(progress_pct, int) or progress_pct < 0 or progress_pct > 100:
                     logger.warning(
@@ -822,8 +835,8 @@ async def process_analysis_azure(
                     step = 'report_generation'
                     mapped_progress = 90 + int((progress_pct - 95) * 2.0)  # 90% to 100%
                 
-                logger.debug(
-                    f"[{request_id}] Progress update: {step} {mapped_progress}% - {message}",
+                logger.info(
+                    f"[{request_id}] 📊 PROGRESS: {step} {mapped_progress}% - {message}",
                     extra={
                         "analysis_id": analysis_id,
                         "step": step,
@@ -854,11 +867,13 @@ async def process_analysis_azure(
                                 })
                                 break  # Success after recreation
                             
+                            logger.info(f"[{request_id}] 📝 Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
                             await db_service.update_analysis(analysis_id, {
                                 'current_step': step,
                                 'step_progress': mapped_progress,
                                 'step_message': message
                             })
+                            logger.info(f"[{request_id}] ✅ Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
                             # CRITICAL: Update last known progress for heartbeat
                             last_known_progress['step'] = step
                             last_known_progress['progress'] = mapped_progress
