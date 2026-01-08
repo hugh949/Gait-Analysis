@@ -577,17 +577,90 @@ class AzureSQLService:
             return False
     
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
-        """Get analysis record with aggressive multi-worker support"""
+        """
+        Get analysis record with ROBUST multi-worker support.
+        
+        CRITICAL ARCHITECTURE CHANGE: File-first approach for multi-worker reliability.
+        In a multi-worker environment (Uvicorn with multiple workers), in-memory storage
+        is NOT shared between workers. Therefore, we MUST read from file first to ensure
+        cross-worker visibility. In-memory cache is only used as a secondary optimization
+        after we've confirmed the file doesn't have the data.
+        """
         if self._use_mock:
             file_path = os.path.abspath(AzureSQLService._mock_storage_file)
             
             logger.debug(f"GET: Looking for analysis {analysis_id} in storage file: {file_path}")
             
-            # CRITICAL: Strategy 0 - Check in-memory storage FIRST (fast path for same process)
-            # This is the fastest path if the analysis was created in the same process
-            if analysis_id in AzureSQLService._mock_storage:
-                logger.debug(f"GET: Found analysis {analysis_id} in in-memory storage (fast path)")
-                return AzureSQLService._mock_storage[analysis_id].copy()
+            # CRITICAL: Multi-worker architecture - ALWAYS read from file first
+            # In-memory cache is NOT reliable across workers, so file is source of truth
+            # We'll update in-memory cache after reading from file for performance
+            max_retries = 20  # Increased to 20 retries for better resilience
+            for retry in range(max_retries):
+                # Strategy 1: ALWAYS read from file first (most reliable for cross-worker access)
+                if os.path.exists(file_path):
+                    try:
+                        with open(file_path, 'r') as f:
+                            if HAS_FCNTL:
+                                try:
+                                    fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock for reading
+                                    file_data = json.load(f)
+                                finally:
+                                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                            else:
+                                file_data = json.load(f)
+                            
+                            if isinstance(file_data, dict):
+                                # CRITICAL: Update in-memory storage from file immediately
+                                # This ensures subsequent calls in the same process are fast
+                                AzureSQLService._mock_storage = file_data
+                                
+                                if analysis_id in file_data:
+                                    logger.info(f"GET: Found analysis {analysis_id} in file (attempt {retry + 1}/{max_retries})")
+                                    return file_data[analysis_id].copy()
+                                else:
+                                    logger.debug(f"GET: File exists but analysis {analysis_id} not found. Available IDs: {list(file_data.keys())}")
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"GET: Invalid JSON in file (attempt {retry + 1}): {e}")
+                        # Try to recover by reloading
+                        self._load_mock_storage()
+                    except (IOError, OSError) as e:
+                        logger.debug(f"GET: Error reading file (attempt {retry + 1}): {e}")
+                
+                # Strategy 2: Check in-memory cache as fallback (only if file doesn't exist yet)
+                # This helps if file hasn't been created yet but we have it in memory
+                if analysis_id in AzureSQLService._mock_storage:
+                    logger.debug(f"GET: Found analysis {analysis_id} in in-memory cache (file not found yet, attempt {retry + 1})")
+                    return AzureSQLService._mock_storage[analysis_id].copy()
+                
+                # Strategy 3: Reload from file using _load_mock_storage (which preserves in-memory if file missing)
+                self._load_mock_storage()
+                
+                # Check if analysis is now in memory (after reload)
+                if analysis_id in AzureSQLService._mock_storage:
+                    if retry > 0:
+                        logger.info(f"GET: Retrieved analysis from memory after reload: {analysis_id} (attempt {retry + 1}/{max_retries})")
+                    else:
+                        logger.debug(f"GET: Retrieved analysis from mock storage: {analysis_id}")
+                    return AzureSQLService._mock_storage[analysis_id].copy()
+                
+                # File doesn't exist or analysis not found - wait and retry
+                if retry < max_retries - 1:  # Don't sleep on last attempt
+                    # CRITICAL: Shorter delays for first few attempts (when file is likely being written)
+                    # Then progressively longer delays
+                    if retry < 5:
+                        # First 5 attempts: very short delays (0.05s, 0.1s, 0.15s, 0.2s, 0.25s)
+                        # This catches files that are being written right now
+                        delay = 0.05 * (retry + 1)
+                    elif retry < 10:
+                        # Next 5 attempts: short delays (0.3s, 0.4s, 0.5s, 0.6s, 0.7s)
+                        delay = 0.3 + 0.1 * (retry - 5)
+                    else:
+                        # Later attempts: longer delays (0.8s, 1.0s, 1.2s, etc.)
+                        delay = 0.8 + 0.2 * (retry - 10)
+                    
+                    logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay:.2f}s (attempt {retry + 1}/{max_retries})")
+                    time.sleep(delay)
+                    continue
             
             # CRITICAL: For multi-worker scenarios, aggressively reload from file
             # Use shorter delays for first few attempts (when file is likely being written)
