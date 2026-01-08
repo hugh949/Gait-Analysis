@@ -875,40 +875,65 @@ async def process_analysis_azure(
                 
                 # CRITICAL: Update database - use SYNC method for reliability during CPU-intensive processing
                 # Progress callback may be called from sync context, so use sync update method
+                logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: Starting database update for analysis {analysis_id}")
+                logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: Step={step}, Progress={mapped_progress}%, Message='{message}'")
+                
                 if db_service:
                     # CRITICAL: Update last known progress FIRST (for thread heartbeat)
+                    logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: Updating last_known_progress dict")
                     last_known_progress['step'] = step
                     last_known_progress['progress'] = mapped_progress
                     last_known_progress['message'] = message
+                    logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: last_known_progress updated: {last_known_progress}")
                     
                     # CRITICAL: Use sync update method (works from both async and sync contexts)
                     # This ensures updates succeed even during CPU-intensive processing
                     try:
-                        logger.info(f"[{request_id}] 📝 Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
+                        logger.info(f"[{request_id}] 📝 PROGRESS CALLBACK: Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
+                        logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: db_service._use_mock = {db_service._use_mock}")
                         
                         if db_service._use_mock:
                             # Use sync method for mock storage (works from threads and async)
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: Using update_analysis_sync (mock storage)")
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: Checking if analysis {analysis_id} exists in memory...")
+                            analysis_in_memory = analysis_id in db_service._mock_storage
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: Analysis {analysis_id} in memory: {analysis_in_memory}")
+                            if analysis_in_memory:
+                                logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: Current analysis state: status={db_service._mock_storage[analysis_id].get('status')}, step={db_service._mock_storage[analysis_id].get('current_step')}, progress={db_service._mock_storage[analysis_id].get('step_progress')}")
+                            
                             update_success = db_service.update_analysis_sync(analysis_id, {
                                 'current_step': step,
                                 'step_progress': mapped_progress,
                                 'step_message': message
                             })
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: update_analysis_sync returned: {update_success}")
                         else:
                             # For real SQL, use async method
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: Using async update_analysis (real SQL)")
                             update_success = await db_service.update_analysis(analysis_id, {
                                 'current_step': step,
                                 'step_progress': mapped_progress,
                                 'step_message': message
                             })
+                            logger.debug(f"[{request_id}] 📝 PROGRESS CALLBACK: async update_analysis returned: {update_success}")
                         
                         if update_success:
-                            logger.info(f"[{request_id}] ✅ Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
+                            logger.info(f"[{request_id}] ✅ PROGRESS CALLBACK: Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
+                            # Verify update was saved
+                            if db_service._use_mock:
+                                if analysis_id in db_service._mock_storage:
+                                    logger.debug(f"[{request_id}] ✅ PROGRESS CALLBACK: Verified - analysis {analysis_id} exists in memory after update")
+                                    logger.debug(f"[{request_id}] ✅ PROGRESS CALLBACK: Verified state: status={db_service._mock_storage[analysis_id].get('status')}, step={db_service._mock_storage[analysis_id].get('current_step')}, progress={db_service._mock_storage[analysis_id].get('step_progress')}")
+                                else:
+                                    logger.error(f"[{request_id}] ❌ PROGRESS CALLBACK: CRITICAL - Analysis {analysis_id} NOT in memory after successful update!")
                         else:
                             # Update failed - recreate analysis immediately
-                            logger.warning(f"[{request_id}] Update returned False - recreating analysis {analysis_id}")
+                            logger.warning(f"[{request_id}] ⚠️ PROGRESS CALLBACK: Update returned False - recreating analysis {analysis_id}")
+                            logger.debug(f"[{request_id}] ⚠️ PROGRESS CALLBACK: Recreating analysis with step={step}, progress={mapped_progress}%")
                             if db_service._use_mock:
                                 # Recreate in memory and file
                                 from datetime import datetime
+                                logger.debug(f"[{request_id}] ⚠️ PROGRESS CALLBACK: Creating analysis dict for recreation...")
                                 db_service._mock_storage[analysis_id] = {
                                     'id': analysis_id,
                                     'patient_id': patient_id,
@@ -922,9 +947,12 @@ async def process_analysis_azure(
                                     'created_at': datetime.now().isoformat(),
                                     'updated_at': datetime.now().isoformat()
                                 }
+                                logger.debug(f"[{request_id}] ⚠️ PROGRESS CALLBACK: Analysis dict created, saving to file...")
                                 db_service._save_mock_storage()
-                                logger.info(f"[{request_id}] ✅ Recreated analysis {analysis_id} in memory and file")
+                                logger.info(f"[{request_id}] ✅ PROGRESS CALLBACK: Recreated analysis {analysis_id} in memory and file")
+                                logger.debug(f"[{request_id}] ✅ PROGRESS CALLBACK: Verification - analysis in memory: {analysis_id in db_service._mock_storage}")
                             else:
+                                logger.debug(f"[{request_id}] ⚠️ PROGRESS CALLBACK: Recreating analysis using async create_analysis (real SQL)")
                                 await db_service.create_analysis({
                                     'id': analysis_id,
                                     'patient_id': patient_id,
@@ -938,14 +966,15 @@ async def process_analysis_azure(
                     except Exception as update_error:
                         # CRITICAL: On any error, recreate analysis immediately
                         logger.error(
-                            f"[{request_id}] Progress update error: {update_error}. Recreating analysis...",
-                            extra={"analysis_id": analysis_id, "step": step},
+                            f"[{request_id}] ❌ PROGRESS CALLBACK: Progress update error: {type(update_error).__name__}: {update_error}. Recreating analysis...",
+                            extra={"analysis_id": analysis_id, "step": step, "error_type": type(update_error).__name__, "error_message": str(update_error)},
                             exc_info=True
                         )
                         try:
                             if db_service._use_mock:
                                 # Recreate in memory and file
                                 from datetime import datetime
+                                logger.debug(f"[{request_id}] ❌ PROGRESS CALLBACK: Recreating analysis in memory after error...")
                                 db_service._mock_storage[analysis_id] = {
                                     'id': analysis_id,
                                     'patient_id': patient_id,
@@ -959,9 +988,12 @@ async def process_analysis_azure(
                                     'created_at': datetime.now().isoformat(),
                                     'updated_at': datetime.now().isoformat()
                                 }
+                                logger.debug(f"[{request_id}] ❌ PROGRESS CALLBACK: Saving recreated analysis to file...")
                                 db_service._save_mock_storage()
-                                logger.warning(f"[{request_id}] ✅ Recreated analysis after progress update error")
+                                logger.warning(f"[{request_id}] ✅ PROGRESS CALLBACK: Recreated analysis after progress update error")
+                                logger.debug(f"[{request_id}] ✅ PROGRESS CALLBACK: Verification - analysis in memory: {analysis_id in db_service._mock_storage}")
                             else:
+                                logger.debug(f"[{request_id}] ❌ PROGRESS CALLBACK: Recreating analysis using async create_analysis after error")
                                 await db_service.create_analysis({
                                     'id': analysis_id,
                                     'patient_id': patient_id,
@@ -973,9 +1005,11 @@ async def process_analysis_azure(
                                     'step_message': message
                                 })
                         except Exception as recreate_error:
-                            logger.error(f"[{request_id}] Failed to recreate analysis: {recreate_error}")
+                            logger.error(f"[{request_id}] ❌ PROGRESS CALLBACK: Failed to recreate analysis: {type(recreate_error).__name__}: {recreate_error}", exc_info=True)
                             # Don't raise - progress updates are non-critical
                             # Analysis will be recreated by thread heartbeat
+                else:
+                    logger.warning(f"[{request_id}] ⚠️ PROGRESS CALLBACK: db_service is None - cannot update analysis")
             except Exception as e:
                 # CRITICAL: Catch-all to ensure progress callback never fails the process
                 logger.error(

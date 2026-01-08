@@ -401,96 +401,143 @@ class GaitAnalysisService:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
+                logger.debug(f"📹 Frame {frame_count}: Failed to read frame (end of video or error)")
                 break
+            
+            # Log frame read success
+            if frame_count % 10 == 0:  # Log every 10 frames to avoid spam
+                logger.debug(f"📹 Frame {frame_count}/{total_frames}: Successfully read frame (shape: {frame.shape if frame is not None else 'None'})")
             
             if frame_count % frame_skip != 0:
                 frame_count += 1
                 if progress_callback and frame_count % 10 == 0:
                     progress = min(50, int((frame_count / total_frames) * 50))
-                    progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                    try:
+                        logger.debug(f"📊 Progress callback (skipped frame): {progress}% - Frame {frame_count}/{total_frames}")
+                        progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Frame {frame_count}: Progress callback error (non-critical): {e}")
                 continue
             
             timestamp_ms = int((frame_count / video_fps) * 1000)  # MediaPipe expects milliseconds
             timestamp = frame_count / video_fps
+            
+            # Log frame processing start
+            if frame_count % 20 == 0:  # Log every 20 frames
+                logger.info(f"🎬 Frame {frame_count}/{total_frames}: Starting pose detection (timestamp: {timestamp:.3f}s, {timestamp_ms}ms)")
             
             # Detect pose using MediaPipe 0.10.x
             if self.pose_landmarker and MEDIAPIPE_AVAILABLE:
                 try:
                     # Convert BGR to RGB
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    logger.debug(f"🖼️ Frame {frame_count}: Converted BGR to RGB (shape: {rgb_frame.shape})")
                     
                     # Create MediaPipe Image - use VisionImage if available, otherwise use numpy array directly
                     # CRITICAL: Handle ImageFormat being None gracefully
+                    mp_image = None
                     if VisionImage:
                         try:
                             if ImageFormat:
                                 # Use ImageFormat if available
+                                logger.debug(f"🖼️ Frame {frame_count}: Creating VisionImage with ImageFormat.SRGB")
                                 mp_image = VisionImage(
                                     image_format=ImageFormat.SRGB,
                                     data=rgb_frame
                                 )
+                                logger.debug(f"✅ Frame {frame_count}: VisionImage created successfully with ImageFormat")
                             else:
                                 # ImageFormat not available - try without it or use alternative
                                 # Some MediaPipe versions accept data directly
                                 try:
                                     # Try with just data (MediaPipe may infer format)
+                                    logger.debug(f"🖼️ Frame {frame_count}: Creating VisionImage without ImageFormat (data only)")
                                     mp_image = VisionImage(data=rgb_frame)
-                                except TypeError:
+                                    logger.debug(f"✅ Frame {frame_count}: VisionImage created successfully without ImageFormat")
+                                except TypeError as type_err:
                                     # If that fails, try with SRGB as string or enum value
                                     try:
                                         # Try using the string "SRGB" or integer value
+                                        logger.debug(f"🖼️ Frame {frame_count}: Trying VisionImage with string 'SRGB'")
                                         mp_image = VisionImage(
                                             image_format="SRGB",  # or try 1, 2, etc. depending on MediaPipe version
                                             data=rgb_frame
                                         )
-                                    except (TypeError, ValueError):
+                                        logger.debug(f"✅ Frame {frame_count}: VisionImage created successfully with string 'SRGB'")
+                                    except (TypeError, ValueError) as str_err:
                                         # Last resort: try numpy array directly
-                                        logger.warning(f"Frame {frame_count}: Could not create VisionImage with ImageFormat - using numpy array directly")
+                                        logger.warning(f"⚠️ Frame {frame_count}: Could not create VisionImage (TypeError: {type_err}, ValueError: {str_err}) - using numpy array directly")
                                         mp_image = rgb_frame
                         except Exception as img_error:
-                            logger.warning(f"Frame {frame_count}: Failed to create VisionImage: {img_error}, using numpy array directly")
+                            logger.warning(f"⚠️ Frame {frame_count}: Failed to create VisionImage: {type(img_error).__name__}: {img_error}, using numpy array directly")
                             mp_image = rgb_frame
                     else:
                         # Fallback: Use numpy array directly (MediaPipe 0.10.x might accept it)
+                        logger.debug(f"🖼️ Frame {frame_count}: VisionImage class not available - using numpy array directly")
                         mp_image = rgb_frame
                     
                     # Process frame with error handling
+                    logger.debug(f"🔍 Frame {frame_count}: Calling pose_landmarker.detect_for_video (timestamp_ms: {timestamp_ms})")
                     detection_result = self.pose_landmarker.detect_for_video(mp_image, timestamp_ms)
+                    logger.debug(f"🔍 Frame {frame_count}: MediaPipe detection complete (result: {type(detection_result).__name__})")
                     
                     if detection_result and detection_result.pose_landmarks:
+                        num_poses = len(detection_result.pose_landmarks)
+                        logger.debug(f"✅ Frame {frame_count}: MediaPipe detected {num_poses} pose(s)")
+                        
                         # Extract keypoints from first detected pose
                         pose_landmarks = detection_result.pose_landmarks[0]
+                        num_landmarks = len(pose_landmarks) if pose_landmarks else 0
+                        logger.debug(f"📍 Frame {frame_count}: Extracting keypoints from pose (landmarks: {num_landmarks})")
+                        
                         keypoints_2d = self._extract_2d_keypoints_v2(pose_landmarks, width, height)
+                        num_keypoints = len(keypoints_2d) if keypoints_2d else 0
+                        logger.debug(f"📍 Frame {frame_count}: Extracted {num_keypoints} keypoints")
                         
                         # Validate keypoint quality before adding
-                        if keypoints_2d and self._validate_keypoint_quality(keypoints_2d):
+                        logger.debug(f"🔍 Frame {frame_count}: Validating keypoint quality...")
+                        is_valid = self._validate_keypoint_quality(keypoints_2d) if keypoints_2d else False
+                        logger.debug(f"🔍 Frame {frame_count}: Keypoint validation result: {is_valid}")
+                        
+                        if keypoints_2d and is_valid:
                             frames_2d_keypoints.append(keypoints_2d)
                             frame_timestamps.append(timestamp)
+                            logger.info(f"✅ Frame {frame_count}: Valid keypoints added (total keypoint frames: {len(frames_2d_keypoints)})")
+                            
+                            # Log keypoint details for critical joints
+                            if frame_count % 50 == 0:  # Log every 50 frames
+                                left_ankle = keypoints_2d.get('left_ankle', {})
+                                right_ankle = keypoints_2d.get('right_ankle', {})
+                                logger.debug(f"📍 Frame {frame_count}: Left ankle: {left_ankle.get('x', 0):.1f}, {left_ankle.get('y', 0):.1f} | Right ankle: {right_ankle.get('x', 0):.1f}, {right_ankle.get('y', 0):.1f}")
                         else:
-                            logger.debug(f"Frame {frame_count}: Keypoints failed quality validation")
+                            logger.warning(f"⚠️ Frame {frame_count}: Keypoints failed quality validation (keypoints: {num_keypoints}, valid: {is_valid})")
                     else:
                         if frame_count % 50 == 0:  # Log every 50 frames to avoid spam
-                            logger.debug(f"Frame {frame_count}: No pose detected")
+                            logger.debug(f"⚠️ Frame {frame_count}: No pose detected by MediaPipe (detection_result: {detection_result is not None}, pose_landmarks: {detection_result.pose_landmarks if detection_result else None})")
                 except Exception as e:
-                    logger.warning(f"Error processing frame {frame_count} with MediaPipe: {e}")
+                    logger.error(f"❌ Frame {frame_count}: Error processing frame with MediaPipe: {type(e).__name__}: {e}", exc_info=True)
                     # Continue processing other frames
             else:
                 # Fallback mode
+                logger.debug(f"⚠️ Frame {frame_count}: MediaPipe not available - using fallback mode")
                 if frame_count % (frame_skip * 3) == 0:
                     dummy_keypoints = self._create_dummy_keypoints(width, height, frame_count)
                     if dummy_keypoints:
                         frames_2d_keypoints.append(dummy_keypoints)
                         frame_timestamps.append(timestamp)
+                        logger.debug(f"📝 Frame {frame_count}: Added dummy keypoints (fallback mode)")
             
             frame_count += 1
             
             if progress_callback and frame_count % 5 == 0:
                     progress = min(50, int((frame_count / total_frames) * 50))
                     try:
+                        logger.debug(f"📊 Progress callback: {progress}% - Frame {frame_count}/{total_frames}")
                         progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                        logger.debug(f"✅ Progress callback completed successfully for frame {frame_count}")
                     except Exception as e:
                         # CRITICAL: Progress callback errors must never stop processing
-                        logger.warning(f"Error calling progress_callback (non-critical): {e}")
+                        logger.error(f"❌ Frame {frame_count}: Progress callback error (non-critical): {type(e).__name__}: {e}", exc_info=True)
                     # Don't re-raise - continue processing
                     # Continue processing even if progress update fails
         
