@@ -149,7 +149,15 @@ class GaitAnalysisService:
         """Initialize gait analysis service with MediaPipe 0.10.x"""
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.pose_landmarker = None
-        self.running_mode = RunningMode.VIDEO if RunningMode else None
+        # Set running mode only if RunningMode is available
+        if RunningMode:
+            try:
+                self.running_mode = RunningMode.VIDEO
+            except AttributeError:
+                self.running_mode = None
+                logger.warning("RunningMode.VIDEO not available - using None")
+        else:
+            self.running_mode = None
         
         # CRITICAL: Always initialize the service, even if MediaPipe fails
         # This allows the service to work in fallback mode
