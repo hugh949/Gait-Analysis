@@ -794,15 +794,14 @@ async def process_analysis_azure(
                                 
                                 # Use sync update method (works from threads)
                                 # CRITICAL: Add timeout to prevent blocking on file I/O
-                                import time as time_module
-                                start_time = time_module.time()
+                                start_time = time.time()
                                 update_success = db_service.update_analysis_sync(analysis_id, {
                                     'status': 'processing',
                                     'current_step': step,
                                     'step_progress': progress,
                                     'step_message': message
                                 })
-                                update_duration = time_module.time() - start_time
+                                update_duration = time.time() - start_time
                                 
                                 if update_duration > 0.5:
                                     logger.warning(f"[{request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Update took {update_duration:.2f}s (slow file I/O)")

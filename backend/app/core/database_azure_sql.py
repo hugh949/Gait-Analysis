@@ -628,8 +628,7 @@ class AzureSQLService:
                 # CRITICAL: Save to file IMMEDIATELY after memory update (for cross-worker visibility)
                 # This is essential for long-running processing where other workers need to see updates
                 # Use timeout to prevent blocking the heartbeat thread on slow file I/O
-                import time as time_module
-                save_start = time_module.time()
+                save_start = time.time()
                 try:
                     self._save_mock_storage()  # Persist to file with forced sync
                     save_duration = time_module.time() - save_start
@@ -644,7 +643,7 @@ class AzureSQLService:
                     elif save_duration > 1.0:
                         logger.warning(f"UPDATE_SYNC: Slow file save took {save_duration:.2f}s - may impact heartbeat performance")
                 except Exception as save_error:
-                    save_duration = time_module.time() - save_start
+                    save_duration = time.time() - save_start
                     # CRITICAL: Even if file save fails, the update is in memory
                     # Don't fail the update - in-memory storage is the source of truth
                     logger.error(f"UPDATE_SYNC: Failed to save to file after {save_duration:.3f}s, but update is in memory: {save_error}. Analysis {analysis_id} is still available in memory.")
