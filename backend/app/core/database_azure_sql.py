@@ -730,10 +730,17 @@ class AzureSQLService:
                             logger.warning(f"File contains {len(file_data)} analyses. IDs: {list(file_data.keys())}")
                             # If the analysis ID is in the file but not in memory, there's a sync issue
                             if analysis_id in file_data:
-                                logger.error(f"CRITICAL: Analysis {analysis_id} exists in file but not loaded into memory! This indicates a file loading issue. Forcing reload.")
-                                # Force reload and return the data directly
-                                AzureSQLService._mock_storage = file_data
-                                return file_data[analysis_id].copy()
+                                logger.error(f"CRITICAL: Analysis {analysis_id} exists in file but not loaded into memory! This indicates a file loading issue. Merging file data into memory.")
+                                # CRITICAL: MERGE file data into memory, don't replace it
+                                for key, value in file_data.items():
+                                    AzureSQLService._mock_storage[key] = value
+                                logger.error(f"CRITICAL: Merged file data into memory. Analysis {analysis_id} should now be available.")
+                                # Return from memory (which now has merged data)
+                                if analysis_id in AzureSQLService._mock_storage:
+                                    return AzureSQLService._mock_storage[analysis_id].copy()
+                                else:
+                                    # Fallback: return directly from file
+                                    return file_data[analysis_id].copy()
                         else:
                             logger.error(f"CRITICAL: File contains invalid data type: {type(file_data)}. Expected dict.")
                 except json.JSONDecodeError as e:
