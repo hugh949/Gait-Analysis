@@ -16,7 +16,7 @@ env:
   RESOURCE_GROUP: gait-analysis-rg-wus3
   ACR_NAME: gaitacr737
   IMAGE_NAME: gait-integrated
-  IMAGE_TAG: latest
+  IMAGE_TAG: ${{ github.sha }}
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '18'
 
@@ -243,10 +243,16 @@ jobs:
         echo ""
         
         # Build with logs visible to see actual errors
+        # Use --no-cache to ensure fresh build when code changes
+        # Also tag as 'latest' for convenience
+        # Build from backend directory where Dockerfile.integrated is located
+        cd backend
         if ! az acr build \
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+          --image ${{ env.IMAGE_NAME }}:latest \
           --file Dockerfile.integrated \
+          --no-cache \
           .; then
           echo ""
           echo "❌ Docker build failed!"
@@ -258,8 +264,11 @@ jobs:
           echo "   - ACR authentication issues"
           exit 1
         fi
+        cd ..
           
         echo "✅ Docker image built and pushed to ACR"
+        echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        echo "   Also tagged as: ${{ env.IMAGE_NAME }}:latest"
         
     - name: Get ACR credentials
       id: acr-creds
@@ -275,6 +284,16 @@ jobs:
     - name: Configure App Service container
       run: |
         echo "⚙️  Configuring App Service container..."
+        echo "   Using image: ${{ steps.acr-creds.outputs.login_server }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        
+        # Stop the app first to ensure clean restart
+        echo "🛑 Stopping App Service..."
+        az webapp stop \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --output none || echo "   (App may already be stopped)"
+        
+        # Configure container with new image
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -283,14 +302,14 @@ jobs:
           --docker-registry-server-user "${{ steps.acr-creds.outputs.username }}" \
           --docker-registry-server-password "${{ steps.acr-creds.outputs.password }}" \
           --output none
-          
+        
         # Also set password via app settings (backup method)
         az webapp config appsettings set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --settings DOCKER_REGISTRY_SERVER_PASSWORD="${{ steps.acr-creds.outputs.password }}" \
           --output none
-          
+        
         echo "✅ Container configuration updated"
         
     - name: Configure App Service settings
@@ -354,18 +373,53 @@ jobs:
         
     - name: Restart App Service
       run: |
-        echo "🔄 Restarting App Service..."
-        az webapp restart \
+        echo "🔄 Starting App Service with new container..."
+        az webapp start \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --output none
-        echo "✅ App Service restarted"
         
-    - name: Wait for deployment
+        echo "✅ App Service started"
+        echo "⏳ Waiting 30 seconds for initial startup..."
+        sleep 30
+        
+        # Verify the app is running
+        STATE=$(az webapp show \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --query state -o tsv)
+        echo "   App Service state: $STATE"
+        
+        if [ "$STATE" != "Running" ]; then
+          echo "⚠️  App Service is not in Running state, attempting restart..."
+          az webapp restart \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --output none
+          sleep 30
+        fi
+        
+    - name: Wait for container to be ready
       run: |
-        echo "⏳ Waiting 90 seconds for container to start..."
-        sleep 90
+        echo "⏳ Waiting for container to be fully ready..."
+        echo "   This may take 60-90 seconds for the first request"
+        sleep 60
         
+    - name: Verify deployed code
+      run: |
+        echo "🔍 Verifying deployed code..."
+        APP_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        
+        # Check if we can get a response (even if 500, means code is running)
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/" || echo "000")
+        echo "   Initial response: HTTP $HTTP_CODE"
+        
+        if [ "$HTTP_CODE" = "000" ]; then
+          echo "   ⚠️  App not responding yet, will retry in health check"
+        else
+          echo "   ✅ App is responding (code may still be deploying)"
+        fi
+    
     - name: Health check
       continue-on-error: true
       run: |
@@ -378,13 +432,19 @@ jobs:
         echo ""
         
         HEALTH_CHECK_PASSED=false
-        for i in {1..20}; do
+        LAST_ERROR=""
+        for i in {1..25}; do
           # Test root endpoint
-          HTTP_CODE_ROOT=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/" || echo "000")
-          # Test health endpoint
-          HTTP_CODE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/health" || echo "000")
+          HTTP_CODE_ROOT=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$APP_URL/" 2>&1 | tail -1 || echo "000")
+          # Test health endpoint  
+          HTTP_CODE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$APP_URL/health" 2>&1 | tail -1 || echo "000")
           
-          if [ "$HTTP_CODE_ROOT" = "200" ] || [ "$HTTP_CODE_HEALTH" = "200" ]; then
+          # Check for specific error patterns in response
+          RESPONSE=$(curl -s --max-time 15 "$APP_URL/" 2>&1 || echo "")
+          if echo "$RESPONSE" | grep -q "FileResponse.*not defined"; then
+            LAST_ERROR="FileResponse import missing - deployment may not have updated"
+            echo "   ⚠️  Check $i/25... Found FileResponse error - code may not be updated"
+          elif [ "$HTTP_CODE_ROOT" = "200" ] || [ "$HTTP_CODE_HEALTH" = "200" ]; then
             echo ""
             echo "✅✅✅ Application is healthy!"
             echo "   Root endpoint: HTTP $HTTP_CODE_ROOT"
@@ -392,8 +452,8 @@ jobs:
             echo ""
             
             # Show health check details
-            curl -s --max-time 10 "$APP_URL/health" | python3 -m json.tool 2>/dev/null || \
-            curl -s --max-time 10 "$APP_URL/" | python3 -m json.tool 2>/dev/null || \
+            curl -s --max-time 15 "$APP_URL/health" | python3 -m json.tool 2>/dev/null || \
+            curl -s --max-time 15 "$APP_URL/" | python3 -m json.tool 2>/dev/null || \
             echo "   (Response received but not JSON)"
             
             echo ""
@@ -402,11 +462,14 @@ jobs:
             HEALTH_CHECK_PASSED=true
             break
           else
-            echo "   Check $i/20... (Root: $HTTP_CODE_ROOT, Health: $HTTP_CODE_HEALTH)"
+            echo "   Check $i/25... (Root: $HTTP_CODE_ROOT, Health: $HTTP_CODE_HEALTH)"
             if [ "$i" -eq 10 ]; then
               echo "   ⏳ Still starting... this is normal, container may need more time"
             fi
-            sleep 10
+            if [ "$i" -eq 20 ]; then
+              echo "   ⏳ Taking longer than expected... checking logs may help"
+            fi
+            sleep 8
           fi
         done
         
@@ -414,15 +477,21 @@ jobs:
           echo ""
           echo "⚠️  Application health check did not pass within timeout"
           echo "   Final status: Root=$HTTP_CODE_ROOT, Health=$HTTP_CODE_HEALTH"
+          if [ -n "$LAST_ERROR" ]; then
+            echo "   Error detected: $LAST_ERROR"
+          fi
           echo ""
-          echo "   This may be normal if the container is still starting."
-          echo "   The deployment completed successfully, but the app needs more time to start."
+          echo "   This may indicate:"
+          echo "   - Container is still starting (wait 2-3 more minutes)"
+          echo "   - Code deployment issue (check if new code is in image)"
+          echo "   - Application error (check logs below)"
           echo ""
-          echo "   Check Azure Portal logs for details:"
+          echo "   Check Azure Portal logs:"
           echo "   https://portal.azure.com/#@/resource/subscriptions/*/resourceGroups/${{ env.RESOURCE_GROUP }}/providers/Microsoft.Web/sites/${{ env.AZURE_WEBAPP_NAME }}/logStream"
           echo ""
           echo "   Or check logs with:"
           echo "   az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}"
+          exit 1
         fi
 
     - name: Deployment summary
