@@ -654,46 +654,85 @@ async def process_analysis_azure(
             )
         
         # CRITICAL: Add periodic heartbeat to keep analysis alive during long processing
+        # This is especially important for long-running video processing (3+ minutes)
         heartbeat_task = None
+        last_known_progress = {'step': 'pose_estimation', 'progress': 0, 'message': 'Starting analysis...'}
+        
         async def heartbeat_update():
             """Periodic heartbeat to ensure analysis stays alive during processing"""
+            heartbeat_count = 0
             try:
                 while True:
-                    await asyncio.sleep(10)  # Update every 10 seconds
+                    await asyncio.sleep(5)  # More frequent updates: every 5 seconds (was 10)
+                    heartbeat_count += 1
                     try:
-                        # Get current analysis to preserve its state
+                        # CRITICAL: Always verify analysis exists and update it
+                        # This prevents the analysis from disappearing during long processing
                         current_analysis = await db_service.get_analysis(analysis_id)
+                        
                         if current_analysis:
                             # Update with current state to keep it alive
+                            # Use last known progress if current analysis doesn't have it
+                            step = current_analysis.get('current_step') or last_known_progress['step']
+                            progress = current_analysis.get('step_progress') or last_known_progress['progress']
+                            message = current_analysis.get('step_message') or last_known_progress['message']
+                            
+                            # Update last known progress
+                            last_known_progress['step'] = step
+                            last_known_progress['progress'] = progress
+                            last_known_progress['message'] = message
+                            
+                            # Force update to keep analysis alive
                             await db_service.update_analysis(analysis_id, {
                                 'status': 'processing',
-                                'current_step': current_analysis.get('current_step', 'pose_estimation'),
-                                'step_progress': current_analysis.get('step_progress', 0),
-                                'step_message': current_analysis.get('step_message', 'Processing...')
+                                'current_step': step,
+                                'step_progress': progress,
+                                'step_message': f"{message} (heartbeat #{heartbeat_count})"
                             })
-                            logger.debug(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive")
+                            
+                            if heartbeat_count % 12 == 0:  # Log every 60 seconds (12 * 5s)
+                                logger.info(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count}, {step} {progress}%)")
+                            else:
+                                logger.debug(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive (heartbeat #{heartbeat_count})")
                         else:
-                            logger.warning(f"[{request_id}] Heartbeat: Analysis {analysis_id} not found - recreating")
-                            # Try to recreate if lost
+                            logger.warning(f"[{request_id}] Heartbeat: Analysis {analysis_id} not found - recreating (heartbeat #{heartbeat_count})")
+                            # CRITICAL: Recreate with last known progress
                             await db_service.create_analysis({
                                 'id': analysis_id,
                                 'patient_id': patient_id,
                                 'filename': 'unknown',
                                 'video_url': video_url,
                                 'status': 'processing',
-                                'current_step': 'pose_estimation',
-                                'step_progress': 0,
-                                'step_message': 'Processing in progress...'
+                                'current_step': last_known_progress['step'],
+                                'step_progress': last_known_progress['progress'],
+                                'step_message': f"{last_known_progress['message']} (recreated by heartbeat #{heartbeat_count})"
                             })
+                            logger.info(f"[{request_id}] Heartbeat: Recreated analysis {analysis_id} with progress: {last_known_progress['step']} {last_known_progress['progress']}%")
                     except Exception as heartbeat_error:
-                        logger.warning(f"[{request_id}] Heartbeat update failed (non-critical): {heartbeat_error}")
+                        logger.error(f"[{request_id}] Heartbeat update failed (heartbeat #{heartbeat_count}): {heartbeat_error}", exc_info=True)
+                        # CRITICAL: Try to recreate even if update failed
+                        try:
+                            await db_service.create_analysis({
+                                'id': analysis_id,
+                                'patient_id': patient_id,
+                                'filename': 'unknown',
+                                'video_url': video_url,
+                                'status': 'processing',
+                                'current_step': last_known_progress['step'],
+                                'step_progress': last_known_progress['progress'],
+                                'step_message': f"{last_known_progress['message']} (recreated after heartbeat error)"
+                            })
+                            logger.warning(f"[{request_id}] Heartbeat: Recreated analysis after error")
+                        except Exception as recreate_error:
+                            logger.error(f"[{request_id}] Heartbeat: Failed to recreate analysis: {recreate_error}")
             except asyncio.CancelledError:
-                pass
+                logger.info(f"[{request_id}] Heartbeat cancelled after {heartbeat_count} heartbeats")
             except Exception as e:
-                logger.warning(f"[{request_id}] Heartbeat error (non-critical): {e}")
+                logger.error(f"[{request_id}] Heartbeat error: {e}", exc_info=True)
         
         # Start heartbeat task
         heartbeat_task = asyncio.create_task(heartbeat_update())
+        logger.info(f"[{request_id}] Started heartbeat task for analysis {analysis_id}")
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -770,6 +809,10 @@ async def process_analysis_azure(
                                 'step_progress': mapped_progress,
                                 'step_message': message
                             })
+                            # CRITICAL: Update last known progress for heartbeat
+                            last_known_progress['step'] = step
+                            last_known_progress['progress'] = mapped_progress
+                            last_known_progress['message'] = message
                             break  # Success - exit retry loop
                         except Exception as update_error:
                             if retry < max_retries - 1:
@@ -833,6 +876,10 @@ async def process_analysis_azure(
                     'step_progress': 10,
                     'step_message': 'Starting pose estimation...'
                 })
+                # Update last known progress for heartbeat
+                last_known_progress['step'] = 'pose_estimation'
+                last_known_progress['progress'] = 10
+                last_known_progress['message'] = 'Starting pose estimation...'
             except Exception as e:
                 logger.warning(f"[{request_id}] Failed to update progress at start: {e}")
             
