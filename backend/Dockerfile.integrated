@@ -15,7 +15,7 @@ LABEL build_date="${BUILD_DATE}" \
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies with BuildKit cache mount for faster rebuilds
 # - gcc, unixodbc-dev: for Azure SQL (pyodbc)
 # - libgl1, libglib2.0-0: for OpenCV
 # - libgomp1: for MediaPipe (OpenMP support)
@@ -23,7 +23,9 @@ WORKDIR /app
 # - python3-dev: for MediaPipe Python bindings
 # - wget, curl: for MediaPipe model downloads
 # - ffmpeg: for video processing (optional but helpful)
-RUN apt-get update && apt-get install -y \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     gcc \
     g++ \
     python3-dev \
@@ -38,16 +40,20 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip first (important for MediaPipe)
-RUN pip install --upgrade pip setuptools wheel
+# Use cache mount for pip cache to speed up dependency installation
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 # Copy requirements first (for better caching)
 # requirements.txt contains Azure SDKs + gait analysis dependencies (opencv-python, mediapipe)
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies with cache mount
 # This installs: fastapi, uvicorn, azure-storage-blob, azure-cognitiveservices-vision-computervision,
 # opencv-python, mediapipe, numpy, etc.
-RUN pip install --no-cache-dir -r requirements.txt
+# Cache mount dramatically speeds up rebuilds when only code changes
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt
 
 # Verify MediaPipe installation (non-blocking - app handles fallback gracefully)
 # MediaPipe may not expose 'solutions' immediately in some Docker environments
