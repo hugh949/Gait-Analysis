@@ -211,14 +211,9 @@ class GaitAnalysisService:
         # Sample frames (process every Nth frame for efficiency)
         frame_skip = max(1, int(video_fps / 10))  # Process ~10 frames per second
         
-        # Progress tracking for async callback
-        progress_updates = []
-        progress_lock = threading.Lock()
-        
-        def sync_progress_callback(progress: int, message: str):
-            """Synchronous progress callback that stores updates for async processing"""
-            with progress_lock:
-                progress_updates.append((progress, message))
+        # Use the progress_callback passed in (from analyze_video)
+        # This callback writes to the shared progress_updates list that monitor_progress reads
+        # CRITICAL: Do NOT create a new local progress_updates list here!
         
         while cap.isOpened():
             ret, frame = cap.read()
@@ -231,7 +226,7 @@ class GaitAnalysisService:
                 # Still update progress for skipped frames
                 if progress_callback and frame_count % 10 == 0:
                     progress = min(50, int((frame_count / total_frames) * 50))
-                    sync_progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                    progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
                 continue
             
             timestamp = frame_count / video_fps
@@ -268,7 +263,7 @@ class GaitAnalysisService:
                 if frame_count % 5 == 0:
                     # Pose estimation phase: 0-50% of total progress
                     progress = min(50, int((frame_count / total_frames) * 50))
-                    sync_progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
+                    progress_callback(progress, f"Processing frame {frame_count}/{total_frames}...")
         
         cap.release()
         
@@ -280,14 +275,17 @@ class GaitAnalysisService:
         
         # Progress: Moving to 3D lifting phase
         if progress_callback:
-            sync_progress_callback(55, "Lifting 2D keypoints to 3D...")
+            progress_callback(55, "Lifting 2D keypoints to 3D...")
+            logger.info(f"Progress: 55% - Lifting 2D keypoints to 3D... ({len(frames_2d_keypoints)} frames)")
         
         # Lift 2D keypoints to 3D
         frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
+        logger.info(f"3D lifting complete: {len(frames_3d_keypoints)} frames")
         
         # Progress: Moving to metrics calculation
         if progress_callback:
-            sync_progress_callback(75, "Calculating gait parameters...")
+            progress_callback(75, "Calculating gait parameters...")
+            logger.info("Progress: 75% - Calculating gait parameters...")
         
         # Calculate gait metrics
         metrics = self._calculate_gait_metrics(
@@ -296,10 +294,12 @@ class GaitAnalysisService:
             video_fps,
             reference_length_mm
         )
+        logger.info(f"Gait metrics calculated: {metrics}")
         
         # Progress: Finalizing
         if progress_callback:
-            sync_progress_callback(95, "Finalizing analysis results...")
+            progress_callback(95, "Finalizing analysis results...")
+            logger.info("Progress: 95% - Finalizing analysis results...")
         
         result = {
             "status": "completed",
@@ -313,7 +313,8 @@ class GaitAnalysisService:
         
         # Progress: Complete
         if progress_callback:
-            sync_progress_callback(100, "Analysis complete!")
+            progress_callback(100, "Analysis complete!")
+            logger.info("Progress: 100% - Analysis complete!")
         
         return result
     
