@@ -594,6 +594,106 @@ class AzureSQLService:
             logger.error(f"Failed to update analysis: {e}")
             return False
     
+    def update_analysis_sync(self, analysis_id: str, updates: Dict) -> bool:
+        """
+        Synchronous version of update_analysis for use from threads.
+        CRITICAL: This method updates in-memory storage FIRST, then saves to file IMMEDIATELY.
+        This ensures the analysis is always visible across workers during long processing.
+        """
+        logger.info(f"📝 UPDATE_SYNC: Updating analysis {analysis_id} with fields: {list(updates.keys())}")
+        if self._use_mock:
+            # CRITICAL: Always ensure analysis exists in memory before updating
+            # If not in memory, try to load from file first (for cross-worker scenarios)
+            if analysis_id not in AzureSQLService._mock_storage:
+                logger.info(f"UPDATE_SYNC: Analysis {analysis_id} not in memory, reloading from file...")
+                self._load_mock_storage()
+            
+            # Update in-memory mock storage IMMEDIATELY (source of truth)
+            if analysis_id in AzureSQLService._mock_storage:
+                from datetime import datetime
+                # CRITICAL: Update in-memory FIRST (immediate visibility within this worker)
+                old_status = AzureSQLService._mock_storage[analysis_id].get('status')
+                old_step = AzureSQLService._mock_storage[analysis_id].get('current_step')
+                old_progress = AzureSQLService._mock_storage[analysis_id].get('step_progress')
+                
+                AzureSQLService._mock_storage[analysis_id].update(updates)
+                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
+                
+                new_status = updates.get('status', old_status)
+                new_step = updates.get('current_step', old_step)
+                new_progress = updates.get('step_progress', old_progress)
+                
+                logger.info(f"📝 UPDATE_SYNC: Updated analysis {analysis_id} in memory. Status: {old_status}->{new_status}, step: {old_step}->{new_step}, progress: {old_progress}%->{new_progress}%")
+                
+                # CRITICAL: Save to file IMMEDIATELY after memory update (for cross-worker visibility)
+                # This is essential for long-running processing where other workers need to see updates
+                try:
+                    self._save_mock_storage()  # Persist to file with forced sync
+                    logger.info(f"✅ UPDATE_SYNC: Successfully saved analysis {analysis_id} to file. Total analyses: {len(AzureSQLService._mock_storage)}")
+                    
+                    # CRITICAL: Verify the save worked by checking file exists and has content
+                    file_path = os.path.abspath(AzureSQLService._mock_storage_file)
+                    if os.path.exists(file_path):
+                        file_size = os.path.getsize(file_path)
+                        logger.debug(f"UPDATE_SYNC: File verified: {file_path} ({file_size} bytes)")
+                        
+                        # Quick verification: try to read the file and check if our analysis is in it
+                        try:
+                            with open(file_path, 'r') as f:
+                                if HAS_FCNTL:
+                                    try:
+                                        fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock for reading
+                                        file_data = json.load(f)
+                                    finally:
+                                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                                else:
+                                    file_data = json.load(f)
+                                
+                                if isinstance(file_data, dict) and analysis_id in file_data:
+                                    logger.debug(f"UPDATE_SYNC: Verified - analysis {analysis_id} exists in saved file")
+                                else:
+                                    logger.warning(f"UPDATE_SYNC: WARNING - analysis {analysis_id} not found in saved file! File has {len(file_data) if isinstance(file_data, dict) else 0} analyses")
+                        except Exception as verify_error:
+                            logger.warning(f"UPDATE_SYNC: Could not verify file contents: {verify_error}")
+                    else:
+                        logger.error(f"UPDATE_SYNC: CRITICAL - File does not exist after save: {file_path}")
+                except Exception as save_error:
+                    # CRITICAL: Even if file save fails, the update is in memory
+                    # Don't fail the update - in-memory storage is the source of truth
+                    logger.error(f"UPDATE_SYNC: Failed to save to file, but update is in memory: {save_error}. Analysis {analysis_id} is still available in memory.")
+                    # Continue - the update is successful in memory, but cross-worker visibility may be limited
+                return True
+            
+            # Analysis not found - try to reload and recreate
+            logger.warning(f"UPDATE_SYNC: Analysis {analysis_id} not found in mock storage. Available IDs: {list(AzureSQLService._mock_storage.keys())}")
+            self._load_mock_storage()
+            if analysis_id in AzureSQLService._mock_storage:
+                from datetime import datetime
+                AzureSQLService._mock_storage[analysis_id].update(updates)
+                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
+                self._save_mock_storage()
+                logger.warning(f"UPDATE_SYNC: Found and updated analysis {analysis_id} after reload")
+                return True
+            
+            logger.error(f"UPDATE_SYNC: Analysis {analysis_id} not found after reload. Recreating...")
+            # Recreate the analysis if it's lost
+            from datetime import datetime
+            AzureSQLService._mock_storage[analysis_id] = {
+                'id': analysis_id,
+                'status': updates.get('status', 'processing'),
+                'current_step': updates.get('current_step', 'pose_estimation'),
+                'step_progress': updates.get('step_progress', 0),
+                'step_message': updates.get('step_message', 'Processing...'),
+                'updated_at': datetime.now().isoformat()
+            }
+            self._save_mock_storage()
+            logger.warning(f"UPDATE_SYNC: Recreated analysis {analysis_id}")
+            return True
+        
+        # For real SQL, we can't use sync method - return False to indicate async method should be used
+        logger.warning(f"UPDATE_SYNC: Real SQL database - sync method not available. Use async update_analysis instead.")
+        return False
+    
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """
         Get analysis record with ROBUST multi-worker support.
