@@ -603,19 +603,19 @@ async def process_analysis_azure(
                     details={"video_url": video_url, "analysis_id": analysis_id}
                 )
             else:
-            # Try to get video from blob storage by blob name
+                # Try to get video from blob storage by blob name
                 if storage_service is None:
                     raise StorageError(
                         "Storage service not available and video URL is not a local file",
                         details={"video_url": video_url, "analysis_id": analysis_id}
                     )
                 
-            blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
+                blob_name = video_url.split('/')[-1] if '/' in video_url else video_url
                 logger.debug(f"[{request_id}] Downloading blob: {blob_name}")
                 
-            import tempfile
-            video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
-            blob_data = await storage_service.download_blob(blob_name)
+                import tempfile
+                video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
+                blob_data = await storage_service.download_blob(blob_name)
                 
                 if not blob_data:
                     raise StorageError(
