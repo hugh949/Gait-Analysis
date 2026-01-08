@@ -24,11 +24,13 @@ loguru>=0.7.0
 # Minimal numpy (if needed by Azure SDKs)
 numpy>=1.24.0
 
-# Gait Analysis - Advanced Pose Estimation (Leg-Focused)
+# Gait Analysis - Advanced Pose Estimation (Leg-Focused) - MAXIMUM ACCURACY
 opencv-python>=4.8.0
-mediapipe==0.9.3.0  # Use 0.9.x which has solutions API (0.10.x changed to tasks API)
+mediapipe>=0.10.8,<0.11.0  # Latest 0.10.x with tasks API - improved accuracy
 aiohttp>=3.9.0
-scipy>=1.11.0  # For advanced signal processing and filtering
+scipy>=1.11.0  # Advanced signal processing: Savitzky-Golay filtering, spline interpolation
+filterpy>=1.4.5  # Kalman filtering for smooth, accurate trajectory tracking
+numba>=0.59.0  # JIT compilation for faster biomechanical calculations
 
 # Testing
 pytest==7.4.3
