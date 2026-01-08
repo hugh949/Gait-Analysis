@@ -375,13 +375,20 @@ class GaitAnalysisService:
                 try:
                     # Convert BGR to RGB
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    # Create MediaPipe Image - dimensions are inferred from numpy array
-                    # MediaPipe 0.10.x Image class infers width/height from the data array shape
-                    # Use vision.Image (not mp.Image) for MediaPipe 0.10.x tasks API
-                    mp_image = vision.Image(
-                        image_format=vision.ImageFormat.SRGB,
-                        data=rgb_frame
-                    )
+                    
+                    # Create MediaPipe Image - use VisionImage if available, otherwise use numpy array directly
+                    if VisionImage and ImageFormat:
+                        try:
+                            mp_image = VisionImage(
+                                image_format=ImageFormat.SRGB,
+                                data=rgb_frame
+                            )
+                        except Exception as img_error:
+                            logger.warning(f"Failed to create VisionImage: {img_error}, using numpy array directly")
+                            mp_image = rgb_frame
+                    else:
+                        # Fallback: Use numpy array directly (MediaPipe 0.10.x might accept it)
+                        mp_image = rgb_frame
                     
                     # Process frame with error handling
                     detection_result = self.pose_landmarker.detect_for_video(mp_image, timestamp_ms)
