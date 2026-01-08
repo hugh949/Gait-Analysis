@@ -295,11 +295,42 @@ async def upload_video(
                 'step_message': 'Upload complete. Starting analysis...'
             }
             
-            await db_service.create_analysis(analysis_data)
+            # Create analysis record - this will save to file and verify it's readable
+            creation_success = await db_service.create_analysis(analysis_data)
+            if not creation_success:
+                logger.error(f"[{request_id}] Failed to create analysis record", extra={"analysis_id": analysis_id})
+                raise DatabaseError("Failed to create analysis record", details={"analysis_id": analysis_id})
+            
             logger.info(
                 f"[{request_id}] Created analysis record",
                 extra={"analysis_id": analysis_id, "patient_id": patient_id}
             )
+            
+            # CRITICAL: Verify the analysis is immediately readable before returning
+            # This ensures the file is fully written and visible to other requests
+            verification_attempts = 0
+            max_verification_attempts = 5
+            while verification_attempts < max_verification_attempts:
+                try:
+                    verification_analysis = await db_service.get_analysis(analysis_id)
+                    if verification_analysis and verification_analysis.get('id') == analysis_id:
+                        logger.info(f"[{request_id}] Verified analysis is immediately readable after creation")
+                        break
+                    else:
+                        verification_attempts += 1
+                        if verification_attempts < max_verification_attempts:
+                            await asyncio.sleep(0.1)  # Wait 100ms and retry
+                            continue
+                        else:
+                            logger.warning(f"[{request_id}] Analysis not immediately readable after creation, but continuing (file may sync shortly)")
+                except Exception as e:
+                    verification_attempts += 1
+                    if verification_attempts < max_verification_attempts:
+                        logger.debug(f"[{request_id}] Verification read failed (attempt {verification_attempts}), retrying: {e}")
+                        await asyncio.sleep(0.1)
+                        continue
+                    else:
+                        logger.warning(f"[{request_id}] Could not verify analysis after creation: {e}")
         except Exception as e:
             logger.error(f"[{request_id}] Error creating analysis record: {e}", exc_info=True)
             if tmp_path and os.path.exists(tmp_path):

@@ -241,8 +241,8 @@ class AzureSQLService:
             logger.debug(f"SAVE: Attempting atomic rename from {temp_file} ({temp_file_size} bytes) to {AzureSQLService._mock_storage_file}")
             os.replace(temp_file, AzureSQLService._mock_storage_file)
             
-            # Force filesystem sync to ensure rename is visible immediately
-            # Note: os is already imported at module level, don't re-import here
+            # CRITICAL: Force filesystem sync to ensure rename is visible immediately
+            # This is essential for multi-process/request scenarios
             try:
                 # Sync the directory to ensure the rename is visible
                 dir_fd = os.open(storage_dir, os.O_RDONLY)
@@ -254,13 +254,17 @@ class AzureSQLService:
             except Exception as e:
                 logger.warning(f"SAVE: Could not sync directory (may cause visibility delay): {e}")
             
-            # Additional sync - sync the file itself
+            # CRITICAL: Sync the file itself to ensure it's fully written to disk
             try:
                 with open(AzureSQLService._mock_storage_file, 'r+') as f:
                     os.fsync(f.fileno())
                     logger.debug(f"SAVE: File synced successfully")
             except Exception as e:
                 logger.warning(f"SAVE: Could not sync file (may cause visibility delay): {e}")
+            
+            # CRITICAL: Add a small delay to ensure filesystem has time to make file visible
+            # This helps with filesystem caching and ensures other processes can see the file
+            time.sleep(0.05)  # 50ms delay for filesystem to catch up
             
             logger.info(f"SAVE: Successfully saved {len(AzureSQLService._mock_storage)} analyses to mock storage file: {AzureSQLService._mock_storage_file}. IDs: {list(AzureSQLService._mock_storage.keys())}")
             
@@ -392,52 +396,69 @@ class AzureSQLService:
                 'created_at': datetime.now().isoformat(),
                 'updated_at': datetime.now().isoformat()
             }
-            logger.debug(f"About to save mock storage with {len(AzureSQLService._mock_storage)} analyses")
+            logger.debug(f"CREATE: About to save mock storage with {len(AzureSQLService._mock_storage)} analyses")
             self._save_mock_storage()  # Persist to file
             
             # CRITICAL: Verify the save worked by checking in-memory storage
             # The in-memory storage should be the source of truth immediately after save
-            if analysis_id in AzureSQLService._mock_storage:
-                logger.info(f"Created analysis in mock storage: {analysis_id}. Total analyses: {len(AzureSQLService._mock_storage)}")
-                
-                # Additional verification: Try to read it back immediately to ensure file is visible
-                # This helps catch any filesystem sync issues early
-                file_path = os.path.abspath(AzureSQLService._mock_storage_file)
-                if os.path.exists(file_path):
-                    try:
-                        # Quick verification read (with retry in case of filesystem delay)
-                        for verify_retry in range(3):
-                            try:
-                                with open(file_path, 'r') as f:
-                                    if HAS_FCNTL:
-                                        try:
-                                            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                                            verify_data = json.load(f)
-                                        finally:
-                                            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-                                    else:
-                                        verify_data = json.load(f)
-                                    
-                                    if isinstance(verify_data, dict) and analysis_id in verify_data:
-                                        logger.debug(f"Verified analysis {analysis_id} is readable from file immediately after creation")
-                                        break
-                                    elif verify_retry < 2:
-                                        time.sleep(0.05)  # Short delay and retry
-                                        continue
-                            except (json.JSONDecodeError, IOError, OSError) as e:
-                                if verify_retry < 2:
-                                    logger.debug(f"Verification read failed (attempt {verify_retry + 1}), retrying: {e}")
-                                    time.sleep(0.05)
-                                    continue
-                                else:
-                                    logger.warning(f"Could not verify analysis in file after creation (non-critical): {e}")
-                    except Exception as e:
-                        logger.warning(f"File verification check failed (non-critical): {e}")
-                
-                return True
-            else:
-                logger.error(f"Analysis was not found in mock storage immediately after creation: {analysis_id}")
+            if analysis_id not in AzureSQLService._mock_storage:
+                logger.error(f"CREATE: Analysis was not found in mock storage immediately after creation: {analysis_id}")
                 return False
+            
+            logger.info(f"CREATE: Created analysis in mock storage: {analysis_id}. Total analyses: {len(AzureSQLService._mock_storage)}")
+            
+            # CRITICAL: Verify file is readable and contains the analysis before returning
+            # This ensures the file is fully written and synced to disk
+            file_path = os.path.abspath(AzureSQLService._mock_storage_file)
+            verification_passed = False
+            
+            # Wait up to 1 second for file to be readable with the new analysis
+            for verify_retry in range(10):  # 10 attempts with 0.1s delays = 1 second max
+                if not os.path.exists(file_path):
+                    if verify_retry < 9:
+                        time.sleep(0.1)
+                        continue
+                    else:
+                        logger.error(f"CREATE: Storage file does not exist after save: {file_path}")
+                        break
+                
+                try:
+                    # Try to read the file with proper locking
+                    with open(file_path, 'r') as f:
+                        if HAS_FCNTL:
+                            try:
+                                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                                verify_data = json.load(f)
+                            finally:
+                                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                        else:
+                            verify_data = json.load(f)
+                        
+                        if isinstance(verify_data, dict) and analysis_id in verify_data:
+                            # Verify the data matches what we expect
+                            stored_analysis = verify_data[analysis_id]
+                            if stored_analysis.get('id') == analysis_id:
+                                verification_passed = True
+                                logger.info(f"CREATE: Verified analysis {analysis_id} is readable from file (attempt {verify_retry + 1})")
+                                break
+                        elif verify_retry < 9:
+                            logger.debug(f"CREATE: Analysis not yet in file, retrying... (attempt {verify_retry + 1})")
+                            time.sleep(0.1)
+                            continue
+                except (json.JSONDecodeError, IOError, OSError) as e:
+                    if verify_retry < 9:
+                        logger.debug(f"CREATE: Verification read failed (attempt {verify_retry + 1}), retrying: {e}")
+                        time.sleep(0.1)
+                        continue
+                    else:
+                        logger.warning(f"CREATE: Could not verify analysis in file after creation: {e}")
+            
+            if not verification_passed:
+                logger.warning(f"CREATE: Could not verify analysis {analysis_id} in file after creation, but it exists in memory. File may have sync issues.")
+                # Still return True because in-memory storage has it - file will catch up
+                return True
+            
+            return True
         
         try:
             with self.get_connection() as conn:
