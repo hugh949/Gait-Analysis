@@ -396,6 +396,7 @@ class GaitAnalysisService:
                     # CRITICAL: Progress callback errors must never stop processing
                     logger.warning(f"Error calling progress_callback (non-critical): {e}")
                     # Don't re-raise - continue processing
+                    # Continue processing even if progress update fails
         
         cap.release()
         logger.info(f"Video processing complete: processed {frame_count} frames, extracted {len(frames_2d_keypoints)} keypoint frames")

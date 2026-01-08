@@ -577,17 +577,24 @@ class AzureSQLService:
             return False
     
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
-        """Get analysis record"""
+        """Get analysis record with aggressive multi-worker support"""
         if self._use_mock:
-            # CRITICAL: Always reload from file first to ensure we have latest data
-            # This handles cases where analysis was created in a background task
-            # or in a different process/thread where in-memory storage might not be synced
             file_path = os.path.abspath(AzureSQLService._mock_storage_file)
             
             logger.debug(f"GET: Looking for analysis {analysis_id} in storage file: {file_path}")
             
-            for retry in range(10):  # Increased to 10 retries for better resilience
-                # Strategy 1: Try reading file directly first (most reliable)
+            # CRITICAL: Strategy 0 - Check in-memory storage FIRST (fast path for same process)
+            # This is the fastest path if the analysis was created in the same process
+            if analysis_id in AzureSQLService._mock_storage:
+                logger.debug(f"GET: Found analysis {analysis_id} in in-memory storage (fast path)")
+                return AzureSQLService._mock_storage[analysis_id].copy()
+            
+            # CRITICAL: For multi-worker scenarios, aggressively reload from file
+            # Use shorter delays for first few attempts (when file is likely being written)
+            # Then longer delays for later attempts (when file might not exist yet)
+            max_retries = 20  # Increased to 20 retries for better resilience
+            for retry in range(max_retries):
+                # Strategy 1: Try reading file directly (most reliable for cross-worker access)
                 if os.path.exists(file_path):
                     try:
                         with open(file_path, 'r') as f:
@@ -601,11 +608,12 @@ class AzureSQLService:
                                 file_data = json.load(f)
                             
                             if isinstance(file_data, dict):
-                                # Update in-memory storage from file
+                                # CRITICAL: Update in-memory storage from file immediately
+                                # This ensures subsequent calls in the same process are fast
                                 AzureSQLService._mock_storage = file_data
                                 
                                 if analysis_id in file_data:
-                                    logger.info(f"GET: Found analysis {analysis_id} in file (attempt {retry + 1})")
+                                    logger.info(f"GET: Found analysis {analysis_id} in file (attempt {retry + 1}/{max_retries})")
                                     return file_data[analysis_id].copy()
                                 else:
                                     logger.debug(f"GET: File exists but analysis {analysis_id} not found. Available IDs: {list(file_data.keys())}")
@@ -620,16 +628,27 @@ class AzureSQLService:
                 # Check if analysis is now in memory (after reload)
                 if analysis_id in AzureSQLService._mock_storage:
                     if retry > 0:
-                        logger.info(f"GET: Retrieved analysis from memory after reload: {analysis_id} (attempt {retry + 1})")
+                        logger.info(f"GET: Retrieved analysis from memory after reload: {analysis_id} (attempt {retry + 1}/{max_retries})")
                     else:
                         logger.debug(f"GET: Retrieved analysis from mock storage: {analysis_id}")
                     return AzureSQLService._mock_storage[analysis_id].copy()
                 
                 # File doesn't exist or analysis not found - wait and retry
-                if retry < 9:  # Don't sleep on last attempt
-                    # Progressive delays: 0.2s, 0.4s, 0.6s, 0.8s, 1.0s, 1.2s, 1.4s, 1.6s, 1.8s
-                    delay = 0.2 * (retry + 1)
-                    logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay}s (attempt {retry + 1}/10)")
+                if retry < max_retries - 1:  # Don't sleep on last attempt
+                    # CRITICAL: Shorter delays for first few attempts (when file is likely being written)
+                    # Then progressively longer delays
+                    if retry < 5:
+                        # First 5 attempts: very short delays (0.05s, 0.1s, 0.15s, 0.2s, 0.25s)
+                        # This catches files that are being written right now
+                        delay = 0.05 * (retry + 1)
+                    elif retry < 10:
+                        # Next 5 attempts: short delays (0.3s, 0.4s, 0.5s, 0.6s, 0.7s)
+                        delay = 0.3 + 0.1 * (retry - 5)
+                    else:
+                        # Later attempts: longer delays (0.8s, 1.0s, 1.2s, etc.)
+                        delay = 0.8 + 0.2 * (retry - 10)
+                    
+                    logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay:.2f}s (attempt {retry + 1}/{max_retries})")
                     time.sleep(delay)
                     continue
             

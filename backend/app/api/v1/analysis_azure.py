@@ -449,21 +449,63 @@ async def process_analysis_azure(
             }
         )
         
-        # Update progress: Starting
-        try:
-            await db_service.update_analysis(analysis_id, {
-                'status': 'processing',
-                'current_step': 'pose_estimation',
-                'step_progress': 5,
-                'step_message': 'Downloading video for analysis...'
-            })
-        except Exception as e:
-            logger.error(
-                f"[{request_id}] Failed to update analysis status: {e}",
-                extra={"analysis_id": analysis_id},
-                exc_info=True
-            )
-            # Continue anyway - not critical
+        # CRITICAL: Ensure analysis exists before starting processing
+        # This prevents "Analysis not found" errors during processing
+        analysis_exists = False
+        for verify_attempt in range(5):
+            try:
+                existing_analysis = await db_service.get_analysis(analysis_id)
+                if existing_analysis and existing_analysis.get('id') == analysis_id:
+                    analysis_exists = True
+                    logger.info(f"[{request_id}] Verified analysis exists before processing (attempt {verify_attempt + 1})")
+                    break
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error verifying analysis (attempt {verify_attempt + 1}): {e}")
+                if verify_attempt < 4:
+                    await asyncio.sleep(0.2 * (verify_attempt + 1))
+                    continue
+        
+        if not analysis_exists:
+            logger.error(f"[{request_id}] Analysis {analysis_id} not found before processing. Cannot proceed.")
+            # Try to create a minimal analysis record to prevent complete failure
+            try:
+                await db_service.create_analysis({
+                    'id': analysis_id,
+                    'patient_id': patient_id,
+                    'filename': 'unknown',
+                    'video_url': video_url,
+                    'status': 'processing',
+                    'current_step': 'pose_estimation',
+                    'step_progress': 0,
+                    'step_message': 'Analysis record recreated - processing starting...'
+                })
+                logger.warning(f"[{request_id}] Recreated analysis record - proceeding with processing")
+            except Exception as recreate_error:
+                logger.error(f"[{request_id}] Failed to recreate analysis record: {recreate_error}")
+                # Still continue - we'll try to update it during processing
+        
+        # Update progress: Starting - with retry logic
+        for retry in range(5):
+            try:
+                await db_service.update_analysis(analysis_id, {
+                    'status': 'processing',
+                    'current_step': 'pose_estimation',
+                    'step_progress': 5,
+                    'step_message': 'Downloading video for analysis...'
+                })
+                break  # Success
+            except Exception as e:
+                if retry < 4:
+                    logger.warning(f"[{request_id}] Failed to update analysis status (attempt {retry + 1}/5): {e}. Retrying...")
+                    await asyncio.sleep(0.2 * (retry + 1))
+                    continue
+                else:
+                    logger.error(
+                        f"[{request_id}] Failed to update analysis status after 5 attempts: {e}",
+                        extra={"analysis_id": analysis_id},
+                        exc_info=True
+                    )
+                    # Continue anyway - not critical, but log the error
         
         # Get gait analysis service with error handling
         try:
@@ -610,6 +652,48 @@ async def process_analysis_azure(
                 field="video",
                 details={"video_path": video_path, "analysis_id": analysis_id}
             )
+        
+        # CRITICAL: Add periodic heartbeat to keep analysis alive during long processing
+        heartbeat_task = None
+        async def heartbeat_update():
+            """Periodic heartbeat to ensure analysis stays alive during processing"""
+            try:
+                while True:
+                    await asyncio.sleep(10)  # Update every 10 seconds
+                    try:
+                        # Get current analysis to preserve its state
+                        current_analysis = await db_service.get_analysis(analysis_id)
+                        if current_analysis:
+                            # Update with current state to keep it alive
+                            await db_service.update_analysis(analysis_id, {
+                                'status': 'processing',
+                                'current_step': current_analysis.get('current_step', 'pose_estimation'),
+                                'step_progress': current_analysis.get('step_progress', 0),
+                                'step_message': current_analysis.get('step_message', 'Processing...')
+                            })
+                            logger.debug(f"[{request_id}] Heartbeat: Analysis {analysis_id} is alive")
+                        else:
+                            logger.warning(f"[{request_id}] Heartbeat: Analysis {analysis_id} not found - recreating")
+                            # Try to recreate if lost
+                            await db_service.create_analysis({
+                                'id': analysis_id,
+                                'patient_id': patient_id,
+                                'filename': 'unknown',
+                                'video_url': video_url,
+                                'status': 'processing',
+                                'current_step': 'pose_estimation',
+                                'step_progress': 0,
+                                'step_message': 'Processing in progress...'
+                            })
+                    except Exception as heartbeat_error:
+                        logger.warning(f"[{request_id}] Heartbeat update failed (non-critical): {heartbeat_error}")
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.warning(f"[{request_id}] Heartbeat error (non-critical): {e}")
+        
+        # Start heartbeat task
+        heartbeat_task = asyncio.create_task(heartbeat_update())
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -947,9 +1031,52 @@ async def process_analysis_azure(
                     )
                     # Continue anyway - not critical
         
+        # CRITICAL: Stop heartbeat before final updates
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+        
+        # CRITICAL: Verify analysis exists before final update
+        analysis_verified = False
+        for verify_retry in range(10):
+            try:
+                final_check = await db_service.get_analysis(analysis_id)
+                if final_check and final_check.get('id') == analysis_id:
+                    analysis_verified = True
+                    logger.info(f"[{request_id}] Verified analysis exists before final update (attempt {verify_retry + 1})")
+                    break
+            except Exception as verify_error:
+                if verify_retry < 9:
+                    logger.warning(f"[{request_id}] Analysis verification failed (attempt {verify_retry + 1}): {verify_error}. Retrying...")
+                    await asyncio.sleep(0.2 * (verify_retry + 1))
+                    continue
+        
+        if not analysis_verified:
+            logger.error(f"[{request_id}] Analysis {analysis_id} not found before final update. Recreating...")
+            # CRITICAL: Recreate analysis if lost
+            try:
+                await db_service.create_analysis({
+                    'id': analysis_id,
+                    'patient_id': patient_id,
+                    'filename': 'unknown',
+                    'video_url': video_url,
+                    'status': 'processing',
+                    'current_step': 'report_generation',
+                    'step_progress': 95,
+                    'step_message': 'Finalizing analysis...',
+                    'metrics': metrics
+                })
+                logger.warning(f"[{request_id}] Recreated analysis record before final update")
+            except Exception as recreate_error:
+                logger.error(f"[{request_id}] Failed to recreate analysis: {recreate_error}")
+        
         # STEP 4: Final update: Mark as completed with metrics - CRITICAL with retry logic
         # This is the most important update - must succeed
         completion_success = False
+        max_db_retries = 10  # Increased retries for critical final update
         for retry in range(max_db_retries):
             try:
                 await db_service.update_analysis(analysis_id, {
@@ -1092,6 +1219,40 @@ async def process_analysis_azure(
             logger.error(f"[{request_id}] Failed to update analysis status: {db_err}")
     
     finally:
+        # CRITICAL: Stop heartbeat in finally block
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error stopping heartbeat: {e}")
+        
+        # CRITICAL: Ensure analysis is always saved, even if processing failed
+        # This prevents "Analysis not found" errors
+        try:
+            final_analysis = await db_service.get_analysis(analysis_id)
+            if not final_analysis:
+                logger.error(f"[{request_id}] Analysis {analysis_id} not found in finally block. Attempting to recreate...")
+                # Try to recreate with whatever state we have
+                try:
+                    await db_service.create_analysis({
+                        'id': analysis_id,
+                        'patient_id': patient_id,
+                        'filename': 'unknown',
+                        'video_url': video_url,
+                        'status': 'failed',
+                        'current_step': 'pose_estimation',
+                        'step_progress': 0,
+                        'step_message': 'Analysis record was lost - recreated in finally block'
+                    })
+                    logger.warning(f"[{request_id}] Recreated analysis record in finally block")
+                except Exception as recreate_error:
+                    logger.error(f"[{request_id}] Failed to recreate analysis in finally: {recreate_error}")
+        except Exception as final_check_error:
+            logger.error(f"[{request_id}] Error checking analysis in finally: {final_check_error}")
+        
         # Clean up temporary video file with proper error handling
         if video_path and os.path.exists(video_path) and video_path != video_url:
             try:
