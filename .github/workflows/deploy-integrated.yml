@@ -176,7 +176,28 @@ jobs:
     - name: Build and push Docker image to ACR
       run: |
         echo "🐳 Building Docker image (Frontend + Backend)..."
-        cd backend
+        
+        # Verify backend directory exists and change to it
+        echo "📂 Checking working directory..."
+        echo "   Current directory: $(pwd)"
+        echo "   Contents: $(ls -d */ 2>/dev/null | head -5 || echo 'No subdirectories')"
+        
+        if [ ! -d "backend" ]; then
+          echo "❌ Error: backend directory not found!"
+          echo "   Current directory: $(pwd)"
+          echo "   Full contents:"
+          ls -la
+          exit 1
+        fi
+        
+        echo "✅ backend directory found"
+        cd backend || {
+          echo "❌ Error: Failed to change to backend directory"
+          echo "   Current directory: $(pwd)"
+          exit 1
+        }
+        
+        echo "✅ Changed to backend directory: $(pwd)"
         
         # Verify required files exist
         echo "📋 Verifying required files..."
@@ -234,19 +255,20 @@ jobs:
         echo ""
         echo "All required files verified!"
         
+        # Verify we're in the backend directory
+        if [ ! -f "Dockerfile.integrated" ]; then
+          echo "❌ Error: Not in backend directory! Dockerfile.integrated not found in $(pwd)"
+          echo "   Current directory contents: $(ls -la | head -10)"
+          exit 1
+        fi
+        
         # Build image using ACR Tasks
-        # Note: ACR builds always use fresh context, no --no-cache flag needed
         echo "🔨 Starting Docker build..."
         echo "   Registry: ${{ env.ACR_NAME }}"
         echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
         echo "   Dockerfile: Dockerfile.integrated"
+        echo "   Working directory: $(pwd)"
         echo ""
-        
-        # Build with logs visible to see actual errors
-        # Use --no-cache to ensure fresh build when code changes
-        # Also tag as 'latest' for convenience
-        # Build from backend directory where Dockerfile.integrated is located
-        cd backend
         
         # Set build arguments for traceability
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -279,7 +301,6 @@ jobs:
           echo "   - ACR authentication issues"
           exit 1
         fi
-        cd ..
           
         echo "✅ Docker image built and pushed to ACR"
         echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
