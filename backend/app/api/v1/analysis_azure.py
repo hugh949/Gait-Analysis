@@ -1435,11 +1435,10 @@ async def process_analysis_azure(
         if heartbeat_stop_event:
             heartbeat_stop_event.set()
             if heartbeat_thread and heartbeat_thread.is_alive():
-                heartbeat_thread.join(timeout=2.0)
-            except asyncio.CancelledError:
-                pass
-            except Exception as e:
-                logger.warning(f"[{request_id}] Error stopping heartbeat: {e}")
+                try:
+                    heartbeat_thread.join(timeout=2.0)
+                except Exception as e:
+                    logger.warning(f"[{request_id}] Error stopping heartbeat: {e}")
         
         # CRITICAL: Ensure analysis is always saved, even if processing failed
         # This prevents "Analysis not found" errors
