@@ -501,20 +501,44 @@ class AzureSQLService:
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
         """Update analysis record"""
         if self._use_mock:
-            # CRITICAL: Reload from file first to ensure we have latest data
+            # CRITICAL: Preserve existing analysis in memory before reloading
+            # This ensures we never lose data even if file is temporarily unavailable
+            existing_analysis = AzureSQLService._mock_storage.get(analysis_id) if analysis_id in AzureSQLService._mock_storage else None
+            
+            # Reload from file first to ensure we have latest data
             # This handles cases where another process/thread might have updated it
             self._load_mock_storage()
+            
+            # CRITICAL: If analysis was in memory before reload but not after, restore it
+            # This handles cases where file reload cleared it (shouldn't happen with our fixes, but safety net)
+            if existing_analysis and analysis_id not in AzureSQLService._mock_storage:
+                logger.warning(f"UPDATE: Analysis {analysis_id} was in memory before reload but disappeared after. Restoring from memory backup.")
+                AzureSQLService._mock_storage[analysis_id] = existing_analysis
             
             # Update in-memory mock storage (use class variable to ensure persistence)
             if analysis_id in AzureSQLService._mock_storage:
                 from datetime import datetime
                 AzureSQLService._mock_storage[analysis_id].update(updates)
                 AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
-                logger.debug(f"About to save mock storage after update. Total analyses: {len(AzureSQLService._mock_storage)}")
+                logger.debug(f"UPDATE: About to save mock storage after update. Total analyses: {len(AzureSQLService._mock_storage)}. IDs: {list(AzureSQLService._mock_storage.keys())}")
                 self._save_mock_storage()  # Persist to file
-                logger.debug(f"Updated analysis in mock storage: {analysis_id}")
+                logger.debug(f"UPDATE: Updated analysis in mock storage: {analysis_id}")
                 return True
-            logger.warning(f"Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}")
+            
+            # Analysis not found - log detailed information
+            logger.error(f"UPDATE: Analysis not found in mock storage: {analysis_id}. Available IDs: {list(AzureSQLService._mock_storage.keys())}. Storage file: {AzureSQLService._mock_storage_file}")
+            
+            # CRITICAL: If we had it in memory before, restore it and try again
+            if existing_analysis:
+                logger.warning(f"UPDATE: Restoring analysis {analysis_id} from memory backup and retrying update")
+                AzureSQLService._mock_storage[analysis_id] = existing_analysis
+                from datetime import datetime
+                AzureSQLService._mock_storage[analysis_id].update(updates)
+                AzureSQLService._mock_storage[analysis_id]['updated_at'] = datetime.now().isoformat()
+                self._save_mock_storage()
+                logger.info(f"UPDATE: Successfully updated analysis {analysis_id} after restore from memory")
+                return True
+            
             return False
         
         try:
