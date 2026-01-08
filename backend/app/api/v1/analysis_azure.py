@@ -19,6 +19,8 @@ import uuid
 import asyncio
 from datetime import datetime
 import traceback
+import threading
+import time
 
 from app.services.azure_storage import AzureStorageService
 from app.services.azure_vision import AzureVisionService
@@ -750,92 +752,77 @@ async def process_analysis_azure(
                 details={"video_path": video_path, "analysis_id": analysis_id}
             )
         
-        # CRITICAL: Add periodic heartbeat to keep analysis alive during long processing
-        # This is especially important for long-running video processing (3+ minutes)
-        # NOTE: There's also an immediate keep-alive that starts right after analysis creation
-        # This heartbeat runs during actual processing and is more aggressive
-        heartbeat_task = None
+        # CRITICAL: Use THREAD-BASED keep-alive that runs independently of async event loop
+        # During CPU-intensive processing, async tasks are starved, so we need threads
         last_known_progress = {'step': 'pose_estimation', 'progress': 0, 'message': 'Starting analysis...'}
+        heartbeat_thread = None
+        heartbeat_stop_event = threading.Event()
         
-        async def heartbeat_update():
-            """Periodic heartbeat to ensure analysis stays alive during processing"""
+        def thread_based_heartbeat():
+            """Thread-based heartbeat that runs independently of async event loop"""
             heartbeat_count = 0
-            logger.info(f"[{request_id}] 🔄 PROCESSING HEARTBEAT STARTED for analysis {analysis_id}")
+            logger.info(f"[{request_id}] 🔄 THREAD-BASED HEARTBEAT STARTED for analysis {analysis_id}")
             try:
-                while True:
-                    # Very frequent updates: every 3 seconds for first minute, then every 5 seconds
-                    sleep_time = 3 if heartbeat_count < 20 else 5
-                    await asyncio.sleep(sleep_time)
+                while not heartbeat_stop_event.is_set():
+                    # Very frequent updates: every 2 seconds for first 2 minutes, then every 5 seconds
+                    sleep_time = 2 if heartbeat_count < 60 else 5
+                    heartbeat_stop_event.wait(sleep_time)
+                    if heartbeat_stop_event.is_set():
+                        break
                     heartbeat_count += 1
                     try:
-                        # CRITICAL: Always verify analysis exists and update it
-                        # This prevents the analysis from disappearing during long processing
-                        logger.info(f"[{request_id}] 🔄 Processing heartbeat #{heartbeat_count} - checking analysis {analysis_id}")
-                        current_analysis = await db_service.get_analysis(analysis_id)
-                        
-                        if current_analysis:
-                            # Update with current state to keep it alive
-                            # Use last known progress if current analysis doesn't have it
-                            step = current_analysis.get('current_step') or last_known_progress['step']
-                            progress = current_analysis.get('step_progress') or last_known_progress['progress']
-                            message = current_analysis.get('step_message') or last_known_progress['message']
-                            
-                            # Update last known progress
-                            last_known_progress['step'] = step
-                            last_known_progress['progress'] = progress
-                            last_known_progress['message'] = message
-                            
-                            logger.info(f"[{request_id}] 🔄 Processing heartbeat: Analysis {analysis_id} found - updating (status: {current_analysis.get('status')}, step: {step}, progress: {progress}%)")
-                            
-                            # Force update to keep analysis alive (remove heartbeat suffix to avoid clutter)
-                            await db_service.update_analysis(analysis_id, {
-                                'status': 'processing',
-                                'current_step': step,
-                                'step_progress': progress,
-                                'step_message': message  # Keep original message
-                            })
-                            
-                            logger.info(f"[{request_id}] ✅ Processing heartbeat: Analysis {analysis_id} updated successfully (heartbeat #{heartbeat_count}, {step} {progress}%)")
-                        else:
-                            logger.warning(f"[{request_id}] Processing heartbeat: Analysis {analysis_id} not found - recreating (heartbeat #{heartbeat_count})")
-                            # CRITICAL: Recreate with last known progress
-                            await db_service.create_analysis({
-                                'id': analysis_id,
-                                'patient_id': patient_id,
-                                'filename': 'unknown',
-                                'video_url': video_url,
-                                'status': 'processing',
-                                'current_step': last_known_progress['step'],
-                                'step_progress': last_known_progress['progress'],
-                                'step_message': f"{last_known_progress['message']} (recreated by processing heartbeat #{heartbeat_count})"
-                            })
-                            logger.info(f"[{request_id}] Processing heartbeat: Recreated analysis {analysis_id} with progress: {last_known_progress['step']} {last_known_progress['progress']}%")
+                        # CRITICAL: Use sync method to update analysis (works from threads)
+                        # Check if analysis exists in memory first
+                        if db_service and db_service._use_mock:
+                            if analysis_id in db_service._mock_storage:
+                                # Analysis exists in memory - update it
+                                step = last_known_progress['step']
+                                progress = last_known_progress['progress']
+                                message = last_known_progress['message']
+                                
+                                logger.info(f"[{request_id}] 🔄 Thread heartbeat #{heartbeat_count} - updating analysis {analysis_id} ({step} {progress}%)")
+                                
+                                # Use sync update method (works from threads)
+                                update_success = db_service.update_analysis_sync(analysis_id, {
+                                    'status': 'processing',
+                                    'current_step': step,
+                                    'step_progress': progress,
+                                    'step_message': message
+                                })
+                                
+                                if update_success:
+                                    logger.info(f"[{request_id}] ✅ Thread heartbeat: Analysis {analysis_id} updated (heartbeat #{heartbeat_count})")
+                                else:
+                                    logger.warning(f"[{request_id}] ⚠️ Thread heartbeat: Update returned False - analysis may be missing")
+                            else:
+                                # Analysis not in memory - recreate it
+                                logger.warning(f"[{request_id}] ⚠️ Thread heartbeat: Analysis {analysis_id} not in memory - recreating (heartbeat #{heartbeat_count})")
+                                # Recreate in memory and file
+                                from datetime import datetime
+                                db_service._mock_storage[analysis_id] = {
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': last_known_progress['step'],
+                                    'step_progress': last_known_progress['progress'],
+                                    'step_message': f"{last_known_progress['message']} (recreated by thread heartbeat #{heartbeat_count})",
+                                    'metrics': {},
+                                    'created_at': datetime.now().isoformat(),
+                                    'updated_at': datetime.now().isoformat()
+                                }
+                                db_service._save_mock_storage()
+                                logger.info(f"[{request_id}] ✅ Thread heartbeat: Recreated analysis {analysis_id} (heartbeat #{heartbeat_count})")
                     except Exception as heartbeat_error:
-                        logger.error(f"[{request_id}] Processing heartbeat update failed (heartbeat #{heartbeat_count}): {heartbeat_error}", exc_info=True)
-                        # CRITICAL: Try to recreate even if update failed
-                        try:
-                            await db_service.create_analysis({
-                                'id': analysis_id,
-                                'patient_id': patient_id,
-                                'filename': 'unknown',
-                                'video_url': video_url,
-                                'status': 'processing',
-                                'current_step': last_known_progress['step'],
-                                'step_progress': last_known_progress['progress'],
-                                'step_message': f"{last_known_progress['message']} (recreated after processing heartbeat error)"
-                            })
-                            logger.warning(f"[{request_id}] Processing heartbeat: Recreated analysis after error")
-                        except Exception as recreate_error:
-                            logger.error(f"[{request_id}] Processing heartbeat: Failed to recreate analysis: {recreate_error}")
-            except asyncio.CancelledError:
-                logger.info(f"[{request_id}] Processing heartbeat cancelled after {heartbeat_count} heartbeats")
+                        logger.error(f"[{request_id}] ❌ Thread heartbeat error (heartbeat #{heartbeat_count}): {heartbeat_error}", exc_info=True)
             except Exception as e:
-                logger.error(f"[{request_id}] Processing heartbeat error: {e}", exc_info=True)
+                logger.error(f"[{request_id}] ❌ Thread heartbeat fatal error: {e}", exc_info=True)
         
-        # Start heartbeat task IMMEDIATELY - before any processing starts
-        heartbeat_task = asyncio.create_task(heartbeat_update())
-        logger.info(f"[{request_id}] ✅ Started processing heartbeat task for analysis {analysis_id} (task ID: {id(heartbeat_task)})")
-        logger.info(f"[{request_id}] ✅ Heartbeat task is running: {not heartbeat_task.done()}")
+        # Start thread-based heartbeat IMMEDIATELY - before any processing starts
+        heartbeat_thread = threading.Thread(target=thread_based_heartbeat, daemon=True)
+        heartbeat_thread.start()
+        logger.info(f"[{request_id}] ✅ Started thread-based heartbeat for analysis {analysis_id} (thread ID: {heartbeat_thread.ident})")
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -886,40 +873,68 @@ async def process_analysis_azure(
                     }
                 )
                 
-                # CRITICAL: Update database - NEVER fail, always update in-memory first
+                # CRITICAL: Update database - use SYNC method for reliability during CPU-intensive processing
+                # Progress callback may be called from sync context, so use sync update method
                 if db_service:
-                    # CRITICAL: Update directly without checking first - in-memory is source of truth
-                    # This prevents race conditions and ensures updates always succeed during processing
+                    # CRITICAL: Update last known progress FIRST (for thread heartbeat)
+                    last_known_progress['step'] = step
+                    last_known_progress['progress'] = mapped_progress
+                    last_known_progress['message'] = message
+                    
+                    # CRITICAL: Use sync update method (works from both async and sync contexts)
+                    # This ensures updates succeed even during CPU-intensive processing
                     try:
                         logger.info(f"[{request_id}] 📝 Updating analysis {analysis_id} with progress: {step} {mapped_progress}%")
-                        update_success = await db_service.update_analysis(analysis_id, {
-                            'current_step': step,
-                            'step_progress': mapped_progress,
-                            'step_message': message
-                        })
                         
-                        if update_success:
-                            logger.info(f"[{request_id}] ✅ Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
-                            # CRITICAL: Update last known progress for heartbeat
-                            last_known_progress['step'] = step
-                            last_known_progress['progress'] = mapped_progress
-                            last_known_progress['message'] = message
-                        else:
-                            # Update failed - recreate analysis immediately
-                            logger.warning(f"[{request_id}] Update returned False - recreating analysis {analysis_id}")
-                            await db_service.create_analysis({
-                                'id': analysis_id,
-                                'patient_id': patient_id,
-                                'filename': 'unknown',
-                                'video_url': video_url,
-                                'status': 'processing',
+                        if db_service._use_mock:
+                            # Use sync method for mock storage (works from threads and async)
+                            update_success = db_service.update_analysis_sync(analysis_id, {
                                 'current_step': step,
                                 'step_progress': mapped_progress,
                                 'step_message': message
                             })
-                            last_known_progress['step'] = step
-                            last_known_progress['progress'] = mapped_progress
-                            last_known_progress['message'] = message
+                        else:
+                            # For real SQL, use async method
+                            update_success = await db_service.update_analysis(analysis_id, {
+                                'current_step': step,
+                                'step_progress': mapped_progress,
+                                'step_message': message
+                            })
+                        
+                        if update_success:
+                            logger.info(f"[{request_id}] ✅ Successfully updated analysis {analysis_id} progress to {step} {mapped_progress}%")
+                        else:
+                            # Update failed - recreate analysis immediately
+                            logger.warning(f"[{request_id}] Update returned False - recreating analysis {analysis_id}")
+                            if db_service._use_mock:
+                                # Recreate in memory and file
+                                from datetime import datetime
+                                db_service._mock_storage[analysis_id] = {
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': step,
+                                    'step_progress': mapped_progress,
+                                    'step_message': message,
+                                    'metrics': {},
+                                    'created_at': datetime.now().isoformat(),
+                                    'updated_at': datetime.now().isoformat()
+                                }
+                                db_service._save_mock_storage()
+                                logger.info(f"[{request_id}] ✅ Recreated analysis {analysis_id} in memory and file")
+                            else:
+                                await db_service.create_analysis({
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': step,
+                                    'step_progress': mapped_progress,
+                                    'step_message': message
+                                })
                     except Exception as update_error:
                         # CRITICAL: On any error, recreate analysis immediately
                         logger.error(
@@ -928,27 +943,39 @@ async def process_analysis_azure(
                             exc_info=True
                         )
                         try:
-                            await db_service.create_analysis({
-                                'id': analysis_id,
-                                'patient_id': patient_id,
-                                'filename': 'unknown',
-                                'video_url': video_url,
-                                'status': 'processing',
-                                'current_step': step,
-                                'step_progress': mapped_progress,
-                                'step_message': message
-                            })
-                            logger.warning(f"[{request_id}] Recreated analysis after progress update failure")
-                            last_known_progress['step'] = step
-                            last_known_progress['progress'] = mapped_progress
-                            last_known_progress['message'] = message
+                            if db_service._use_mock:
+                                # Recreate in memory and file
+                                from datetime import datetime
+                                db_service._mock_storage[analysis_id] = {
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': step,
+                                    'step_progress': mapped_progress,
+                                    'step_message': message,
+                                    'metrics': {},
+                                    'created_at': datetime.now().isoformat(),
+                                    'updated_at': datetime.now().isoformat()
+                                }
+                                db_service._save_mock_storage()
+                                logger.warning(f"[{request_id}] ✅ Recreated analysis after progress update error")
+                            else:
+                                await db_service.create_analysis({
+                                    'id': analysis_id,
+                                    'patient_id': patient_id,
+                                    'filename': 'unknown',
+                                    'video_url': video_url,
+                                    'status': 'processing',
+                                    'current_step': step,
+                                    'step_progress': mapped_progress,
+                                    'step_message': message
+                                })
                         except Exception as recreate_error:
                             logger.error(f"[{request_id}] Failed to recreate analysis: {recreate_error}")
                             # Don't raise - progress updates are non-critical
-                            # But update last known progress so heartbeat can recreate it
-                            last_known_progress['step'] = step
-                            last_known_progress['progress'] = mapped_progress
-                            last_known_progress['message'] = message
+                            # Analysis will be recreated by thread heartbeat
             except Exception as e:
                 # CRITICAL: Catch-all to ensure progress callback never fails the process
                 logger.error(
@@ -1407,10 +1434,10 @@ async def process_analysis_azure(
     
     finally:
         # CRITICAL: Stop heartbeat in finally block
-        if heartbeat_task:
-            heartbeat_task.cancel()
-            try:
-                await heartbeat_task
+        if heartbeat_stop_event:
+            heartbeat_stop_event.set()
+            if heartbeat_thread and heartbeat_thread.is_alive():
+                heartbeat_thread.join(timeout=2.0)
             except asyncio.CancelledError:
                 pass
             except Exception as e:

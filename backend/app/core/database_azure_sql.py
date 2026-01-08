@@ -209,8 +209,11 @@ class AzureSQLService:
                     logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite load error")
                 return
     
-    def _save_mock_storage(self):
-        """Save mock storage to file with file locking"""
+    def _save_mock_storage(self, force_sync: bool = True):
+        """
+        Save mock storage to file with file locking.
+        CRITICAL: This is a synchronous method that can be called from threads.
+        """
         logger.info(f"SAVE: Starting save operation for {len(AzureSQLService._mock_storage)} analyses to {AzureSQLService._mock_storage_file}")
         try:
             # Ensure directory exists
