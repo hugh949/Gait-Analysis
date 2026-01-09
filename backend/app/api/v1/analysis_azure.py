@@ -169,17 +169,33 @@ async def upload_video(
     """
     # Structured logging with request context
     request_id = str(uuid.uuid4())[:8]
+    upload_request_start = time.time()
+    
+    # CRITICAL: Log upload start immediately to track if request reaches server
     logger.info(
-        f"[{request_id}] Upload request received",
+        f"[{request_id}] ========== UPLOAD REQUEST RECEIVED ==========",
         extra={
             "request_id": request_id,
             "filename": file.filename if file else None,
             "content_type": request.headers.get("content-type"),
+            "content_length": request.headers.get("content-length"),
             "patient_id": patient_id,
             "view_type": view_type,
-            "fps": fps
+            "fps": fps,
+            "timestamp": datetime.utcnow().isoformat()
         }
     )
+    
+    # Log estimated file size from Content-Length header if available
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            estimated_size_mb = int(content_length) / (1024 * 1024)
+            logger.info(f"[{request_id}] Estimated file size from Content-Length: {estimated_size_mb:.2f}MB")
+            if estimated_size_mb > 50:
+                logger.warning(f"[{request_id}] ⚠️ Large file detected ({estimated_size_mb:.2f}MB). Azure timeout is 230s. Upload may timeout.")
+        except (ValueError, TypeError):
+            pass
     
     # Validate database service is available
     if db_service is None:
@@ -298,8 +314,19 @@ async def upload_video(
                 }
             )
             
-            # Warn if file is large and might cause processing issues
-            if file_size > MAX_RECOMMENDED_SIZE:
+            # CRITICAL: Warn if upload is approaching timeout
+            if upload_duration > 200:  # 200 seconds - very close to 230s timeout
+                logger.error(
+                    f"[{request_id}] ⚠️ CRITICAL: Upload took {upload_duration:.1f}s (Azure timeout is 230s). "
+                    f"File may have timed out. Size: {file_size / (1024*1024):.1f}MB"
+                )
+            elif upload_duration > 180:  # 3 minutes - getting close
+                logger.warning(
+                    f"[{request_id}] ⚠️ Upload took {upload_duration:.1f}s (approaching 230s Azure timeout). "
+                    f"File size: {file_size / (1024*1024):.1f}MB. "
+                    f"Consider using smaller files (<50MB) to avoid timeout issues."
+                )
+            elif file_size > MAX_RECOMMENDED_SIZE:
                 logger.warning(
                     f"[{request_id}] ⚠️ Large file uploaded ({file_size / (1024*1024):.1f}MB). "
                     f"Upload took {upload_duration:.1f}s. "
@@ -511,6 +538,24 @@ async def upload_video(
             except:
                 pass
             raise VideoProcessingError("Failed to schedule video analysis", details={"error": str(e)})
+        
+        upload_total_duration = time.time() - upload_request_start
+        logger.info(
+            f"[{request_id}] ========== UPLOAD REQUEST COMPLETE ==========",
+            extra={
+                "request_id": request_id,
+                "analysis_id": analysis_id,
+                "total_duration": upload_total_duration,
+                "file_size_mb": file_size / (1024*1024) if file_size > 0 else 0,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+        
+        # CRITICAL: Warn if total request time is approaching timeout
+        if upload_total_duration > 200:
+            logger.error(f"[{request_id}] ⚠️ CRITICAL: Total upload request took {upload_total_duration:.1f}s (Azure timeout: 230s). Response may not reach client.")
+        elif upload_total_duration > 180:
+            logger.warning(f"[{request_id}] ⚠️ Upload request took {upload_total_duration:.1f}s (approaching 230s Azure timeout)")
         
         return AnalysisResponse(
             analysis_id=analysis_id,
