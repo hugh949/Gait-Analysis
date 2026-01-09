@@ -248,8 +248,13 @@ app.add_middleware(
 
 # CRITICAL: Register API routes BEFORE catch-all routes
 # FastAPI matches routes in registration order, so specific routes must come first
+# IMPORTANT: FastAPI matches routes by specificity and order:
+# 1. More specific routes (with exact paths) match first
+# 2. Routes are matched in registration order
+# 3. Catch-all routes (with path parameters) match last
 
 # API routes - must be registered before catch-all
+# These routes are more specific and will match before the catch-all
 app.include_router(analysis_router, prefix="/api/v1/analysis", tags=["analysis"])
 
 # CRITICAL: Log registered routes for debugging
@@ -383,60 +388,31 @@ if FRONTEND_DIR.exists():
             return FileResponse(favicon_path)
         return {"error": "Not found"}
     
-    @app.get("/{full_path:path}")
-    async def serve_spa(request: Request, full_path: str):
-        """
-        Serve React SPA - all non-API routes return index.html
-        This enables client-side routing
-        
-        CRITICAL: This route ONLY matches GET requests, so it won't interfere with POST/PUT/DELETE API calls.
-        FastAPI matches routes in registration order, so API routes (registered first) take precedence.
-        
-        NOTE: This catch-all route should NOT match API routes because:
-        1. API routes are registered before this (more specific routes match first)
-        2. FastAPI matches routes in registration order
-        3. This route only matches GET requests (POST/PUT/DELETE go to API routes)
-        4. If an API route doesn't match, this will catch it (which is fine for 404s)
-        """
+    # CRITICAL: Register common frontend routes explicitly to avoid catch-all conflicts
+    # This prevents the catch-all from interfering with API routes
+    @app.get("/upload")
+    async def serve_upload_page(request: Request):
+        """Serve upload page"""
+        return await serve_spa_page(request, "upload")
+    
+    @app.get("/results")
+    async def serve_results_page(request: Request):
+        """Serve results page"""
+        return await serve_spa_page(request, "results")
+    
+    @app.get("/history")
+    async def serve_history_page(request: Request):
+        """Serve history page"""
+        return await serve_spa_page(request, "history")
+    
+    async def serve_spa_page(request: Request, path: str = ""):
+        """Helper function to serve SPA pages"""
         request_id = getattr(request.state, 'request_id', 'unknown')
-        logger.debug(f"[{request_id}] SPA route called: {full_path}, method: {request.method}")
-        
-        # CRITICAL: First check if this is an API route - if so, return 404 (not 405)
-        # This prevents the catch-all from interfering with API routes
-        if full_path.startswith("api/"):
-            logger.error(f"[{request_id}] ❌ API route caught by catch-all: {request.method} {full_path}")
-            logger.error(f"[{request_id}] ❌ This indicates the API route was not properly matched!")
-            # Log registered routes for debugging
-            try:
-                route_info = []
-                for r in app.routes:
-                    if hasattr(r, 'path'):
-                        methods = list(r.methods) if hasattr(r, 'methods') else '?'
-                        route_info.append(f"{methods} {r.path}")
-                logger.error(f"[{request_id}] ❌ Registered routes: {route_info}")
-            except Exception as route_log_error:
-                logger.error(f"[{request_id}] ❌ Could not log routes: {route_log_error}")
-            return JSONResponse(
-                status_code=404,
-                content={"error": "API route not found", "path": full_path, "method": request.method, "message": "The API route was not found. Check that the route is properly registered."}
-            )
-        
-        # CRITICAL: Only handle GET requests - POST/PUT/DELETE should go to API routes
-        # But if we get here with a non-GET request, it means it's not an API route
-        # and it's not a GET request, so return 405
-        if request.method != "GET":
-            logger.warning(f"[{request_id}] Non-GET request caught by catch-all: {request.method} {full_path} - returning 405")
-            return JSONResponse(
-                status_code=405,
-                content={"error": "Method not allowed", "method": request.method, "path": full_path, "message": "This route only accepts GET requests. API routes should handle POST/PUT/DELETE."}
-            )
-        
-        # Serve index.html for all other routes (React SPA routing)
         index_path = FRONTEND_DIR / "index.html"
         if index_path.exists():
             try:
                 file_size = index_path.stat().st_size
-                logger.debug(f"[{request_id}] Serving index.html for SPA route {full_path} (size: {file_size} bytes)")
+                logger.debug(f"[{request_id}] Serving index.html for SPA route {path} (size: {file_size} bytes)")
                 return FileResponse(
                     index_path,
                     media_type="text/html; charset=utf-8",
@@ -447,17 +423,41 @@ if FRONTEND_DIR.exists():
                     }
                 )
             except Exception as e:
-                logger.error(f"[{request_id}] Error serving index.html for SPA route: {e}", exc_info=True)
+                logger.error(f"[{request_id}] Error serving index.html: {e}", exc_info=True)
                 return JSONResponse(
                     status_code=500,
                     content={"error": "Failed to serve frontend", "message": str(e)}
                 )
-        
-        logger.error(f"[{request_id}] Frontend index.html not found at {index_path}")
         return JSONResponse(
             status_code=404,
             content={"error": "Frontend not found", "path": str(index_path)}
         )
+    
+    # CRITICAL: Catch-all route ONLY for GET requests to non-API, non-asset routes
+    # This is registered LAST and should only match if no other route matches
+    # IMPORTANT: FastAPI should match API routes first, so this should never match API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa_catchall(request: Request, full_path: str):
+        """
+        Catch-all for SPA routing - ONLY matches GET requests
+        This should NEVER match API routes because:
+        1. API routes are registered first and are more specific
+        2. FastAPI matches routes in order of registration
+        3. This route only matches GET requests
+        """
+        request_id = getattr(request.state, 'request_id', 'unknown')
+        
+        # CRITICAL: Explicitly exclude API routes and assets
+        if full_path.startswith("api/") or full_path.startswith("assets/"):
+            # This should never happen, but if it does, return 404
+            logger.error(f"[{request_id}] ❌ CRITICAL: {full_path} caught by catch-all - this should not happen!")
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Route not found", "path": full_path}
+            )
+        
+        # Serve index.html for React SPA routing
+        return await serve_spa_page(request, full_path)
 
 
 if __name__ == "__main__":
