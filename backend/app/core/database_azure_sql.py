@@ -631,12 +631,15 @@ class AzureSQLService:
                 # Use timeout to prevent blocking the heartbeat thread on slow file I/O
                 save_start = time.time()
                 try:
-                    self._save_mock_storage()  # Persist to file with forced sync
+                    # CRITICAL: Force sync on every heartbeat update during processing
+                    # This ensures the analysis is ALWAYS visible across workers
+                    self._save_mock_storage(force_sync=True)  # Persist to file with forced sync
                     save_duration = time.time() - save_start
                     logger.info(f"✅ UPDATE_SYNC: Successfully saved analysis {analysis_id} to file in {save_duration:.3f}s. Total analyses: {len(AzureSQLService._mock_storage)}")
                     
-                    # CRITICAL: Quick verification (non-blocking) - only if save was fast
-                    if save_duration < 0.5:  # Only verify if save was quick
+                    # CRITICAL: Verify the save worked by checking file exists and has our analysis
+                    # This ensures the file is actually written and visible
+                    if save_duration < 1.0:  # Only verify if save was quick (don't block on slow I/O)
                         file_path = os.path.abspath(AzureSQLService._mock_storage_file)
                         if os.path.exists(file_path):
                             file_size = os.path.getsize(file_path)
