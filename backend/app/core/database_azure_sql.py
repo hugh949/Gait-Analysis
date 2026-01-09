@@ -88,6 +88,45 @@ class AzureSQLService:
             # Initialize database schema
             self._init_schema()
     
+    def _start_file_watcher(self):
+        """Start a background thread that watches the storage file and reloads it when it changes"""
+        if AzureSQLService._file_watcher_thread is not None and AzureSQLService._file_watcher_thread.is_alive():
+            return  # Already running
+        
+        if AzureSQLService._file_watcher_stop_event is None:
+            AzureSQLService._file_watcher_stop_event = threading.Event()
+        
+        # Initialize last file mtime
+        if os.path.exists(AzureSQLService._mock_storage_file):
+            AzureSQLService._last_file_mtime = os.path.getmtime(AzureSQLService._mock_storage_file)
+        
+        def file_watcher():
+            """Background thread that periodically checks if storage file has changed and reloads it"""
+            logger.info("📁 FILE WATCHER: Starting file watcher thread for multi-worker synchronization")
+            while not AzureSQLService._file_watcher_stop_event.is_set():
+                try:
+                    if os.path.exists(AzureSQLService._mock_storage_file):
+                        current_mtime = os.path.getmtime(AzureSQLService._mock_storage_file)
+                        if current_mtime > AzureSQLService._last_file_mtime:
+                            logger.debug(f"📁 FILE WATCHER: Storage file changed (mtime: {current_mtime}), reloading...")
+                            AzureSQLService._last_file_mtime = current_mtime
+                            # Reload from file (this merges with in-memory, preserving active processing)
+                            self._load_mock_storage()
+                    else:
+                        # File doesn't exist yet - check again later
+                        pass
+                except Exception as e:
+                    logger.warning(f"📁 FILE WATCHER: Error checking file: {e}")
+                
+                # Check every 0.5 seconds for fast synchronization
+                AzureSQLService._file_watcher_stop_event.wait(0.5)
+            
+            logger.info("📁 FILE WATCHER: File watcher thread stopped")
+        
+        AzureSQLService._file_watcher_thread = threading.Thread(target=file_watcher, daemon=True, name="mock-storage-watcher")
+        AzureSQLService._file_watcher_thread.start()
+        logger.info("📁 FILE WATCHER: File watcher thread started")
+    
     def _load_mock_storage(self):
         """Load mock storage from file if it exists, with retry logic for multi-worker scenarios"""
         # Ensure directory exists before trying to load
@@ -747,17 +786,10 @@ class AzureSQLService:
                 logger.error(f"🔍   Updated at: {analysis_state.get('updated_at')}")
                 logger.error(f"🔍   Created at: {analysis_state.get('created_at')}")
             
-            # CRITICAL: Check in-memory storage FIRST (fastest, works for same-worker requests)
-            # In-memory is the source of truth during active processing in the same worker
-            if analysis_id in AzureSQLService._mock_storage:
-                analysis_data = AzureSQLService._mock_storage[analysis_id].copy()
-                logger.error(f"🔍✅ FOUND in memory - returning immediately")
-                logger.error(f"🔍🔍🔍 DIAGNOSTIC GET_ANALYSIS END (SUCCESS - MEMORY) 🔍🔍🔍")
-                return analysis_data
-            
-            # Strategy 2: Read from file (for cross-worker access or after restart)
-            # Multi-worker architecture - file is source of truth across workers
-            max_retries = 20  # Increased to 20 retries for better resilience
+            # CRITICAL: In multi-worker environment, ALWAYS read from FILE FIRST
+            # Memory is NOT shared between workers, so file is the source of truth
+            # We'll merge file data into memory, but file takes precedence for cross-worker visibility
+            max_retries = 30  # Increased to 30 retries for better resilience
             for retry in range(max_retries):
                 # Strategy 1: Read from file (most reliable for cross-worker access)
                 if os.path.exists(file_path):
@@ -793,13 +825,29 @@ class AzureSQLService:
                                             logger.debug(f"GET: Memory data for {key} is newer or same, keeping memory version")
                                 
                                 if analysis_id in file_data:
-                                    logger.info(f"GET: Found analysis {analysis_id} in file (attempt {retry + 1}/{max_retries})")
-                                    # Return from memory (which now has merged data)
+                                    logger.error(f"🔍✅ FOUND in file (attempt {retry + 1}/{max_retries})")
+                                    # CRITICAL: Merge file data into memory (preserve active processing)
+                                    # But file data takes precedence for cross-worker visibility
                                     if analysis_id in AzureSQLService._mock_storage:
-                                        return AzureSQLService._mock_storage[analysis_id].copy()
+                                        # Both exist - check which is newer
+                                        file_updated = file_data[analysis_id].get('updated_at', '')
+                                        mem_updated = AzureSQLService._mock_storage[analysis_id].get('updated_at', '')
+                                        if file_updated > mem_updated:
+                                            # File is newer - use file data
+                                            logger.error(f"🔍 File data is newer, using file version")
+                                            AzureSQLService._mock_storage[analysis_id] = file_data[analysis_id]
+                                        else:
+                                            # Memory is newer - keep memory but merge file fields
+                                            logger.error(f"🔍 Memory data is newer, keeping memory version")
                                     else:
-                                        # Shouldn't happen, but return from file as fallback
-                                        return file_data[analysis_id].copy()
+                                        # Not in memory - add from file
+                                        AzureSQLService._mock_storage[analysis_id] = file_data[analysis_id]
+                                    
+                                    # Return from memory (which now has the correct data)
+                                    analysis_data = AzureSQLService._mock_storage[analysis_id].copy()
+                                    logger.error(f"🔍 Analysis state: status={analysis_data.get('status')}, step={analysis_data.get('current_step')}, progress={analysis_data.get('step_progress')}%")
+                                    logger.error(f"🔍🔍🔍 DIAGNOSTIC GET_ANALYSIS END (SUCCESS - FILE) 🔍🔍🔍")
+                                    return analysis_data
                                 else:
                                     logger.debug(f"GET: File exists but analysis {analysis_id} not found. Available IDs: {list(file_data.keys())}")
                     except json.JSONDecodeError as e:
