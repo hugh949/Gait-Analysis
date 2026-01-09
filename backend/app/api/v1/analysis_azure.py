@@ -515,15 +515,37 @@ async def upload_video(
             logger.info(f"[{request_id}] ✅ Keep-alive task will continue running after request completes")
             
             # Schedule the actual processing task
-            background_tasks.add_task(
-                process_analysis_azure,
-                analysis_id,
-                video_url,
-                patient_id,
-                view_type_str,
-                reference_length_mm,
-                fps
-            )
+            # CRITICAL: Wrap the processing function to add diagnostic logging
+            async def wrapped_process_analysis():
+                """Wrapper to add diagnostic logging when background task executes"""
+                logger.error(f"[{request_id}] 🔧🔧🔧 BACKGROUND TASK WRAPPER CALLED 🔧🔧🔧")
+                logger.error(f"[{request_id}] 🔧 About to call process_analysis_azure for {analysis_id}")
+                logger.error(f"[{request_id}] 🔧 Current time: {datetime.utcnow().isoformat()}")
+                logger.error(f"[{request_id}] 🔧 Process ID: {os.getpid()}")
+                logger.error(f"[{request_id}] 🔧 Thread: {threading.current_thread().ident}, {threading.current_thread().name}")
+                try:
+                    await process_analysis_azure(
+                        analysis_id,
+                        video_url,
+                        patient_id,
+                        view_type_str,
+                        reference_length_mm,
+                        fps
+                    )
+                    logger.error(f"[{request_id}] 🔧✅ Background task completed successfully")
+                except Exception as wrapper_error:
+                    logger.error(f"[{request_id}] 🔧❌ Background task failed: {type(wrapper_error).__name__}: {wrapper_error}", exc_info=True)
+                    raise
+            
+            logger.error(f"[{request_id}] 🔧🔧🔧 SCHEDULING BACKGROUND TASK 🔧🔧🔧")
+            logger.error(f"[{request_id}] 🔧 Analysis ID: {analysis_id}")
+            logger.error(f"[{request_id}] 🔧 About to call background_tasks.add_task")
+            logger.error(f"[{request_id}] 🔧 background_tasks object: {background_tasks}")
+            logger.error(f"[{request_id}] 🔧 background_tasks type: {type(background_tasks)}")
+            
+            background_tasks.add_task(wrapped_process_analysis)
+            
+            logger.error(f"[{request_id}] 🔧✅ background_tasks.add_task() called successfully")
             logger.info(f"[{request_id}] ✅ Background processing task scheduled for analysis {analysis_id}", extra={"analysis_id": analysis_id})
             logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
             logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
@@ -629,13 +651,19 @@ async def process_analysis_azure(
     
     # CRITICAL: Log immediately when function is called (before any try block)
     # This ensures we see if the background task actually starts
-    logger.info("=" * 80)
-    logger.info(f"[{request_id}] ========== PROCESSING TASK FUNCTION CALLED ==========")
-    logger.info(f"[{request_id}] Analysis ID: {analysis_id}")
-    logger.info(f"[{request_id}] Video URL: {video_url}")
-    logger.info(f"[{request_id}] Parameters: view_type={view_type}, fps={fps}, reference_length_mm={reference_length_mm}")
-    logger.info(f"[{request_id}] Timestamp: {datetime.utcnow().isoformat()}")
-    logger.info("=" * 80)
+    import os
+    import threading
+    logger.error("=" * 80)
+    logger.error(f"[{request_id}] ========== PROCESSING TASK FUNCTION CALLED ==========")
+    logger.error(f"[{request_id}] Analysis ID: {analysis_id}")
+    logger.error(f"[{request_id}] Video URL: {video_url}")
+    logger.error(f"[{request_id}] Parameters: view_type={view_type}, fps={fps}, reference_length_mm={reference_length_mm}")
+    logger.error(f"[{request_id}] Timestamp: {datetime.utcnow().isoformat()}")
+    logger.error(f"[{request_id}] Process ID: {os.getpid()}")
+    logger.error(f"[{request_id}] Thread ID: {threading.current_thread().ident}, Thread Name: {threading.current_thread().name}")
+    logger.error(f"[{request_id}] db_service available: {db_service is not None}")
+    logger.error(f"[{request_id}] db_service._use_mock: {db_service._use_mock if db_service else None}")
+    logger.error("=" * 80)
     
     try:
         logger.info(
