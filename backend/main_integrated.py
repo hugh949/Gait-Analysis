@@ -351,6 +351,7 @@ async def root(request: Request):
 async def health_check():
     """Detailed health check - critical for Azure App Service"""
     import time
+    import threading
     try:
         # Check if services are initialized
         from app.api.v1.analysis_azure import db_service, storage_service, vision_service
