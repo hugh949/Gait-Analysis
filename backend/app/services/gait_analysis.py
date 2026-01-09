@@ -736,6 +736,21 @@ class GaitAnalysisService:
             logger.warning("Continuing with original keypoints - signal processing failed")
             # Continue - don't fail the entire process
         
+        # CRITICAL: Save Step 1 checkpoint before proceeding to Step 2
+        try:
+            from app.services.checkpoint_manager import CheckpointManager
+            checkpoint_manager = CheckpointManager(analysis_id=getattr(self, '_current_analysis_id', 'unknown'))
+            checkpoint_manager.save_step_1(
+                frames_2d_keypoints=frames_2d_keypoints,
+                frame_timestamps=frame_timestamps,
+                total_frames=total_frames,
+                video_fps=video_fps,
+                processing_stats={'frames_processed': len(frames_2d_keypoints), 'total_frames': total_frames}
+            )
+            logger.info("✅ Step 1 checkpoint saved - can resume from here if needed")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to save Step 1 checkpoint (non-critical): {e}")
+        
         # STEP 2: Lift to 3D - with comprehensive error handling and fallback
         logger.info("=" * 80)
         logger.info("🎯 ========== STEP 2: 3D LIFTING STARTING ==========")
