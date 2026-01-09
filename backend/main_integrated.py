@@ -252,6 +252,15 @@ app.add_middleware(
 # API routes - must be registered before catch-all
 app.include_router(analysis_router, prefix="/api/v1/analysis", tags=["analysis"])
 
+# CRITICAL: Log registered routes for debugging
+logger.info("Registered API routes:")
+for route in app.routes:
+    if hasattr(route, 'path') and hasattr(route, 'methods'):
+        methods = list(route.methods) if hasattr(route.methods, '__iter__') else [str(route.methods)]
+        logger.info(f"  {methods} {route.path}")
+    elif hasattr(route, 'path'):
+        logger.info(f"  {route.path}")
+
 # Also add a health endpoint at /api/v1/health for frontend compatibility
 @app.get("/api/v1/health")
 async def api_health_check():
