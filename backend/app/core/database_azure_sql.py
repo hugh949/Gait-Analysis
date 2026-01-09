@@ -739,7 +739,7 @@ class AzureSQLService:
         
         # For real SQL, we can't use sync method - return False to indicate async method should be used
         logger.warning(f"UPDATE_SYNC: Real SQL database - sync method not available. Use async update_analysis instead.")
-            return False
+        return False
     
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """
