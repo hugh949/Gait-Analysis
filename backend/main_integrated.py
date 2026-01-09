@@ -389,13 +389,25 @@ if FRONTEND_DIR.exists():
         Serve React SPA - all non-API routes return index.html
         This enables client-side routing
         
+        CRITICAL: This route ONLY matches GET requests, so it won't interfere with POST/PUT/DELETE API calls.
+        FastAPI matches routes in registration order, so API routes (registered first) take precedence.
+        
         NOTE: This catch-all route should NOT match API routes because:
         1. API routes are registered before this (more specific routes match first)
         2. FastAPI matches routes in registration order
-        3. If an API route doesn't match, this will catch it (which is fine for 404s)
+        3. This route only matches GET requests (POST/PUT/DELETE go to API routes)
+        4. If an API route doesn't match, this will catch it (which is fine for 404s)
         """
         request_id = getattr(request.state, 'request_id', 'unknown')
         logger.debug(f"[{request_id}] SPA route called: {full_path}")
+        
+        # CRITICAL: Only handle GET requests - POST/PUT/DELETE should go to API routes
+        if request.method != "GET":
+            logger.warning(f"[{request_id}] Non-GET request caught by catch-all: {request.method} {full_path} - returning 405")
+            return JSONResponse(
+                status_code=405,
+                content={"error": "Method not allowed", "method": request.method, "path": full_path, "message": "This route only accepts GET requests. API routes should handle POST/PUT/DELETE."}
+            )
         
         # Double-check: if this somehow matches an API route, return 404
         # (This shouldn't happen due to route ordering, but safety check)
