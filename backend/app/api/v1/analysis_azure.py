@@ -268,10 +268,10 @@ async def upload_video(
                         
                         # Write chunk immediately to reduce memory usage
                         tmp_file.write(chunk)
-                
-                # Log progress more frequently for large files (every 5MB or every 5 seconds)
-                current_time = time.time()
-                if chunk_count % 20 == 0 or (current_time - last_log_time) >= 5.0:  # Every 20 chunks (~5MB) or every 5 seconds
+                        
+                        # Log progress more frequently for large files (every 5MB or every 5 seconds)
+                        current_time = time.time()
+                        if chunk_count % 20 == 0 or (current_time - last_log_time) >= 5.0:  # Every 20 chunks (~5MB) or every 5 seconds
                     elapsed = current_time - upload_start_time
                     upload_rate = (file_size / elapsed) / (1024 * 1024) if elapsed > 0 else 0  # MB/s
                     estimated_total_time = (file_size / upload_rate) if upload_rate > 0 else 0
