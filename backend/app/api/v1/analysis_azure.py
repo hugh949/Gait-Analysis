@@ -849,7 +849,7 @@ async def process_analysis_azure(
             )
         
         try:
-        file_size = os.path.getsize(video_path)
+            file_size = os.path.getsize(video_path)
         except OSError as e:
             logger.error(
                 f"[{request_id}] Error getting file size: {e}",
