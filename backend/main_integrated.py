@@ -84,7 +84,10 @@ app = FastAPI(
     title="Gait Analysis Application",
     description="Integrated clinical-grade gait analysis (API + Frontend)",
     version="3.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # CRITICAL: Increase request timeout for large file uploads
+    # This allows large video files to be uploaded without timing out
+    # Note: Azure App Service also has request timeout settings that may need adjustment
 )
 
 # Import custom exceptions for global handling

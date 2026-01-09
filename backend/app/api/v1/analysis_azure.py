@@ -230,13 +230,21 @@ async def upload_video(
             raise StorageError("Failed to create temporary file for upload", details={"error": str(e)})
         
         # Read file in chunks with size validation
-        chunk_size = 1024 * 1024  # 1MB chunks
+        # CRITICAL: Use smaller chunks for large files to prevent memory issues
+        # This prevents worker crashes during large file uploads
+        chunk_size = 512 * 1024  # 512KB chunks (reduced from 1MB to prevent memory pressure)
+        chunk_count = 0
         try:
             while True:
                 chunk = await file.read(chunk_size)
                 if not chunk:
                     break
                 file_size += len(chunk)
+                chunk_count += 1
+                
+                # Log progress for large files (every 10MB)
+                if chunk_count % 20 == 0:  # Every 20 chunks = ~10MB
+                    logger.debug(f"[{request_id}] Upload progress: {file_size / (1024*1024):.1f}MB read")
                 
                 # Check file size limit
                 if file_size > MAX_FILE_SIZE:

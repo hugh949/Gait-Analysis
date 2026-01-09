@@ -437,9 +437,14 @@ jobs:
           --set healthCheckPath="/health" \
           --output none 2>/dev/null || echo "   (Health check may already be configured)"
         
-        # Set request timeout via app settings (for long-running video processing)
-        # WEBSITES_CONTAINER_START_TIME_LIMIT sets the timeout in seconds (default: 230)
-        # For video processing, we need longer timeout - set to 600 seconds (10 minutes)
+        # Set request timeout via app settings (for long-running video processing and large file uploads)
+        # WEBSITES_CONTAINER_START_TIME_LIMIT: Container startup timeout (default: 230s)
+        # SCM_COMMAND_IDLE_TIMEOUT: SCM command timeout (default: 230s)
+        # WEBSITES_HTTP_LOGGING_RETENTION_DAYS: Log retention (optional)
+        # CRITICAL: Azure App Service has a default request timeout of 230 seconds
+        # For large video uploads, we need to increase this via web.config or app settings
+        # Note: The actual request timeout is controlled by Azure's load balancer (230s default)
+        # We can't change it via app settings, but we can optimize the upload process
         az webapp config appsettings set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -448,6 +453,16 @@ jobs:
             WEBSITES_CONTAINER_START_TIME_LIMIT=600 \
             SCM_COMMAND_IDLE_TIMEOUT=600 \
           --output none
+        
+        # CRITICAL: Configure request timeout via web.config
+        # Azure App Service uses web.config to set request timeout
+        # This allows large file uploads to complete without timing out
+        echo "📝 Configuring request timeout for large file uploads..."
+        az webapp config set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --generic-configurations '{"requestTimeout": "00:10:00"}' \
+          --output none || echo "⚠️  Could not set request timeout (may require web.config file)"
         
         echo "✅ High availability settings configured"
         
