@@ -824,6 +824,29 @@ class GaitAnalysisService:
             logger.error(error_msg)
             raise ValueError(error_msg)
         
+        # CRITICAL: Validate all 4 steps completed successfully
+        steps_completed = {
+            "step_1_pose_estimation": len(frames_2d_keypoints) > 0,
+            "step_2_3d_lifting": len(frames_3d_keypoints) > 0,
+            "step_3_metrics_calculation": len(metrics) > 0 and not metrics.get('fallback_metrics', False),
+            "step_4_report_generation": True  # Will be set when result is prepared
+        }
+        
+        logger.info("=" * 80)
+        logger.info("🔍 ========== VALIDATION: ALL 4 STEPS COMPLETION CHECK ==========")
+        logger.info(f"🔍 Step 1 (Pose Estimation): {'✅ COMPLETE' if steps_completed['step_1_pose_estimation'] else '❌ FAILED'} ({len(frames_2d_keypoints)} 2D keypoint frames)")
+        logger.info(f"🔍 Step 2 (3D Lifting): {'✅ COMPLETE' if steps_completed['step_2_3d_lifting'] else '❌ FAILED'} ({len(frames_3d_keypoints)} 3D keypoint frames)")
+        logger.info(f"🔍 Step 3 (Metrics Calculation): {'✅ COMPLETE' if steps_completed['step_3_metrics_calculation'] else '❌ FAILED'} ({len(metrics)} metrics)")
+        logger.info(f"🔍 Step 4 (Report Generation): {'✅ IN PROGRESS' if steps_completed['step_4_report_generation'] else '❌ FAILED'}")
+        logger.info("=" * 80)
+        
+        # CRITICAL: Fail if any step didn't complete
+        if not all(steps_completed.values()):
+            failed_steps = [step for step, completed in steps_completed.items() if not completed]
+            error_msg = f"CRITICAL: Not all processing steps completed successfully. Failed steps: {failed_steps}"
+            logger.error(f"❌ {error_msg}")
+            raise ValueError(error_msg)
+        
         result = {
             "status": "completed",
             "analysis_type": "advanced_gait_analysis_v2_professional",
@@ -832,15 +855,23 @@ class GaitAnalysisService:
             "processing_stats": processing_stats,
             "keypoints_2d": frames_2d_keypoints[:10],  # Sample for debugging
             "keypoints_3d": frames_3d_keypoints[:10],  # Sample for debugging
-            "metrics": metrics
+            "metrics": metrics,
+            "steps_completed": steps_completed  # Track which steps completed
         }
         
         logger.info(f"✅ Result prepared: {frames_processed_count} frames processed, {len(metrics)} metrics calculated")
         
         if progress_callback:
-            progress_callback(100, "Analysis complete!")
+            try:
+                progress_callback(98, "All 4 steps complete - finalizing report...")
+                progress_callback(100, "Analysis complete!")
+            except Exception as e:
+                logger.warning(f"Error in progress callback at completion: {e}")
         
-        logger.info("=" * 60)
+        logger.info("=" * 80)
+        logger.info("✅ ========== STEP 4: REPORT GENERATION COMPLETE ==========")
+        logger.info("✅ ========== ALL 4 STEPS COMPLETED SUCCESSFULLY ==========")
+        logger.info("=" * 80)
         logger.info("GAIT ANALYSIS COMPLETE - Professional-Grade Results")
         logger.info(f"  Cadence: {metrics.get('cadence', 0):.1f} steps/min")
         logger.info(f"  Step Length: {metrics.get('step_length', 0):.0f}mm")
