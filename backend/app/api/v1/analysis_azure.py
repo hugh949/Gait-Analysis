@@ -372,6 +372,7 @@ async def upload_video(
                     logger.info(f"[{request_id}] Mock mode: Using temp file directly")
                 elif video_url:
                     # Real storage - clean up temp file
+                    pass  # Temp file will be cleaned up in finally block
                     try:
                         os.unlink(tmp_path)
                         tmp_path = None
@@ -973,28 +974,28 @@ async def process_analysis_azure(
                             # CRITICAL: Always ensure analysis exists - recreate if missing
                             if heartbeat_analysis_id not in heartbeat_db_service._mock_storage:
                                 # Analysis not in memory - IMMEDIATELY recreate it
-                                logger.warning(f"[{request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Analysis {analysis_id} NOT in memory - RECREATING IMMEDIATELY")
+                                logger.warning(f"[{heartbeat_request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Analysis {heartbeat_analysis_id} NOT in memory - RECREATING IMMEDIATELY")
                                 from datetime import datetime
-                                db_service._mock_storage[analysis_id] = {
-                                    'id': analysis_id,
-                                    'patient_id': patient_id,
+                                heartbeat_db_service._mock_storage[heartbeat_analysis_id] = {
+                                    'id': heartbeat_analysis_id,
+                                    'patient_id': heartbeat_patient_id,
                                     'filename': 'unknown',
-                                    'video_url': video_url,
+                                    'video_url': heartbeat_video_url,
                                     'status': 'processing',
-                                    'current_step': last_known_progress['step'],
-                                    'step_progress': last_known_progress['progress'],
-                                    'step_message': f"{last_known_progress['message']} (recreated by heartbeat #{heartbeat_count})",
+                                    'current_step': heartbeat_last_progress['step'],
+                                    'step_progress': heartbeat_last_progress['progress'],
+                                    'step_message': f"{heartbeat_last_progress['message']} (recreated by heartbeat #{heartbeat_count})",
                                     'metrics': {},
                                     'created_at': datetime.now().isoformat(),
                                     'updated_at': datetime.now().isoformat()
                                 }
                                 # Force immediate save
                                 try:
-                                    db_service._save_mock_storage(force_sync=True)
-                                    logger.info(f"[{request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated and saved analysis {analysis_id}")
+                                    heartbeat_db_service._save_mock_storage(force_sync=True)
+                                    logger.info(f"[{heartbeat_request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated and saved analysis {heartbeat_analysis_id}")
                                     last_successful_update = time.time()
                                 except Exception as recreate_error:
-                                    logger.error(f"[{request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Failed to save recreated analysis: {recreate_error}")
+                                    logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Failed to save recreated analysis: {recreate_error}")
                             
                             # Analysis exists in memory - update it
                             step = heartbeat_last_progress['step']
@@ -1016,23 +1017,23 @@ async def process_analysis_azure(
                                 if update_success:
                                     last_successful_update = time.time()
                                     # DIAGNOSTIC: Log EVERY successful update
-                                    logger.error(f"[{request_id}] ✅✅✅ HEARTBEAT #{heartbeat_count} UPDATE SUCCESS ✅✅✅")
-                                    logger.error(f"[{request_id}] ✅ Analysis {analysis_id} updated: {step} {progress}%")
-                                    logger.error(f"[{request_id}] ✅ Update duration: {update_duration:.3f}s")
-                                    logger.error(f"[{request_id}] ✅ Analysis still in memory: {analysis_id in db_service._mock_storage}")
+                                    logger.error(f"[{heartbeat_request_id}] ✅✅✅ HEARTBEAT #{heartbeat_count} UPDATE SUCCESS ✅✅✅")
+                                    logger.error(f"[{heartbeat_request_id}] ✅ Analysis {heartbeat_analysis_id} updated: {step} {progress}%")
+                                    logger.error(f"[{heartbeat_request_id}] ✅ Update duration: {update_duration:.3f}s")
+                                    logger.error(f"[{heartbeat_request_id}] ✅ Analysis still in memory: {heartbeat_analysis_id in heartbeat_db_service._mock_storage}")
                                     
                                     # Verify analysis still exists after update
-                                    if analysis_id not in db_service._mock_storage:
-                                        logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis disappeared IMMEDIATELY after successful update! ❌❌❌")
-                                        logger.error(f"[{request_id}] ❌ Memory storage size: {len(db_service._mock_storage)}")
-                                        logger.error(f"[{request_id}] ❌ Memory analysis IDs: {list(db_service._mock_storage.keys())}")
+                                    if heartbeat_analysis_id not in heartbeat_db_service._mock_storage:
+                                        logger.error(f"[{heartbeat_request_id}] ❌❌❌ CRITICAL: Analysis disappeared IMMEDIATELY after successful update! ❌❌❌")
+                                        logger.error(f"[{heartbeat_request_id}] ❌ Memory storage size: {len(heartbeat_db_service._mock_storage)}")
+                                        logger.error(f"[{heartbeat_request_id}] ❌ Memory analysis IDs: {list(heartbeat_db_service._mock_storage.keys())}")
                                         # Recreate immediately
                                         from datetime import datetime
-                                        db_service._mock_storage[analysis_id] = {
-                                            'id': analysis_id,
-                                            'patient_id': patient_id,
+                                        heartbeat_db_service._mock_storage[heartbeat_analysis_id] = {
+                                            'id': heartbeat_analysis_id,
+                                            'patient_id': heartbeat_patient_id,
                                             'filename': 'unknown',
-                                            'video_url': video_url,
+                                            'video_url': heartbeat_video_url,
                                             'status': 'processing',
                                             'current_step': step,
                                             'step_progress': progress,
@@ -1041,23 +1042,23 @@ async def process_analysis_azure(
                                             'created_at': datetime.now().isoformat(),
                                             'updated_at': datetime.now().isoformat()
                                         }
-                                        db_service._save_mock_storage(force_sync=True)
-                                        logger.error(f"[{request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after disappearance")
+                                        heartbeat_db_service._save_mock_storage(force_sync=True)
+                                        logger.error(f"[{heartbeat_request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after disappearance")
                                 else:
-                                    logger.error(f"[{request_id}] ❌❌❌ HEARTBEAT #{heartbeat_count} UPDATE FAILED ❌❌❌")
-                                    logger.error(f"[{request_id}] ❌ Update returned False")
-                                    logger.error(f"[{request_id}] ❌ Analysis in memory: {analysis_id in db_service._mock_storage}")
+                                    logger.error(f"[{heartbeat_request_id}] ❌❌❌ HEARTBEAT #{heartbeat_count} UPDATE FAILED ❌❌❌")
+                                    logger.error(f"[{heartbeat_request_id}] ❌ Update returned False")
+                                    logger.error(f"[{heartbeat_request_id}] ❌ Analysis in memory: {heartbeat_analysis_id in heartbeat_db_service._mock_storage}")
                                     
                                     # CRITICAL: Verify analysis still exists after update
-                                    if analysis_id not in db_service._mock_storage:
-                                        logger.error(f"[{request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: CRITICAL - Analysis disappeared after update! Recreating...")
+                                    if heartbeat_analysis_id not in heartbeat_db_service._mock_storage:
+                                        logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: CRITICAL - Analysis disappeared after update! Recreating...")
                                         # Recreate immediately
                                         from datetime import datetime
-                                        db_service._mock_storage[analysis_id] = {
-                                            'id': analysis_id,
-                                            'patient_id': patient_id,
+                                        heartbeat_db_service._mock_storage[heartbeat_analysis_id] = {
+                                            'id': heartbeat_analysis_id,
+                                            'patient_id': heartbeat_patient_id,
                                             'filename': 'unknown',
-                                            'video_url': video_url,
+                                            'video_url': heartbeat_video_url,
                                             'status': 'processing',
                                             'current_step': step,
                                             'step_progress': progress,
@@ -1066,43 +1067,37 @@ async def process_analysis_azure(
                                             'created_at': datetime.now().isoformat(),
                                             'updated_at': datetime.now().isoformat()
                                         }
-                                        db_service._save_mock_storage(force_sync=True)
-                                        logger.error(f"[{request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after disappearance")
+                                        heartbeat_db_service._save_mock_storage(force_sync=True)
+                                        logger.error(f"[{heartbeat_request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after disappearance")
                                     elif heartbeat_count % 10 == 0:  # Log every 10 heartbeats
-                                        logger.warning(f"[{request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Update returned False")
+                                        logger.warning(f"[{heartbeat_request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Update returned False")
                                 
                                 if update_duration > 0.3:
-                                    logger.warning(f"[{request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Slow update took {update_duration:.2f}s (may impact persistence)")
+                                    logger.warning(f"[{heartbeat_request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: Slow update took {update_duration:.2f}s (may impact persistence)")
                             except Exception as update_error:
-                                logger.error(f"[{request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Update exception: {type(update_error).__name__}: {update_error}", exc_info=True)
+                                logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Update exception: {type(update_error).__name__}: {update_error}", exc_info=True)
                                 # Try to recreate if update failed
-                                if analysis_id not in db_service._mock_storage:
-                                    logger.error(f"[{request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Analysis missing after update error - recreating...")
+                                if heartbeat_analysis_id not in heartbeat_db_service._mock_storage:
+                                    logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Analysis missing after update error - recreating...")
                                     from datetime import datetime
-                                    db_service._mock_storage[analysis_id] = {
-                                        'id': analysis_id,
-                                        'patient_id': patient_id,
+                                    heartbeat_db_service._mock_storage[heartbeat_analysis_id] = {
+                                        'id': heartbeat_analysis_id,
+                                        'patient_id': heartbeat_patient_id,
                                         'filename': 'unknown',
-                                        'video_url': video_url,
+                                        'video_url': heartbeat_video_url,
                                         'status': 'processing',
-                                        'current_step': last_known_progress['step'],
-                                        'step_progress': last_known_progress['progress'],
-                                        'step_message': f"{last_known_progress['message']} (recreated after error)",
+                                        'current_step': heartbeat_last_progress['step'],
+                                        'step_progress': heartbeat_last_progress['progress'],
+                                        'step_message': f"{heartbeat_last_progress['message']} (recreated after error)",
                                         'metrics': {},
                                         'created_at': datetime.now().isoformat(),
                                         'updated_at': datetime.now().isoformat()
                                     }
                                     try:
-                                        db_service._save_mock_storage(force_sync=True)
-                                        logger.info(f"[{request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after error")
+                                        heartbeat_db_service._save_mock_storage(force_sync=True)
+                                        logger.info(f"[{heartbeat_request_id}] ✅ THREAD HEARTBEAT #{heartbeat_count}: Recreated analysis after error")
                                     except:
                                         pass
-                        else:
-                            if heartbeat_count % 50 == 0:  # Log every 50 heartbeats
-                                logger.warning(f"[{request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: db_service not available")
-                                    except Exception as heartbeat_error:
-                                logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Fatal error: {type(heartbeat_error).__name__}: {heartbeat_error}", exc_info=True)
-                                # Continue - don't let errors stop the heartbeat
                         else:
                             if heartbeat_count % 50 == 0:  # Log every 50 heartbeats
                                 logger.warning(f"[{heartbeat_request_id}] ⚠️ THREAD HEARTBEAT #{heartbeat_count}: db_service not available")

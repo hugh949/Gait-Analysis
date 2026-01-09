@@ -111,7 +111,11 @@ class AzureSQLService:
                         if current_mtime > AzureSQLService._last_file_mtime:
                             logger.debug(f"📁 FILE WATCHER: Storage file changed (mtime: {current_mtime}), reloading...")
                             AzureSQLService._last_file_mtime = current_mtime
+                            # STABILITY MODE: Add small delay before reload to ensure file write is complete
+                            # This reduces race condition where file watcher reads during heartbeat save
+                            time.sleep(0.1)  # 100ms delay to let file write complete
                             # Reload from file (this merges with in-memory, preserving active processing)
+                            # File locking in _load_mock_storage will prevent reading during writes
                             self._load_mock_storage()
                     else:
                         # File doesn't exist yet - check again later
@@ -119,8 +123,10 @@ class AzureSQLService:
                 except Exception as e:
                     logger.warning(f"📁 FILE WATCHER: Error checking file: {e}")
                 
-                # Check every 0.5 seconds for fast synchronization
-                AzureSQLService._file_watcher_stop_event.wait(0.5)
+                # STABILITY MODE: Check every 2.0 seconds to reduce race condition window
+                # This reduces the chance of file watcher reloading while heartbeat is saving
+                # Still fast enough for cross-worker synchronization (2s is acceptable)
+                AzureSQLService._file_watcher_stop_event.wait(2.0)
             
             logger.info("📁 FILE WATCHER: File watcher thread stopped")
         

@@ -108,5 +108,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # STABILITY MODE: Use single worker to avoid multi-worker file sync issues
 # This makes processing slower but MUCH more stable for long-running video analysis
 # The user requested stability over speed to ensure completion
-CMD uvicorn main_integrated:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 600 --timeout-graceful-shutdown 30 --workers ${WEBSITES_WORKER_PROCESSES:-1}
+# CRITICAL: Hardcode --workers 1 to ensure single worker even if env var isn't set
+# This prevents multi-worker race conditions that cause "Analysis not found" errors
+CMD uvicorn main_integrated:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 600 --timeout-graceful-shutdown 30 --workers 1
 
