@@ -299,20 +299,20 @@ async def upload_video(
                     
                     tmp_file.close()
                     upload_duration = time.time() - upload_start_time
-            upload_rate = (file_size / upload_duration) / (1024 * 1024) if upload_duration > 0 else 0  # MB/s
-            
-            logger.info(
-                f"[{request_id}] File uploaded successfully",
-                extra={
-                    "filename": file.filename,
-                    "size": file_size,
-                    "size_mb": file_size / (1024*1024),
-                    "path": tmp_path,
-                    "upload_duration": upload_duration,
-                    "upload_rate_mbps": upload_rate,
-                    "chunks": chunk_count
-                }
-            )
+                    upload_rate = (file_size / upload_duration) / (1024 * 1024) if upload_duration > 0 else 0  # MB/s
+                    
+                    logger.info(
+                        f"[{request_id}] File uploaded successfully",
+                        extra={
+                            "filename": file.filename,
+                            "size": file_size,
+                            "size_mb": file_size / (1024*1024),
+                            "path": tmp_path,
+                            "upload_duration": upload_duration,
+                            "upload_rate_mbps": upload_rate,
+                            "chunks": chunk_count
+                        }
+                    )
             
             # CRITICAL: Warn if upload is approaching timeout
             if upload_duration > 200:  # 200 seconds - very close to 230s timeout
