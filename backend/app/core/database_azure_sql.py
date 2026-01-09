@@ -230,7 +230,7 @@ class AzureSQLService:
                 # Only clear if in-memory storage is also empty (fresh start)
                 if not AzureSQLService._mock_storage:
                     logger.warning(f"LOAD: In-memory storage is empty, keeping it empty despite JSON error")
-                AzureSQLService._mock_storage = {}
+                    AzureSQLService._mock_storage = {}
                 else:
                     logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite file JSON error")
                 if attempt < max_retries - 1:
