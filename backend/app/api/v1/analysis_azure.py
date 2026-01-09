@@ -525,13 +525,13 @@ async def upload_video(
                 logger.error(f"[{request_id}] 🔧 Thread: {threading.current_thread().ident}, {threading.current_thread().name}")
                 try:
                     await process_analysis_azure(
-            analysis_id,
-            video_url,
-            patient_id,
+                        analysis_id,
+                        video_url,
+                        patient_id,
                         view_type_str,
-            reference_length_mm,
-            fps
-        )
+                        reference_length_mm,
+                        fps
+                    )
                     logger.error(f"[{request_id}] 🔧✅ Background task completed successfully")
                 except Exception as wrapper_error:
                     logger.error(f"[{request_id}] 🔧❌ Background task failed: {type(wrapper_error).__name__}: {wrapper_error}", exc_info=True)
