@@ -260,14 +260,14 @@ async def upload_video(
                 last_log_time = time.time()
                 try:
                     while True:
-            chunk = await file.read(chunk_size)
-            if not chunk:
-                break
-                file_size += len(chunk)
-                chunk_count += 1
-                
-                # Write chunk immediately to reduce memory usage
-            tmp_file.write(chunk)
+                        chunk = await file.read(chunk_size)
+                        if not chunk:
+                            break
+                        file_size += len(chunk)
+                        chunk_count += 1
+                        
+                        # Write chunk immediately to reduce memory usage
+                        tmp_file.write(chunk)
                 
                 # Log progress more frequently for large files (every 5MB or every 5 seconds)
                 current_time = time.time()
@@ -389,7 +389,7 @@ async def upload_video(
         
         # Store metadata in Azure SQL Database
         try:
-        analysis_data = {
+            analysis_data = {
             'id': analysis_id,
             'patient_id': patient_id,
             'filename': file.filename,
@@ -716,7 +716,7 @@ async def process_analysis_azure(
         # Update progress: Starting - with retry logic
         for retry in range(5):
             try:
-        await db_service.update_analysis(analysis_id, {
+                await db_service.update_analysis(analysis_id, {
             'status': 'processing',
             'current_step': 'pose_estimation',
             'step_progress': 5,
@@ -738,7 +738,7 @@ async def process_analysis_azure(
         
         # Get gait analysis service with error handling
         try:
-        gait_service = get_gait_analysis_service()
+            gait_service = get_gait_analysis_service()
         if not gait_service:
             error_msg = (
                 "Gait analysis service is not available. "
@@ -767,10 +767,10 @@ async def process_analysis_azure(
         
         # Download video from blob storage to temporary file with comprehensive error handling
         try:
-        if video_url.startswith('http') or video_url.startswith('https'):
-            # Real blob storage URL - download it
+            if video_url.startswith('http') or video_url.startswith('https'):
+                # Real blob storage URL - download it
                 logger.debug(f"[{request_id}] Downloading video from URL: {video_url}")
-            video_path = await gait_service.download_video_from_url(video_url)
+                video_path = await gait_service.download_video_from_url(video_url)
         elif os.path.exists(video_url):
             # Local file path (used in mock mode or if file already exists)
             video_path = video_url
@@ -849,7 +849,7 @@ async def process_analysis_azure(
             )
         
         try:
-        file_size = os.path.getsize(video_path)
+            file_size = os.path.getsize(video_path)
         except OSError as e:
             logger.error(
                 f"[{request_id}] Error getting file size: {e}",
@@ -1626,8 +1626,8 @@ async def process_analysis_azure(
         max_db_retries = 5
         for retry in range(max_db_retries):
             try:
-        await db_service.update_analysis(analysis_id, {
-            'current_step': 'report_generation',
+                await db_service.update_analysis(analysis_id, {
+                    'current_step': 'report_generation',
             'step_progress': 95,
             'step_message': 'Generating analysis report...'
         })
@@ -1703,8 +1703,8 @@ async def process_analysis_azure(
         max_db_retries = 10  # Increased retries for critical final update
         for retry in range(max_db_retries):
             try:
-        await db_service.update_analysis(analysis_id, {
-            'status': 'completed',
+                await db_service.update_analysis(analysis_id, {
+                    'status': 'completed',
             'current_step': 'report_generation',
             'step_progress': 100,
             'step_message': 'Analysis complete!',
