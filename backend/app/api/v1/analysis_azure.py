@@ -1394,6 +1394,37 @@ async def process_analysis_azure(
                     logger.error(f"[{request_id}] ❌ Failed to restart heartbeat thread: {restart_error}", exc_info=True)
             
             logger.info(f"[{request_id}] 🎬 Heartbeat thread is running: {heartbeat_is_alive} (thread ID: {heartbeat_thread.ident if heartbeat_thread else None})")
+            
+            # CRITICAL: Add periodic heartbeat verification during video processing
+            # This will help identify if heartbeat dies during processing
+            async def periodic_heartbeat_check():
+                """Periodically check if heartbeat is still alive during processing"""
+                check_count = 0
+                try:
+                    while True:
+                        await asyncio.sleep(5.0)  # Check every 5 seconds
+                        check_count += 1
+                        if heartbeat_thread:
+                            is_alive = heartbeat_thread.is_alive()
+                            logger.error(f"[{request_id}] 🔍 PERIODIC HEARTBEAT CHECK #{check_count}: Thread alive={is_alive}, Thread ID={heartbeat_thread.ident}")
+                            if not is_alive:
+                                logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Heartbeat thread DIED during processing! ❌❌❌")
+                                logger.error(f"[{request_id}] ❌ Check count: {check_count}, Analysis ID: {analysis_id}")
+                                logger.error(f"[{request_id}] ❌ Analysis in memory: {analysis_id in db_service._mock_storage if db_service else False}")
+                        else:
+                            logger.error(f"[{request_id}] ❌ PERIODIC CHECK #{check_count}: Heartbeat thread is None!")
+                except asyncio.CancelledError:
+                    logger.error(f"[{request_id}] 🔍 Periodic heartbeat monitor cancelled")
+            
+            # Start periodic heartbeat monitoring
+            heartbeat_monitor_task = asyncio.create_task(periodic_heartbeat_check())
+            logger.error(f"[{request_id}] 🔍 Started periodic heartbeat monitor task")
+            
+            logger.error(f"[{request_id}] 🎬🎬🎬 CALLING analyze_video 🎬🎬🎬")
+            logger.error(f"[{request_id}] 🎬 Video path: {video_path}")
+            logger.error(f"[{request_id}] 🎬 FPS: {fps}, View type: {view_type}")
+            logger.error(f"[{request_id}] 🎬 Progress callback available: {progress_callback is not None}")
+            
             analysis_result = await gait_service.analyze_video(
                 video_path,
                 fps=fps,
@@ -1401,6 +1432,14 @@ async def process_analysis_azure(
                 view_type=view_type,
                 progress_callback=progress_callback
             )
+            
+            # Stop periodic monitoring
+            heartbeat_monitor_task.cancel()
+            try:
+                await heartbeat_monitor_task
+            except asyncio.CancelledError:
+                pass
+            logger.error(f"[{request_id}] 🔍 Stopped periodic heartbeat monitor")
             logger.info(f"[{request_id}] ✅ VIDEO ANALYSIS COMPLETE: Got result with keys: {list(analysis_result.keys()) if analysis_result else 'None'}")
             
             # CRITICAL: Validate that processing actually happened
