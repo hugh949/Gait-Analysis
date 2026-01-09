@@ -1717,13 +1717,13 @@ async def process_analysis_azure(
         max_db_retries = 10  # Increased retries for critical final update
         for retry in range(max_db_retries):
             try:
-        await db_service.update_analysis(analysis_id, {
-            'status': 'completed',
-            'current_step': 'report_generation',
-            'step_progress': 100,
-            'step_message': 'Analysis complete!',
-            'metrics': metrics
-        })
+                await db_service.update_analysis(analysis_id, {
+                    'status': 'completed',
+                    'current_step': 'report_generation',
+                    'step_progress': 100,
+                    'step_message': 'Analysis complete!',
+                    'metrics': metrics
+                })
                 completion_success = True
                 logger.info(
                     f"[{request_id}] Analysis completed successfully",
