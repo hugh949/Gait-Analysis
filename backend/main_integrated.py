@@ -401,21 +401,23 @@ if FRONTEND_DIR.exists():
         request_id = getattr(request.state, 'request_id', 'unknown')
         logger.debug(f"[{request_id}] SPA route called: {full_path}")
         
+        # CRITICAL: First check if this is an API route - if so, return 404 (not 405)
+        # This prevents the catch-all from interfering with API routes
+        if full_path.startswith("api/"):
+            logger.warning(f"[{request_id}] API route caught by catch-all: {full_path} - returning 404 (route not found)")
+            return JSONResponse(
+                status_code=404,
+                content={"error": "API route not found", "path": full_path, "method": request.method, "message": "The API route was not found. Check that the route is properly registered."}
+            )
+        
         # CRITICAL: Only handle GET requests - POST/PUT/DELETE should go to API routes
+        # But if we get here with a non-GET request, it means it's not an API route
+        # and it's not a GET request, so return 405
         if request.method != "GET":
             logger.warning(f"[{request_id}] Non-GET request caught by catch-all: {request.method} {full_path} - returning 405")
             return JSONResponse(
                 status_code=405,
                 content={"error": "Method not allowed", "method": request.method, "path": full_path, "message": "This route only accepts GET requests. API routes should handle POST/PUT/DELETE."}
-            )
-        
-        # Double-check: if this somehow matches an API route, return 404
-        # (This shouldn't happen due to route ordering, but safety check)
-        if full_path.startswith("api/"):
-            logger.warning(f"[{request_id}] API route caught by catch-all: {full_path} - this shouldn't happen!")
-            return JSONResponse(
-                status_code=404,
-                content={"error": "API route not found", "path": full_path}
             )
         
         # Serve index.html for all other routes (React SPA routing)
