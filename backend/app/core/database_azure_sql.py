@@ -164,7 +164,7 @@ class AzureSQLService:
                             logger.error(f"LOAD: Storage file is still empty after {max_retries} attempts. Preserving in-memory storage.")
                             # CRITICAL: Don't clear in-memory storage - preserve it
                             if not AzureSQLService._mock_storage:
-                                AzureSQLService._mock_storage = {}
+                            AzureSQLService._mock_storage = {}
                             return
                     
                     # Use file locking to prevent race conditions (if available)
@@ -184,7 +184,7 @@ class AzureSQLService:
                             # CRITICAL: Preserve in-memory storage if it exists
                             if not AzureSQLService._mock_storage:
                                 logger.warning(f"LOAD: In-memory storage is empty, keeping it empty")
-                                AzureSQLService._mock_storage = {}
+                            AzureSQLService._mock_storage = {}
                             else:
                                 logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite invalid file data")
                             return
@@ -197,8 +197,8 @@ class AzureSQLService:
                             for key, value in data.items():
                                 AzureSQLService._mock_storage[key] = value
                             logger.info(f"LOAD: Merged {len(data)} analyses from file into memory. Total in memory: {len(AzureSQLService._mock_storage)} (attempt {attempt + 1})")
-                            if len(AzureSQLService._mock_storage) > 0:
-                                logger.debug(f"LOAD: Analysis IDs in storage: {list(AzureSQLService._mock_storage.keys())}")
+                        if len(AzureSQLService._mock_storage) > 0:
+                            logger.debug(f"LOAD: Analysis IDs in storage: {list(AzureSQLService._mock_storage.keys())}")
                         else:
                             # Invalid data type - preserve in-memory storage
                             logger.warning(f"LOAD: File contains invalid data type, preserving in-memory storage")
@@ -230,7 +230,7 @@ class AzureSQLService:
                 # Only clear if in-memory storage is also empty (fresh start)
                 if not AzureSQLService._mock_storage:
                     logger.warning(f"LOAD: In-memory storage is empty, keeping it empty despite JSON error")
-                    AzureSQLService._mock_storage = {}
+                AzureSQLService._mock_storage = {}
                 else:
                     logger.warning(f"LOAD: Preserving {len(AzureSQLService._mock_storage)} analyses in memory despite file JSON error")
                 if attempt < max_retries - 1:
@@ -580,7 +580,7 @@ class AzureSQLService:
             if analysis_id not in AzureSQLService._mock_storage:
                 logger.info(f"UPDATE: Analysis {analysis_id} not in memory, reloading from file...")
                 # Only reload if not in memory - this handles cross-worker scenarios
-                self._load_mock_storage()
+            self._load_mock_storage()
             
             # Update in-memory mock storage IMMEDIATELY (source of truth)
             if analysis_id in AzureSQLService._mock_storage:
@@ -739,7 +739,7 @@ class AzureSQLService:
         
         # For real SQL, we can't use sync method - return False to indicate async method should be used
         logger.warning(f"UPDATE_SYNC: Real SQL database - sync method not available. Use async update_analysis instead.")
-        return False
+            return False
     
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """
@@ -747,11 +747,15 @@ class AzureSQLService:
         CRITICAL: This method ALWAYS checks in-memory storage FIRST, then file.
         In-memory storage is the source of truth during active processing.
         
-        CRITICAL ARCHITECTURE CHANGE: File-first approach for multi-worker reliability.
-        In a multi-worker environment (Uvicorn with multiple workers), in-memory storage
-        is NOT shared between workers. Therefore, we MUST read from file first to ensure
-        cross-worker visibility. In-memory cache is only used as a secondary optimization
-        after we've confirmed the file doesn't have the data.
+        CRITICAL ARCHITECTURE: In-memory-first approach for maximum reliability.
+        In-memory storage is checked FIRST because:
+        1. It's the fastest (no file I/O)
+        2. It's updated immediately by heartbeat thread
+        3. It's the source of truth during active processing
+        4. File is only used as a fallback if in-memory doesn't have it
+        
+        If analysis is not found in memory, we reload from file and merge into memory.
+        This ensures all workers eventually see the analysis, but in-memory takes precedence.
         """
         if self._use_mock:
             import os
@@ -793,12 +797,20 @@ class AzureSQLService:
                 logger.error(f"🔍   Updated at: {analysis_state.get('updated_at')}")
                 logger.error(f"🔍   Created at: {analysis_state.get('created_at')}")
             
-            # CRITICAL: In multi-worker environment, ALWAYS read from FILE FIRST
-            # Memory is NOT shared between workers, so file is the source of truth
-            # We'll merge file data into memory, but file takes precedence for cross-worker visibility
+            # CRITICAL: Check IN-MEMORY storage FIRST (it's the source of truth during active processing)
+            # The heartbeat thread updates in-memory storage immediately, so it's always up-to-date
+            # Only fall back to file if not in memory (for cross-worker visibility)
             max_retries = 30  # Increased to 30 retries for better resilience
             for retry in range(max_retries):
-                # Strategy 1: Read from file (most reliable for cross-worker access)
+                # Strategy 1: Check in-memory storage FIRST (fastest and most up-to-date)
+                if analysis_id in AzureSQLService._mock_storage:
+                    analysis_data = AzureSQLService._mock_storage[analysis_id].copy()
+                    logger.error(f"🔍✅ FOUND in MEMORY (attempt {retry + 1}/{max_retries})")
+                    logger.error(f"🔍 Analysis state: status={analysis_data.get('status')}, step={analysis_data.get('current_step')}, progress={analysis_data.get('step_progress')}%")
+                    logger.error(f"🔍🔍🔍 DIAGNOSTIC GET_ANALYSIS END (SUCCESS - MEMORY) 🔍🔍🔍")
+                    return analysis_data
+                
+                # Strategy 2: Read from file (for cross-worker visibility)
                 if os.path.exists(file_path):
                     try:
                         with open(file_path, 'r') as f:
@@ -864,7 +876,7 @@ class AzureSQLService:
                     except (IOError, OSError) as e:
                         logger.debug(f"GET: Error reading file (attempt {retry + 1}): {e}")
                 
-                # Strategy 2: Reload from file using _load_mock_storage (which preserves in-memory if file missing)
+                # Strategy 3: Reload from file using _load_mock_storage (which preserves in-memory if file missing)
                 self._load_mock_storage()
                 
                 # Check if analysis is now in memory (after reload)
@@ -873,7 +885,11 @@ class AzureSQLService:
                         logger.info(f"GET: Retrieved analysis from memory after reload: {analysis_id} (attempt {retry + 1}/{max_retries})")
                     else:
                         logger.debug(f"GET: Retrieved analysis from mock storage: {analysis_id}")
-                    return AzureSQLService._mock_storage[analysis_id].copy()
+                    analysis_data = AzureSQLService._mock_storage[analysis_id].copy()
+                    logger.error(f"🔍✅ FOUND in MEMORY after reload (attempt {retry + 1}/{max_retries})")
+                    logger.error(f"🔍 Analysis state: status={analysis_data.get('status')}, step={analysis_data.get('current_step')}, progress={analysis_data.get('step_progress')}%")
+                    logger.error(f"🔍🔍🔍 DIAGNOSTIC GET_ANALYSIS END (SUCCESS - MEMORY AFTER RELOAD) 🔍🔍🔍")
+                    return analysis_data
                 
                 # File doesn't exist or analysis not found - wait and retry
                 if retry < max_retries - 1:  # Don't sleep on last attempt
@@ -886,13 +902,13 @@ class AzureSQLService:
                     elif retry < 10:
                         # Next 5 attempts: short delays (0.3s, 0.4s, 0.5s, 0.6s, 0.7s)
                         delay = 0.3 + 0.1 * (retry - 5)
-                    else:
+                else:
                         # Later attempts: longer delays (0.8s, 1.0s, 1.2s, etc.)
                         delay = 0.8 + 0.2 * (retry - 10)
                     
                     logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay:.2f}s (attempt {retry + 1}/{max_retries})")
                     time.sleep(delay)
-                    continue
+                        continue
             
             # Analysis not found after retries
             logger.error(f"🔍❌❌❌ ANALYSIS NOT FOUND AFTER {max_retries} RETRIES ❌❌❌")
@@ -937,7 +953,7 @@ class AzureSQLService:
                                     return AzureSQLService._mock_storage[analysis_id].copy()
                                 else:
                                     # Fallback: return directly from file
-                                    return file_data[analysis_id].copy()
+                                return file_data[analysis_id].copy()
                         else:
                             logger.error(f"CRITICAL: File contains invalid data type: {type(file_data)}. Expected dict.")
                 except json.JSONDecodeError as e:
