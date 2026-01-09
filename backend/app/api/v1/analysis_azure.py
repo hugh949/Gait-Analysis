@@ -651,8 +651,7 @@ async def process_analysis_azure(
     
     # CRITICAL: Log immediately when function is called (before any try block)
     # This ensures we see if the background task actually starts
-    import os
-    import threading
+    # Note: os and threading are already imported at module level
     logger.error("=" * 80)
     logger.error(f"[{request_id}] ========== PROCESSING TASK FUNCTION CALLED ==========")
     logger.error(f"[{request_id}] Analysis ID: {analysis_id}")
