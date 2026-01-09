@@ -33,10 +33,11 @@ import os
 
 # Import request logging middleware
 try:
-    from app.core.middleware import RequestLoggingMiddleware
+    from app.core.middleware import RequestLoggingMiddleware, SPARoutingMiddleware
     MIDDLEWARE_AVAILABLE = True
 except ImportError:
     MIDDLEWARE_AVAILABLE = False
+    SPARoutingMiddleware = None
     logger.warning("Request logging middleware not available")
 
 # Import app modules with error handling
