@@ -784,8 +784,8 @@ async def process_analysis_azure(
                     "Mock storage mode: Video file was not properly saved",
                     details={"video_url": video_url, "analysis_id": analysis_id}
                 )
-        else:
-            # Try to get video from blob storage by blob name
+            else:
+                # Try to get video from blob storage by blob name
                 if storage_service is None:
                     raise StorageError(
                         "Storage service not available and video URL is not a local file",
