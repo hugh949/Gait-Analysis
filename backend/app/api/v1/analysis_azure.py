@@ -771,7 +771,7 @@ async def process_analysis_azure(
                 # Real blob storage URL - download it
                 logger.debug(f"[{request_id}] Downloading video from URL: {video_url}")
                 video_path = await gait_service.download_video_from_url(video_url)
-        elif os.path.exists(video_url):
+            elif os.path.exists(video_url):
             # Local file path (used in mock mode or if file already exists)
             video_path = video_url
                 logger.info(
