@@ -869,9 +869,29 @@ async def process_analysis_azure(
             thread_name = threading.current_thread().name
             last_successful_update = time.time()
             
-            logger.info(f"[{request_id}] 🔄 THREAD-BASED HEARTBEAT STARTED for analysis {analysis_id}")
-            logger.info(f"[{request_id}] 🔄 THREAD HEARTBEAT: Thread ID: {thread_id}, Name: {thread_name}")
-            logger.info(f"[{request_id}] 🔄 THREAD HEARTBEAT: Running with MAXIMUM-FREQUENCY updates (every 0.1s = 10 times/second)")
+            logger.error(f"[{request_id}] 🔄🔄🔄 THREAD-BASED HEARTBEAT STARTED 🔄🔄🔄")
+            logger.error(f"[{request_id}] 🔄 Analysis ID: {analysis_id}")
+            logger.error(f"[{request_id}] 🔄 Thread ID: {thread_id}, Thread Name: {thread_name}")
+            logger.error(f"[{request_id}] 🔄 Process ID: {os.getpid()}")
+            logger.error(f"[{request_id}] 🔄 db_service available: {db_service is not None}")
+            logger.error(f"[{request_id}] 🔄 db_service._use_mock: {db_service._use_mock if db_service else None}")
+            logger.error(f"[{request_id}] 🔄 Analysis in memory: {analysis_id in db_service._mock_storage if db_service else False}")
+            logger.error(f"[{request_id}] 🔄 Running with MAXIMUM-FREQUENCY updates (every 0.1s = 10 times/second)")
+            
+            # CRITICAL: Verify analysis exists before starting heartbeat loop
+            if db_service and db_service._use_mock:
+                if analysis_id not in db_service._mock_storage:
+                    logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis {analysis_id} NOT in memory when heartbeat starts! ❌❌❌")
+                    logger.error(f"[{request_id}] ❌ Memory storage size: {len(db_service._mock_storage)}")
+                    logger.error(f"[{request_id}] ❌ Memory analysis IDs: {list(db_service._mock_storage.keys())}")
+                    # Try to reload from file
+                    db_service._load_mock_storage()
+                    if analysis_id in db_service._mock_storage:
+                        logger.error(f"[{request_id}] ✅ Analysis found after reload from file")
+                    else:
+                        logger.error(f"[{request_id}] ❌ Analysis still not found after reload - will recreate in first heartbeat")
+                else:
+                    logger.error(f"[{request_id}] ✅ Analysis {analysis_id} found in memory when heartbeat starts")
             
             try:
                 while not heartbeat_stop_event.is_set():
@@ -1051,10 +1071,46 @@ async def process_analysis_azure(
         # Start thread-based heartbeat IMMEDIATELY - before any processing starts
         # CRITICAL: Use non-daemon thread so it can't be killed by Python shutdown
         # This ensures the heartbeat continues even during long processing
-        heartbeat_thread = threading.Thread(target=thread_based_heartbeat, daemon=False, name=f"heartbeat-{analysis_id[:8]}")
-        heartbeat_thread.start()
-        logger.info(f"[{request_id}] ✅ Started NON-DAEMON thread-based heartbeat for analysis {analysis_id} (thread ID: {heartbeat_thread.ident}, name: {heartbeat_thread.name})")
-        logger.info(f"[{request_id}] ✅ Heartbeat thread will run with MAXIMUM-FREQUENCY updates (every 0.1s = 10 times/second) to ensure persistence")
+        logger.error(f"[{request_id}] 🔧🔧🔧 HEARTBEAT THREAD CREATION DIAGNOSTIC 🔧🔧🔧")
+        logger.error(f"[{request_id}] 🔧 About to create heartbeat thread for analysis {analysis_id}")
+        logger.error(f"[{request_id}] 🔧 Current thread: {threading.current_thread().ident}, {threading.current_thread().name}")
+        logger.error(f"[{request_id}] 🔧 db_service available: {db_service is not None}")
+        logger.error(f"[{request_id}] 🔧 db_service._use_mock: {db_service._use_mock if db_service else None}")
+        logger.error(f"[{request_id}] 🔧 Analysis in memory: {analysis_id in db_service._mock_storage if db_service else False}")
+        
+        try:
+            heartbeat_thread = threading.Thread(target=thread_based_heartbeat, daemon=False, name=f"heartbeat-{analysis_id[:8]}")
+            logger.error(f"[{request_id}] 🔧 Heartbeat thread object created: {heartbeat_thread}")
+            logger.error(f"[{request_id}] 🔧 Thread name: {heartbeat_thread.name}")
+            
+            heartbeat_thread.start()
+            logger.error(f"[{request_id}] 🔧 Heartbeat thread.start() called")
+            
+            # CRITICAL: Wait a moment and verify thread actually started
+            import time as time_module
+            time_module.sleep(0.2)  # Wait 200ms for thread to start
+            
+            thread_is_alive = heartbeat_thread.is_alive()
+            thread_ident = heartbeat_thread.ident
+            logger.error(f"[{request_id}] 🔧🔧🔧 HEARTBEAT THREAD STARTUP VERIFICATION 🔧🔧🔧")
+            logger.error(f"[{request_id}] 🔧 Thread is_alive: {thread_is_alive}")
+            logger.error(f"[{request_id}] 🔧 Thread ident: {thread_ident}")
+            logger.error(f"[{request_id}] 🔧 Thread name: {heartbeat_thread.name}")
+            
+            if not thread_is_alive:
+                logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Heartbeat thread is NOT ALIVE after start()! ❌❌❌")
+                logger.error(f"[{request_id}] ❌ This means the thread crashed immediately or never started")
+                logger.error(f"[{request_id}] ❌ Analysis {analysis_id} will become invisible during processing!")
+            else:
+                logger.error(f"[{request_id}] ✅ Heartbeat thread is ALIVE and running")
+            
+            logger.info(f"[{request_id}] ✅ Started NON-DAEMON thread-based heartbeat for analysis {analysis_id} (thread ID: {thread_ident}, name: {heartbeat_thread.name}, alive: {thread_is_alive})")
+            logger.info(f"[{request_id}] ✅ Heartbeat thread will run with MAXIMUM-FREQUENCY updates (every 0.1s = 10 times/second) to ensure persistence")
+        except Exception as thread_start_error:
+            logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Failed to start heartbeat thread! ❌❌❌")
+            logger.error(f"[{request_id}] ❌ Error: {type(thread_start_error).__name__}: {thread_start_error}", exc_info=True)
+            logger.error(f"[{request_id}] ❌ Analysis {analysis_id} will become invisible during processing!")
+            heartbeat_thread = None
         
         # Progress callback that maps internal progress to UI steps with error handling
         async def progress_callback(progress_pct: int, message: str) -> None:
@@ -1107,8 +1163,11 @@ async def process_analysis_azure(
                 
                 # CRITICAL: Update database - use SYNC method for reliability during CPU-intensive processing
                 # Progress callback may be called from sync context, so use sync update method
-                logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: Starting database update for analysis {analysis_id}")
-                logger.debug(f"[{request_id}] 📊 PROGRESS CALLBACK: Step={step}, Progress={mapped_progress}%, Message='{message}'")
+                logger.error(f"[{request_id}] 📊📊📊 PROGRESS CALLBACK CALLED 📊📊📊")
+                logger.error(f"[{request_id}] 📊 Analysis ID: {analysis_id}")
+                logger.error(f"[{request_id}] 📊 Step: {step}, Progress: {mapped_progress}%, Message: '{message}'")
+                logger.error(f"[{request_id}] 📊 db_service available: {db_service is not None}")
+                logger.error(f"[{request_id}] 📊 Starting database update for analysis {analysis_id}")
                 
                 if db_service:
                     # CRITICAL: Update last known progress FIRST (for thread heartbeat)
