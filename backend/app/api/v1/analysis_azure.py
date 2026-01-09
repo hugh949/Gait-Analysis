@@ -772,14 +772,14 @@ async def process_analysis_azure(
                 logger.debug(f"[{request_id}] Downloading video from URL: {video_url}")
                 video_path = await gait_service.download_video_from_url(video_url)
             elif os.path.exists(video_url):
-            # Local file path (used in mock mode or if file already exists)
-            video_path = video_url
+                # Local file path (used in mock mode or if file already exists)
+                video_path = video_url
                 logger.info(
                     f"[{request_id}] Using existing file",
                     extra={"video_path": video_path, "analysis_id": analysis_id}
                 )
-        elif video_url.startswith('mock://'):
-            # Mock mode - this shouldn't happen if we fixed the upload, but handle it
+            elif video_url.startswith('mock://'):
+                # Mock mode - this shouldn't happen if we fixed the upload, but handle it
                 raise StorageError(
                     "Mock storage mode: Video file was not properly saved",
                     details={"video_url": video_url, "analysis_id": analysis_id}
