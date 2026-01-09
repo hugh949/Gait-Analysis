@@ -786,6 +786,18 @@ class GaitAnalysisService:
             logger.info(f"✅ Valid frames: {valid_3d_count}/{len(frames_3d_keypoints)}")
             logger.info("=" * 80)
             
+            # CRITICAL: Save Step 2 checkpoint before proceeding to Step 3
+            try:
+                from app.services.checkpoint_manager import CheckpointManager
+                checkpoint_manager = CheckpointManager(analysis_id=getattr(self, '_current_analysis_id', 'unknown'))
+                checkpoint_manager.save_step_2(
+                    frames_3d_keypoints=frames_3d_keypoints,
+                    frames_2d_keypoints=frames_2d_keypoints
+                )
+                logger.info("✅ Step 2 checkpoint saved - can resume from here if needed")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to save Step 2 checkpoint (non-critical): {e}")
+            
             if progress_callback:
                 try:
                     progress_callback(70, "3D lifting complete - validating results...")
@@ -834,6 +846,18 @@ class GaitAnalysisService:
             logger.info(f"✅ Metrics calculated: {len(metrics)}")
             logger.info(f"✅ Sample metrics: cadence={metrics.get('cadence', 0):.1f}, step_length={metrics.get('step_length', 0):.0f}mm")
             logger.info("=" * 80)
+            
+            # CRITICAL: Save Step 3 checkpoint before proceeding to Step 4
+            try:
+                from app.services.checkpoint_manager import CheckpointManager
+                checkpoint_manager = CheckpointManager(analysis_id=getattr(self, '_current_analysis_id', 'unknown'))
+                checkpoint_manager.save_step_3(
+                    metrics=metrics,
+                    frames_3d_keypoints=frames_3d_keypoints
+                )
+                logger.info("✅ Step 3 checkpoint saved - can resume from here if needed")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to save Step 3 checkpoint (non-critical): {e}")
             
             if progress_callback:
                 try:
