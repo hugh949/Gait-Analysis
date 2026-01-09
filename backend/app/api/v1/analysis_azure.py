@@ -807,7 +807,7 @@ async def process_analysis_azure(
                 
                 try:
                     with open(video_path, 'wb') as f:
-                    f.write(blob_data)
+                        f.write(blob_data)
                         logger.debug(f"[{request_id}] Blob downloaded and saved: {video_path}")
                 except OSError as e:
                     raise StorageError(
