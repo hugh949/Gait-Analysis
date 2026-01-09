@@ -906,8 +906,8 @@ class AzureSQLService:
                         # Later attempts: longer delays (0.8s, 1.0s, 1.2s, etc.)
                         delay = 0.8 + 0.2 * (retry - 10)
                     
-                    logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay:.2f}s (attempt {retry + 1}/{max_retries})")
-                    time.sleep(delay)
+                        logger.debug(f"GET: Analysis {analysis_id} not found, retrying in {delay:.2f}s (attempt {retry + 1}/{max_retries})")
+                        time.sleep(delay)
                         continue
             
             # Analysis not found after retries
