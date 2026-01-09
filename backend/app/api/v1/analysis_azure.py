@@ -285,7 +285,7 @@ async def upload_video(
                 
                 # Check file size limit
                 if file_size > MAX_FILE_SIZE:
-        tmp_file.close()
+                    tmp_file.close()
                     os.unlink(tmp_path)
                     logger.error(
                         f"[{request_id}] File too large: {file_size} bytes (max: {MAX_FILE_SIZE})",
