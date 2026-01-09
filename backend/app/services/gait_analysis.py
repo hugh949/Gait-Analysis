@@ -324,15 +324,15 @@ class GaitAnalysisService:
         monitor_task = asyncio.create_task(monitor_progress())
         
         try:
-        logger.info("=" * 80)
-        logger.info(f"🎬 ========== STARTING VIDEO PROCESSING ==========")
-        logger.info(f"🎬 Video path: {video_path}")
-        logger.info(f"🎬 FPS: {fps}, View type: {view_type}, Reference length: {reference_length_mm}mm")
-        logger.info(f"🎬 Timeout: 3600s (60 minutes)")
-        logger.info(f"🎬 Waiting for video processing to complete...")
-        logger.info("=" * 80)
-        
-        result = await asyncio.wait_for(process_task, timeout=3600.0)
+            logger.info("=" * 80)
+            logger.info(f"🎬 ========== STARTING VIDEO PROCESSING ==========")
+            logger.info(f"🎬 Video path: {video_path}")
+            logger.info(f"🎬 FPS: {fps}, View type: {view_type}, Reference length: {reference_length_mm}mm")
+            logger.info(f"🎬 Timeout: 3600s (60 minutes)")
+            logger.info(f"🎬 Waiting for video processing to complete...")
+            logger.info("=" * 80)
+            
+            result = await asyncio.wait_for(process_task, timeout=3600.0)
             processing_done.set()
             
             # CRITICAL: Validate result before returning
