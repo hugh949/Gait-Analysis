@@ -272,6 +272,9 @@ export default function Testing() {
         {/* Steps Section */}
         <div className="testing-section">
           <h2>3. Execute Steps</h2>
+          <p className="steps-instruction">
+            Click the button below each step to execute it. Each step must be completed before the next one becomes available.
+          </p>
           <div className="steps-container">
             {[1, 2, 3, 4].map((stepNum) => {
               const stepKey = `step${stepNum}` as keyof typeof steps
