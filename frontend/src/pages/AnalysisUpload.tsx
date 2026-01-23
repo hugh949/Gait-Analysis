@@ -807,11 +807,9 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === 'report_generation' && status === 'processing' ? 'active' : currentStep === 'report_generation' && status === 'completed' ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${currentStep === 'report_generation' ? 'active' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep === 'report_generation' && status === 'completed' ? (
-                    <div className="step-checkmark">✓</div>
-                  ) : currentStep === 'report_generation' && status === 'processing' ? (
+                  {currentStep === 'report_generation' ? (
                     <div className="step-spinner">
                       <Loader2 className="spinner-icon" />
                     </div>
