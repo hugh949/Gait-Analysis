@@ -555,7 +555,43 @@ export default function AnalysisUpload() {
           if (response.ok) {
             const data = await response.json()
             if (data.status === 'processing') {
-              // Resume tracking this analysis
+              // Check if it's stuck (report_generation with high progress for >5 minutes)
+              const createdTime = new Date(data.created_at || data.updated_at || 0).getTime()
+              const elapsedMinutes = (Date.now() - createdTime) / (1000 * 60)
+              const isStuck = (
+                data.current_step === 'report_generation' && 
+                data.step_progress >= 98 && 
+                elapsedMinutes > 5 &&
+                data.metrics && 
+                Object.keys(data.metrics).length > 0
+              )
+              
+              if (isStuck) {
+                // Try to auto-fix stuck analysis
+                console.log(`⚠️ Detected stuck analysis ${lastAnalysisId}, attempting auto-fix...`)
+                try {
+                  const fixResponse = await fetch(`${API_URL}/api/v1/analysis/${lastAnalysisId}/force-complete`, { method: 'POST' })
+                  const fixData = await fixResponse.json()
+                  if (fixData.status === 'success') {
+                    console.log(`✅ Auto-fixed stuck analysis ${lastAnalysisId}`)
+                    // Update to completed state
+                    setAnalysisId(lastAnalysisId)
+                    setStatus('completed')
+                    setCurrentStep('report_generation')
+                    setStepProgress(100)
+                    setStepMessage('Analysis complete! (auto-fixed)')
+                    return
+                  }
+                } catch (fixErr) {
+                  console.error(`❌ Error auto-fixing analysis ${lastAnalysisId}:`, fixErr)
+                }
+                // If auto-fix failed, clear and don't resume
+                console.log('⚠️ Auto-fix failed, clearing stuck analysis from state')
+                localStorage.removeItem('lastAnalysisId')
+                return
+              }
+              
+              // Not stuck - resume tracking this analysis
               setAnalysisId(lastAnalysisId)
               setStatus('processing')
               setCurrentStep(data.current_step || 'pose_estimation')
