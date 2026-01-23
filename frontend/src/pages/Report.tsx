@@ -25,7 +25,7 @@ interface AnalysisResult {
   video_url?: string
   current_step?: string
   step_progress?: number
-  progress_message?: string
+  step_message?: string
   metrics?: {
     cadence?: number
     step_length?: number
@@ -172,7 +172,7 @@ export default function Report() {
   const status = analysis.status || 'unknown'
   const currentStep = analysis.current_step || null
   const stepProgress = analysis.step_progress || 0
-  const progressMessage = analysis.progress_message || ''
+  const progressMessage = analysis.step_message || ''
 
   // Use professional assessments from backend if available
   const fallRiskAssessment = metrics.fall_risk_assessment || {}
