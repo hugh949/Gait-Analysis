@@ -1949,9 +1949,19 @@ async def process_analysis_azure(
                 logger.error(f"[{request_id}] Completion timeout after {max_completion_time}s - stopping retries")
                 break
                 
-            # Log progress during retries
+            # Log progress during retries and update UI
             if retry > 0:
                 logger.info(f"[{request_id}] Completion attempt {retry + 1}/{max_db_retries} (elapsed: {elapsed_time:.1f}s)")
+                # Update progress to show we're retrying
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'current_step': 'report_generation',
+                        'step_progress': 99,
+                        'step_message': f'Saving results... (attempt {retry + 1}/{max_db_retries})'
+                    })
+                except:
+                    pass  # Don't fail on progress update
+            
             try:
                 # Try async update first
                 update_result = await db_service.update_analysis(analysis_id, {
