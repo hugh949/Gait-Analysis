@@ -344,7 +344,8 @@ async def execute_step_3(
             frames_3d_keypoints_np,
             frame_timestamps,
             fps,
-            reference_length_mm
+            reference_length_mm,
+            progress_callback=None  # Testing mode doesn't use progress callbacks
         )
         
         # Checkpoint is saved automatically in _calculate_gait_metrics (via checkpoint_manager.save_step_3)

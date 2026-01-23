@@ -846,7 +846,8 @@ class GaitAnalysisService:
                 frames_3d_keypoints,
                 frame_timestamps,
                 video_fps,
-                reference_length_mm
+                reference_length_mm,
+                progress_callback
             )
             logger.info(f"✅ Gait metrics calculated: {len(metrics)} metrics")
             
@@ -1300,12 +1301,19 @@ class GaitAnalysisService:
         frames_3d_keypoints: List[Dict],
         timestamps: List[float],
         fps: float,
-        reference_length_mm: Optional[float]
+        reference_length_mm: Optional[float],
+        progress_callback: Optional[Callable] = None
     ) -> Dict:
         """Advanced gait parameter calculation with improved accuracy"""
         if len(frames_3d_keypoints) < 10:
             logger.warning("Not enough frames for gait analysis")
             return self._empty_metrics()
+        
+        if progress_callback:
+            try:
+                progress_callback(76, "Extracting joint positions from 3D keypoints...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
         
         # Extract joint positions
         left_ankle_positions = []
@@ -1357,6 +1365,12 @@ class GaitAnalysisService:
         else:
             right_step_positions = right_ankle_positions
         
+        if progress_callback:
+            try:
+                progress_callback(78, "Calibrating scale and detecting steps...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
+        
         # Scale calibration
         scale_factor = self._calibrate_leg_scale(frames_3d_keypoints, reference_length_mm)
         
@@ -1367,6 +1381,12 @@ class GaitAnalysisService:
         logger.info(f"Step detection complete: {len(left_steps)} left steps, {len(right_steps)} right steps")
         if len(left_steps) == 0 or len(right_steps) == 0:
             logger.warning(f"Unbalanced step detection - this may indicate detection issues or asymmetric gait")
+        
+        if progress_callback:
+            try:
+                progress_callback(80, f"Calculating basic gait parameters ({len(left_steps)} left, {len(right_steps)} right steps)...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
         
         # Calculate cadence
         if len(left_steps) + len(right_steps) > 0:
@@ -1436,6 +1456,12 @@ class GaitAnalysisService:
             swing_time = 0.0
             double_support_time = 0.0
         
+        if progress_callback:
+            try:
+                progress_callback(82, "Calculating symmetry and variability metrics...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
+        
         # Professional-grade gait parameters
         # Calculate symmetry indices (left vs right)
         symmetry_metrics = self._calculate_symmetry_metrics(
@@ -1447,6 +1473,12 @@ class GaitAnalysisService:
         variability_metrics = self._calculate_variability_metrics(
             step_lengths, all_step_times, left_step_times, right_step_times
         )
+        
+        if progress_callback:
+            try:
+                progress_callback(84, "Calculating geriatric gait parameters and fall risk...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
         
         # CRITICAL: Calculate professional geriatric gait parameters
         # Step width and step width variability (key fall risk indicators)
@@ -1461,6 +1493,12 @@ class GaitAnalysisService:
         speed_variability = self._calculate_stride_to_stride_speed_variability(
             left_ankle_positions, right_ankle_positions, timestamps, scale_factor
         )
+        
+        if progress_callback:
+            try:
+                progress_callback(86, "Analyzing multi-directional gait and validating biomechanics...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
         
         # Multi-directional analysis
         directional_analysis = self._analyze_multi_directional_gait(
@@ -1495,6 +1533,12 @@ class GaitAnalysisService:
         metrics["walk_ratio"] = round(walk_ratio, 4) if walk_ratio > 0 else 0.0
         metrics.update(speed_variability)
         metrics["directional_analysis"] = directional_analysis
+        
+        if progress_callback:
+            try:
+                progress_callback(88, "Assessing fall risk and functional mobility...")
+            except Exception as e:
+                logger.warning(f"Error in progress callback: {e}")
         
         # Calculate fall risk assessment (professional gait lab level)
         fall_risk_assessment = self._assess_fall_risk(
