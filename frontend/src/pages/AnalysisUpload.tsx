@@ -527,23 +527,59 @@ export default function AnalysisUpload() {
           )
           
           if (processingAnalyses.length > 0) {
-            // Use the most recent processing analysis
-            const latest = processingAnalyses.sort((a: any, b: any) => {
-              const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
-              const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
-              return dateB - dateA
-            })[0]
+            // Filter out stuck analyses (in report_generation with 98%+ progress for >5 minutes)
+            const now = Date.now()
+            const validAnalyses = processingAnalyses.filter((a: any) => {
+              const createdTime = new Date(a.created_at || a.updated_at || 0).getTime()
+              const elapsedMinutes = (now - createdTime) / (1000 * 60)
+              const isStuck = (
+                a.current_step === 'report_generation' && 
+                a.step_progress >= 98 && 
+                elapsedMinutes > 5
+              )
+              
+              // If stuck, try to auto-fix it
+              if (isStuck && a.metrics && Object.keys(a.metrics).length > 0) {
+                console.log(`⚠️ Detected stuck analysis ${a.id}, attempting auto-fix...`)
+                fetch(`${API_URL}/api/v1/analysis/${a.id}/force-complete`, { method: 'POST' })
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.status === 'success') {
+                      console.log(`✅ Auto-fixed stuck analysis ${a.id}`)
+                    } else {
+                      console.warn(`⚠️ Failed to auto-fix analysis ${a.id}:`, data.message)
+                    }
+                  })
+                  .catch(err => console.error(`❌ Error auto-fixing analysis ${a.id}:`, err))
+                return false // Don't resume stuck analyses
+              }
+              
+              return !isStuck
+            })
             
-            const resumeId = latest.id
-            setAnalysisId(resumeId)
-            setStatus('processing')
-            setCurrentStep(latest.current_step || 'pose_estimation')
-            setStepProgress(latest.step_progress || 0)
-            setStepMessage(latest.step_message || 'Resuming analysis...')
-            localStorage.setItem('lastAnalysisId', resumeId)
-            // Start polling
-            pollAnalysisStatus(resumeId)
-            return
+            if (validAnalyses.length > 0) {
+              // Use the most recent valid processing analysis
+              const latest = validAnalyses.sort((a: any, b: any) => {
+                const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
+                const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
+                return dateB - dateA
+              })[0]
+              
+              const resumeId = latest.id
+              setAnalysisId(resumeId)
+              setStatus('processing')
+              setCurrentStep(latest.current_step || 'pose_estimation')
+              setStepProgress(latest.step_progress || 0)
+              setStepMessage(latest.step_message || 'Resuming analysis...')
+              localStorage.setItem('lastAnalysisId', resumeId)
+              // Start polling
+              pollAnalysisStatus(resumeId)
+              return
+            } else {
+              // All analyses are stuck - clear localStorage
+              console.log('⚠️ All processing analyses appear to be stuck, clearing state')
+              localStorage.removeItem('lastAnalysisId')
+            }
           }
         }
         
