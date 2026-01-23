@@ -683,6 +683,14 @@ class GaitAnalysisService:
         
         logger.info(f"Detected poses in {len(frames_2d_keypoints)} frames")
         
+        # CRITICAL: Update progress to indicate Step 1 (frame processing) is complete
+        if progress_callback:
+            try:
+                progress_callback(50, "Frame processing complete. Starting signal processing...")
+                logger.info("✅ Progress updated: Step 1 (frame processing) complete")
+            except Exception as e:
+                logger.warning(f"Error in progress callback after frame processing: {e}")
+        
         # STEP 1 (continued): Apply advanced signal processing for maximum accuracy
         # CRITICAL: Wrap in try-except to ensure processing continues even if filtering fails
         try:
@@ -744,18 +752,39 @@ class GaitAnalysisService:
         logger.info(f"🎯 View type: {view_type}")
         logger.info("=" * 80)
         
+        # CRITICAL: Explicitly update progress to indicate Step 2 is starting
+        # This ensures the UI shows the correct step transition
         if progress_callback:
             try:
-                progress_callback(60, "Starting 3D lifting...")
+                logger.info("🔄 Updating progress: Transitioning from Step 1 to Step 2 (3D Lifting)")
+                progress_callback(60, "Step 1 complete. Starting 3D lifting...")
                 progress_callback(62, "Lifting 2D keypoints to 3D...")
+                logger.info("✅ Progress updated: Step 2 (3D Lifting) started")
             except Exception as e:
-                logger.warning(f"Error in progress callback during 3D lifting step: {e}")
+                logger.error(f"❌ Error in progress callback during 3D lifting step transition: {e}", exc_info=True)
+                # Don't fail - continue processing
         
         frames_3d_keypoints = []
         try:
             logger.debug(f"Starting 3D lifting: {len(frames_2d_keypoints)} 2D frames, view_type={view_type}")
+            # CRITICAL: Update progress before starting 3D lifting to ensure UI shows correct step
+            if progress_callback:
+                try:
+                    progress_callback(63, "Processing 3D lifting...")
+                    logger.info("✅ Progress updated to 63%: 3D lifting in progress")
+                except Exception as e:
+                    logger.warning(f"Error updating progress at 63%: {e}")
+            
             frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
             logger.info(f"✅ 3D lifting complete: {len(frames_3d_keypoints)} frames successfully lifted to 3D")
+            
+            # CRITICAL: Update progress after 3D lifting completes
+            if progress_callback:
+                try:
+                    progress_callback(70, "3D lifting complete - validating results...")
+                    logger.info("✅ Progress updated to 70%: 3D lifting complete")
+                except Exception as e:
+                    logger.warning(f"Error updating progress at 70%: {e}")
             
             # Validate 3D keypoints quality
             valid_3d_count = sum(1 for kp in frames_3d_keypoints if len(kp) > 0)
