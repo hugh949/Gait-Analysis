@@ -1764,6 +1764,27 @@ async def process_analysis_azure(
                 metrics['step_length_cv'] = safe_get_metric('step_length_cv', 0.0)
             if 'step_time_cv' in raw_metrics:
                 metrics['step_time_cv'] = safe_get_metric('step_time_cv', 0.0)
+            if 'step_time' in raw_metrics:
+                metrics['step_time'] = safe_get_metric('step_time', 0.0)
+            
+            # Add geriatric-specific parameters
+            if 'step_width_mean' in raw_metrics:
+                metrics['step_width_mean'] = safe_get_metric('step_width_mean', 0.0)
+            if 'step_width_cv' in raw_metrics:
+                metrics['step_width_cv'] = safe_get_metric('step_width_cv', 0.0)
+            if 'walk_ratio' in raw_metrics:
+                metrics['walk_ratio'] = safe_get_metric('walk_ratio', 0.0)
+            if 'stride_speed_cv' in raw_metrics:
+                metrics['stride_speed_cv'] = safe_get_metric('stride_speed_cv', 0.0)
+            
+            # Add professional assessments
+            if 'fall_risk_assessment' in raw_metrics:
+                metrics['fall_risk_assessment'] = raw_metrics.get('fall_risk_assessment', {})
+            if 'functional_mobility' in raw_metrics:
+                metrics['functional_mobility'] = raw_metrics.get('functional_mobility', {})
+            if 'directional_analysis' in raw_metrics:
+                metrics['directional_analysis'] = raw_metrics.get('directional_analysis', {})
+            
             if 'biomechanical_validation' in raw_metrics:
                 metrics['biomechanical_validation'] = raw_metrics.get('biomechanical_validation', {})
             

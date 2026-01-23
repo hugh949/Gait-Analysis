@@ -30,6 +30,36 @@ interface AnalysisResult {
     double_support_time?: number
     swing_time?: number
     stance_time?: number
+    step_time?: number
+    // Geriatric-specific parameters
+    step_width_mean?: number
+    step_width_cv?: number
+    walk_ratio?: number
+    stride_speed_cv?: number
+    step_length_cv?: number
+    step_time_cv?: number
+    step_time_symmetry?: number
+    step_length_symmetry?: number
+    // Professional assessments
+    fall_risk_assessment?: {
+      risk_score?: number
+      risk_level?: string
+      risk_category?: string
+      risk_factors?: string[]
+      risk_factor_count?: number
+      walking_speed_mps?: number
+      normalized_stride_length?: number
+    }
+    functional_mobility?: {
+      mobility_score?: number
+      mobility_level?: string
+      mobility_category?: string
+      score_percentage?: number
+    }
+    directional_analysis?: {
+      primary_direction?: string
+      direction_confidence?: number
+    }
   }
   created_at?: string
 }
@@ -94,12 +124,17 @@ export default function Report() {
   const metrics = analysis.metrics || {}
   const status = analysis.status || 'unknown'
 
+  // Use professional assessments from backend if available
+  const fallRiskAssessment = metrics.fall_risk_assessment || {}
+  const functionalMobility = metrics.functional_mobility || {}
+  const fallRisk = fallRiskAssessment.risk_level || (metrics.walking_speed ? 
+    (metrics.walking_speed / 1000 < 1.0 ? 'High' : metrics.walking_speed / 1000 < 1.2 ? 'Moderate' : 'Low') : null)
+  
   // Calculate metrics for different sections
   const walkingSpeed = metrics.walking_speed ? metrics.walking_speed / 1000 : null
-  const healthScore = walkingSpeed 
+  const healthScore = functionalMobility.mobility_score || (walkingSpeed 
     ? Math.min(100, Math.max(0, Math.round((walkingSpeed / 1.4) * 100)))
-    : null
-  const fallRisk = walkingSpeed ? (walkingSpeed < 1.0 ? 'High' : walkingSpeed < 1.2 ? 'Moderate' : 'Low') : null
+    : null)
 
   return (
     <div className="report-page">
@@ -170,14 +205,37 @@ export default function Report() {
           <section className="report-section caregiver-section">
             <h2>Caregiver</h2>
             <div className="section-content">
-              {fallRisk && (
-                <div className={`risk-indicator risk-${fallRisk.toLowerCase()}`}>
-                  <div className="risk-label">Fall Risk Assessment</div>
-                  <div className="risk-value">{fallRisk}</div>
+              {fallRiskAssessment.risk_level && (
+                <div className={`risk-indicator risk-${fallRiskAssessment.risk_level.toLowerCase()}`}>
+                  <div className="risk-label">Professional Fall Risk Assessment</div>
+                  <div className="risk-value">{fallRiskAssessment.risk_level}</div>
+                  <div className="risk-score">Risk Score: {fallRiskAssessment.risk_score?.toFixed(1) || 'N/A'}</div>
                   <div className="risk-description">
-                    {fallRisk === 'Low' && <p>✅ Low risk - Continue monitoring</p>}
-                    {fallRisk === 'Moderate' && <p>⚠️ Moderate risk - Consider consultation</p>}
-                    {fallRisk === 'High' && <p>🔴 High risk - Please consult healthcare provider</p>}
+                    <p>{fallRiskAssessment.risk_category || 'Assessment in progress'}</p>
+                    {fallRiskAssessment.risk_factors && fallRiskAssessment.risk_factors.length > 0 && (
+                      <div className="risk-factors">
+                        <p><strong>Key Risk Factors:</strong></p>
+                        <ul>
+                          {fallRiskAssessment.risk_factors.slice(0, 5).map((factor, idx) => (
+                            <li key={idx}>{factor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {functionalMobility.mobility_level && (
+                <div className="mobility-indicator">
+                  <div className="mobility-label">Functional Mobility Assessment</div>
+                  <div className="mobility-value">{functionalMobility.mobility_level}</div>
+                  <div className="mobility-score">
+                    Score: {functionalMobility.mobility_score?.toFixed(1) || 'N/A'} / 100
+                    ({functionalMobility.score_percentage?.toFixed(1) || '0'}%)
+                  </div>
+                  <div className="mobility-description">
+                    <p>{functionalMobility.mobility_category || 'Assessment in progress'}</p>
                   </div>
                 </div>
               )}
@@ -219,8 +277,9 @@ export default function Report() {
 
           {/* Professional Section */}
           <section className="report-section professional-section">
-            <h2>Professional</h2>
+            <h2>Professional Gait Lab Parameters</h2>
             <div className="section-content">
+              <h3>Spatiotemporal Parameters</h3>
               <div className="metrics-grid comprehensive">
                 {metrics.cadence && (
                   <div className="metric-card">
@@ -271,7 +330,97 @@ export default function Report() {
                     <div className="metric-unit">s</div>
                   </div>
                 )}
+                {metrics.step_time && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Time</div>
+                    <div className="metric-value">{metrics.step_time.toFixed(3)}</div>
+                    <div className="metric-unit">s</div>
+                  </div>
+                )}
               </div>
+
+              <h3>Geriatric Fall Risk Parameters</h3>
+              <div className="metrics-grid comprehensive">
+                {metrics.step_width_mean !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Width (Mean)</div>
+                    <div className="metric-value">{(metrics.step_width_mean / 1000).toFixed(3)}</div>
+                    <div className="metric-unit">m</div>
+                    <div className="metric-note">Base of support</div>
+                  </div>
+                )}
+                {metrics.step_width_cv !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Width Variability</div>
+                    <div className="metric-value">{metrics.step_width_cv.toFixed(2)}</div>
+                    <div className="metric-unit">% CV</div>
+                    <div className="metric-note">
+                      {metrics.step_width_cv > 15 ? '⚠️ High variability' : 
+                       metrics.step_width_cv > 10 ? '⚠️ Moderate variability' : 
+                       '✅ Normal variability'}
+                    </div>
+                  </div>
+                )}
+                {metrics.walk_ratio !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Walk Ratio</div>
+                    <div className="metric-value">{metrics.walk_ratio.toFixed(4)}</div>
+                    <div className="metric-unit">mm/(steps/min)</div>
+                    <div className="metric-note">Gait efficiency indicator</div>
+                  </div>
+                )}
+                {metrics.stride_speed_cv !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Stride Speed Variability</div>
+                    <div className="metric-value">{metrics.stride_speed_cv.toFixed(2)}</div>
+                    <div className="metric-unit">% CV</div>
+                    <div className="metric-note">Strongest fall predictor</div>
+                  </div>
+                )}
+                {metrics.step_length_cv !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Length Variability</div>
+                    <div className="metric-value">{metrics.step_length_cv.toFixed(2)}</div>
+                    <div className="metric-unit">% CV</div>
+                  </div>
+                )}
+                {metrics.step_time_cv !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Time Variability</div>
+                    <div className="metric-value">{metrics.step_time_cv.toFixed(2)}</div>
+                    <div className="metric-unit">% CV</div>
+                  </div>
+                )}
+              </div>
+
+              <h3>Gait Symmetry</h3>
+              <div className="metrics-grid comprehensive">
+                {metrics.step_time_symmetry !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Time Symmetry</div>
+                    <div className="metric-value">{(metrics.step_time_symmetry * 100).toFixed(1)}</div>
+                    <div className="metric-unit">%</div>
+                    <div className="metric-note">
+                      {metrics.step_time_symmetry >= 0.85 ? '✅ Good symmetry' : '⚠️ Asymmetry detected'}
+                    </div>
+                  </div>
+                )}
+                {metrics.step_length_symmetry !== undefined && (
+                  <div className="metric-card">
+                    <div className="metric-label">Step Length Symmetry</div>
+                    <div className="metric-value">{(metrics.step_length_symmetry * 100).toFixed(1)}</div>
+                    <div className="metric-unit">%</div>
+                  </div>
+                )}
+              </div>
+
+              {metrics.directional_analysis && (
+                <div className="directional-info">
+                  <h3>Multi-Directional Analysis</h3>
+                  <p><strong>Primary Direction:</strong> {metrics.directional_analysis.primary_direction}</p>
+                  <p><strong>Confidence:</strong> {(metrics.directional_analysis.direction_confidence * 100).toFixed(1)}%</p>
+                </div>
+              )}
 
               <div className="clinical-notes">
                 <h3>Clinical Notes</h3>

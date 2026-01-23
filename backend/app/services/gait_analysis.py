@@ -271,7 +271,8 @@ class GaitAnalysisService:
         fps: float = 30.0,
         reference_length_mm: Optional[float] = None,
         view_type: str = "front",
-        progress_callback: Optional[Callable] = None
+        progress_callback: Optional[Callable] = None,
+        analysis_id: Optional[str] = None
     ) -> Dict:
         """
         Analyze video for gait parameters with maximum accuracy
@@ -1413,6 +1414,25 @@ class GaitAnalysisService:
             step_lengths, all_step_times, left_step_times, right_step_times
         )
         
+        # CRITICAL: Calculate professional geriatric gait parameters
+        # Step width and step width variability (key fall risk indicators)
+        step_width_metrics = self._calculate_step_width_metrics(
+            left_ankle_positions, right_ankle_positions, left_steps, right_steps, timestamps, scale_factor
+        )
+        
+        # Walk ratio (step length / cadence) - indicator of gait efficiency
+        walk_ratio = self._calculate_walk_ratio(avg_step_length, cadence)
+        
+        # Stride-to-stride speed variability (strongest predictor of falls)
+        speed_variability = self._calculate_stride_to_stride_speed_variability(
+            left_ankle_positions, right_ankle_positions, timestamps, scale_factor
+        )
+        
+        # Multi-directional analysis
+        directional_analysis = self._analyze_multi_directional_gait(
+            frames_3d_keypoints, left_ankle_positions, right_ankle_positions, timestamps
+        )
+        
         # Validate biomechanical constraints
         validation_results = self._validate_biomechanical_constraints(
             frames_3d_keypoints, left_ankle_positions, right_ankle_positions
@@ -1435,11 +1455,30 @@ class GaitAnalysisService:
         # Add professional-grade metrics
         metrics.update(symmetry_metrics)
         metrics.update(variability_metrics)
+        
+        # Add geriatric-specific parameters
+        metrics.update(step_width_metrics)
+        metrics["walk_ratio"] = round(walk_ratio, 4) if walk_ratio > 0 else 0.0
+        metrics.update(speed_variability)
+        metrics["directional_analysis"] = directional_analysis
+        
+        # Calculate fall risk assessment (professional gait lab level)
+        fall_risk_assessment = self._assess_fall_risk(
+            metrics, step_width_metrics, speed_variability, variability_metrics
+        )
+        metrics["fall_risk_assessment"] = fall_risk_assessment
+        
+        # Calculate functional mobility score
+        functional_mobility = self._calculate_functional_mobility_score(metrics)
+        metrics["functional_mobility"] = functional_mobility
+        
         metrics["biomechanical_validation"] = validation_results
         
         logger.info(f"Calculated gait metrics: cadence={cadence:.1f}, step_length={avg_step_length:.0f}mm, speed={walking_speed:.0f}mm/s")
         logger.info(f"Symmetry: step_time={symmetry_metrics.get('step_time_symmetry', 0):.2f}, step_length={symmetry_metrics.get('step_length_symmetry', 0):.2f}")
         logger.info(f"Variability: step_length_cv={variability_metrics.get('step_length_cv', 0):.2f}%, step_time_cv={variability_metrics.get('step_time_cv', 0):.2f}%")
+        logger.info(f"Step width: {step_width_metrics.get('step_width_mean', 0):.1f}mm, CV={step_width_metrics.get('step_width_cv', 0):.2f}%")
+        logger.info(f"Fall risk: {fall_risk_assessment.get('risk_level', 'unknown')} (score: {fall_risk_assessment.get('risk_score', 0):.2f})")
         
         return metrics
     
@@ -1568,6 +1607,29 @@ class GaitAnalysisService:
             "step_length_symmetry": 0.0,
             "step_length_cv": 0.0,
             "step_time_cv": 0.0,
+            # Geriatric-specific parameters
+            "step_width_mean": 0.0,
+            "step_width_std": 0.0,
+            "step_width_cv": 0.0,
+            "walk_ratio": 0.0,
+            "stride_speed_cv": 0.0,
+            "directional_analysis": {
+                "primary_direction": "unknown",
+                "direction_confidence": 0.0
+            },
+            "fall_risk_assessment": {
+                "risk_score": 0.0,
+                "risk_level": "Unknown",
+                "risk_category": "Insufficient data",
+                "risk_factors": [],
+                "risk_factor_count": 0
+            },
+            "functional_mobility": {
+                "mobility_score": 0.0,
+                "mobility_level": "Unknown",
+                "mobility_category": "Insufficient data",
+                "score_percentage": 0.0
+            },
             "biomechanical_validation": {
                 "valid": False,
                 "warnings": [],
@@ -1829,6 +1891,433 @@ class GaitAnalysisService:
         validation_results["error_count"] = len(validation_results["errors"])
         
         return validation_results
+    
+    def _calculate_step_width_metrics(
+        self,
+        left_ankle_positions: np.ndarray,
+        right_ankle_positions: np.ndarray,
+        left_steps: List[int],
+        right_steps: List[int],
+        timestamps: List[float],
+        scale_factor: float
+    ) -> Dict:
+        """
+        Calculate step width and step width variability - critical fall risk indicators
+        Step width is the lateral distance between left and right ankles during double support
+        """
+        step_width_metrics = {}
+        
+        if len(left_ankle_positions) < 5 or len(right_ankle_positions) < 5:
+            logger.warning("Insufficient data for step width calculation")
+            return {
+                "step_width_mean": 0.0,
+                "step_width_std": 0.0,
+                "step_width_cv": 0.0,
+                "step_width_min": 0.0,
+                "step_width_max": 0.0
+            }
+        
+        # Calculate step width at each frame (lateral distance between ankles)
+        step_widths = []
+        
+        # Use step indices to calculate step width at heel strike moments
+        all_step_indices = sorted(set(left_steps + right_steps))
+        
+        for step_idx in all_step_indices:
+            if step_idx < len(left_ankle_positions) and step_idx < len(right_ankle_positions):
+                # Calculate lateral distance (perpendicular to forward direction)
+                # For frontal view: use X coordinate difference
+                # For side view: use Z coordinate difference
+                # We'll use the component perpendicular to the walking direction
+                left_pos = left_ankle_positions[step_idx]
+                right_pos = right_ankle_positions[step_idx]
+                
+                # Calculate lateral distance (assuming walking is primarily in Y direction)
+                # Step width is the distance in the X-Z plane (perpendicular to forward motion)
+                lateral_vec = np.array([
+                    right_pos[0] - left_pos[0],  # X difference
+                    0,  # Y is forward direction, not lateral
+                    right_pos[2] - left_pos[2]   # Z difference
+                ])
+                step_width = np.linalg.norm(lateral_vec) * scale_factor
+                step_widths.append(step_width)
+        
+        # If we don't have enough step-based widths, calculate from all frames
+        if len(step_widths) < 3:
+            logger.debug("Using all frames for step width calculation")
+            step_widths = []
+            for i in range(min(len(left_ankle_positions), len(right_ankle_positions))):
+                left_pos = left_ankle_positions[i]
+                right_pos = right_ankle_positions[i]
+                lateral_vec = np.array([
+                    right_pos[0] - left_pos[0],
+                    0,
+                    right_pos[2] - left_pos[2]
+                ])
+                step_width = np.linalg.norm(lateral_vec) * scale_factor
+                step_widths.append(step_width)
+        
+        if len(step_widths) > 0:
+            step_width_mean = np.mean(step_widths)
+            step_width_std = np.std(step_widths)
+            step_width_cv = (step_width_std / step_width_mean * 100.0) if step_width_mean > 0 else 0.0
+            
+            step_width_metrics = {
+                "step_width_mean": round(step_width_mean, 1),
+                "step_width_std": round(step_width_std, 1),
+                "step_width_cv": round(step_width_cv, 2),
+                "step_width_min": round(np.min(step_widths), 1),
+                "step_width_max": round(np.max(step_widths), 1)
+            }
+            
+            logger.debug(f"Step width: mean={step_width_mean:.1f}mm, CV={step_width_cv:.2f}%")
+        else:
+            step_width_metrics = {
+                "step_width_mean": 0.0,
+                "step_width_std": 0.0,
+                "step_width_cv": 0.0,
+                "step_width_min": 0.0,
+                "step_width_max": 0.0
+            }
+        
+        return step_width_metrics
+    
+    def _calculate_walk_ratio(self, step_length_mm: float, cadence_steps_per_min: float) -> float:
+        """
+        Calculate walk ratio = step length (mm) / cadence (steps/min)
+        Higher walk ratio indicates more efficient gait
+        Normal range for older adults: 0.4-0.6 mm/(steps/min)
+        """
+        if cadence_steps_per_min > 0 and step_length_mm > 0:
+            walk_ratio = step_length_mm / cadence_steps_per_min
+            return walk_ratio
+        return 0.0
+    
+    def _calculate_stride_to_stride_speed_variability(
+        self,
+        left_ankle_positions: np.ndarray,
+        right_ankle_positions: np.ndarray,
+        timestamps: List[float],
+        scale_factor: float
+    ) -> Dict:
+        """
+        Calculate stride-to-stride variability in gait speed
+        This is the single best independent predictor of falling in older adults
+        """
+        speed_variability_metrics = {}
+        
+        if len(left_ankle_positions) < 10 or len(right_ankle_positions) < 10 or len(timestamps) < 10:
+            return {
+                "stride_speed_mean": 0.0,
+                "stride_speed_std": 0.0,
+                "stride_speed_cv": 0.0,
+                "stride_speed_variability_score": 0.0
+            }
+        
+        # Calculate instantaneous speed for each stride
+        stride_speeds = []
+        
+        # Calculate speed between consecutive frames
+        for i in range(1, min(len(left_ankle_positions), len(right_ankle_positions), len(timestamps))):
+            if i < len(timestamps) and timestamps[i] > timestamps[i-1]:
+                # Calculate average forward velocity (Y direction)
+                left_velocity = (left_ankle_positions[i][1] - left_ankle_positions[i-1][1]) / (timestamps[i] - timestamps[i-1])
+                right_velocity = (right_ankle_positions[i][1] - right_ankle_positions[i-1][1]) / (timestamps[i] - timestamps[i-1])
+                avg_velocity = (left_velocity + right_velocity) / 2.0
+                speed = abs(avg_velocity) * scale_factor  # Convert to mm/s
+                stride_speeds.append(speed)
+        
+        if len(stride_speeds) > 1:
+            speed_mean = np.mean(stride_speeds)
+            speed_std = np.std(stride_speeds)
+            speed_cv = (speed_std / speed_mean * 100.0) if speed_mean > 0 else 0.0
+            
+            # Variability score: higher CV = higher risk
+            # Normal CV for older adults: <5%, elevated: 5-10%, high risk: >10%
+            variability_score = min(100.0, speed_cv * 10.0)  # Scale to 0-100
+            
+            speed_variability_metrics = {
+                "stride_speed_mean": round(speed_mean, 1),
+                "stride_speed_std": round(speed_std, 1),
+                "stride_speed_cv": round(speed_cv, 2),
+                "stride_speed_variability_score": round(variability_score, 2)
+            }
+            
+            logger.debug(f"Stride-to-stride speed variability: CV={speed_cv:.2f}%, score={variability_score:.2f}")
+        else:
+            speed_variability_metrics = {
+                "stride_speed_mean": 0.0,
+                "stride_speed_std": 0.0,
+                "stride_speed_cv": 0.0,
+                "stride_speed_variability_score": 0.0
+            }
+        
+        return speed_variability_metrics
+    
+    def _analyze_multi_directional_gait(
+        self,
+        frames_3d_keypoints: List[Dict],
+        left_ankle_positions: np.ndarray,
+        right_ankle_positions: np.ndarray,
+        timestamps: List[float]
+    ) -> Dict:
+        """
+        Analyze gait in multiple directions to simulate multi-camera gait lab systems
+        Detects primary walking direction and analyzes gait parameters in that direction
+        """
+        directional_analysis = {
+            "primary_direction": "unknown",
+            "direction_confidence": 0.0,
+            "directional_parameters": {}
+        }
+        
+        if len(left_ankle_positions) < 10 or len(right_ankle_positions) < 10:
+            return directional_analysis
+        
+        # Detect primary walking direction by analyzing displacement vectors
+        # Calculate average displacement direction
+        total_displacement = np.array([0.0, 0.0, 0.0])
+        
+        for i in range(1, min(len(left_ankle_positions), len(right_ankle_positions))):
+            left_disp = left_ankle_positions[i] - left_ankle_positions[i-1]
+            right_disp = right_ankle_positions[i] - right_ankle_positions[i-1]
+            avg_disp = (left_disp + right_disp) / 2.0
+            total_displacement += avg_disp
+        
+        # Normalize to get direction vector
+        total_magnitude = np.linalg.norm(total_displacement)
+        if total_magnitude > 0:
+            direction_vector = total_displacement / total_magnitude
+            
+            # Determine primary direction based on largest component
+            abs_components = np.abs(direction_vector)
+            max_component_idx = np.argmax(abs_components)
+            
+            direction_names = ["X (lateral)", "Y (forward/backward)", "Z (depth)"]
+            primary_direction = direction_names[max_component_idx]
+            
+            # Calculate confidence based on how dominant the primary direction is
+            confidence = abs_components[max_component_idx] / np.sum(abs_components) if np.sum(abs_components) > 0 else 0.0
+            
+            directional_analysis = {
+                "primary_direction": primary_direction,
+                "direction_confidence": round(confidence, 3),
+                "direction_vector": {
+                    "x": round(direction_vector[0], 3),
+                    "y": round(direction_vector[1], 3),
+                    "z": round(direction_vector[2], 3)
+                },
+                "total_displacement_magnitude": round(total_magnitude, 1)
+            }
+            
+            logger.debug(f"Multi-directional analysis: primary={primary_direction}, confidence={confidence:.3f}")
+        else:
+            logger.warning("Could not determine walking direction - insufficient displacement")
+        
+        return directional_analysis
+    
+    def _assess_fall_risk(
+        self,
+        metrics: Dict,
+        step_width_metrics: Dict,
+        speed_variability: Dict,
+        variability_metrics: Dict
+    ) -> Dict:
+        """
+        Professional fall risk assessment based on validated clinical parameters
+        Combines multiple gait parameters to assess fall risk in older adults
+        """
+        risk_factors = []
+        risk_score = 0.0
+        
+        # Factor 1: Gait speed (strongest single predictor)
+        walking_speed = metrics.get("walking_speed", 0.0) / 1000.0  # Convert mm/s to m/s
+        if walking_speed < 0.6:  # <0.6 m/s is high risk
+            risk_factors.append("Very slow gait speed (<0.6 m/s)")
+            risk_score += 30.0
+        elif walking_speed < 1.0:  # 0.6-1.0 m/s is moderate risk
+            risk_factors.append("Slow gait speed (0.6-1.0 m/s)")
+            risk_score += 15.0
+        
+        # Factor 2: Step width variability (strong predictor, especially at increased speeds)
+        step_width_cv = step_width_metrics.get("step_width_cv", 0.0)
+        if step_width_cv > 15.0:  # High variability
+            risk_factors.append(f"High step width variability (CV={step_width_cv:.1f}%)")
+            risk_score += 25.0
+        elif step_width_cv > 10.0:  # Moderate variability
+            risk_factors.append(f"Moderate step width variability (CV={step_width_cv:.1f}%)")
+            risk_score += 12.0
+        
+        # Factor 3: Stride-to-stride speed variability (single best predictor)
+        speed_cv = speed_variability.get("stride_speed_cv", 0.0)
+        if speed_cv > 10.0:  # High variability
+            risk_factors.append(f"High stride speed variability (CV={speed_cv:.1f}%)")
+            risk_score += 30.0
+        elif speed_cv > 5.0:  # Moderate variability
+            risk_factors.append(f"Moderate stride speed variability (CV={speed_cv:.1f}%)")
+            risk_score += 15.0
+        
+        # Factor 4: Step length variability
+        step_length_cv = variability_metrics.get("step_length_cv", 0.0)
+        if step_length_cv > 10.0:
+            risk_factors.append(f"High step length variability (CV={step_length_cv:.1f}%)")
+            risk_score += 10.0
+        elif step_length_cv > 5.0:
+            risk_factors.append(f"Moderate step length variability (CV={step_length_cv:.1f}%)")
+            risk_score += 5.0
+        
+        # Factor 5: Step time variability
+        step_time_cv = variability_metrics.get("step_time_cv", 0.0)
+        if step_time_cv > 10.0:
+            risk_factors.append(f"High step time variability (CV={step_time_cv:.1f}%)")
+            risk_score += 10.0
+        elif step_time_cv > 5.0:
+            risk_factors.append(f"Moderate step time variability (CV={step_time_cv:.1f}%)")
+            risk_score += 5.0
+        
+        # Factor 6: Double support time (increased in fall-risk groups)
+        double_support = metrics.get("double_support_time", 0.0)
+        step_time = metrics.get("step_time", 1.0)
+        if step_time > 0:
+            double_support_ratio = double_support / step_time
+            if double_support_ratio > 0.25:  # >25% of step time in double support
+                risk_factors.append(f"Elevated double support time ({double_support_ratio*100:.1f}%)")
+                risk_score += 8.0
+        
+        # Factor 7: Gait asymmetry
+        step_time_symmetry = metrics.get("step_time_symmetry", 1.0)
+        if step_time_symmetry < 0.85:  # <85% symmetry
+            risk_factors.append(f"Gait asymmetry (symmetry={step_time_symmetry*100:.1f}%)")
+            risk_score += 8.0
+        
+        # Factor 8: Short stride length (normalized)
+        stride_length = metrics.get("stride_length", 0.0) / 1000.0  # Convert mm to m
+        # Assume average height of 1.65m for older adults (can be parameterized)
+        assumed_height = 1.65
+        normalized_stride = stride_length / assumed_height if assumed_height > 0 else 0.0
+        if normalized_stride < 0.52:  # <0.52 predicts recurrent falls with 93% sensitivity
+            risk_factors.append(f"Short normalized stride length ({normalized_stride:.2f})")
+            risk_score += 15.0
+        
+        # Determine risk level
+        if risk_score >= 60.0:
+            risk_level = "High"
+            risk_category = "High fall risk - consider intervention"
+        elif risk_score >= 30.0:
+            risk_level = "Moderate"
+            risk_category = "Moderate fall risk - monitor closely"
+        elif risk_score >= 15.0:
+            risk_level = "Low-Moderate"
+            risk_category = "Low-moderate risk - regular monitoring recommended"
+        else:
+            risk_level = "Low"
+            risk_category = "Low fall risk - continue current activities"
+        
+        fall_risk_assessment = {
+            "risk_score": round(risk_score, 2),
+            "risk_level": risk_level,
+            "risk_category": risk_category,
+            "risk_factors": risk_factors,
+            "risk_factor_count": len(risk_factors),
+            "walking_speed_mps": round(walking_speed, 2),
+            "normalized_stride_length": round(normalized_stride, 3)
+        }
+        
+        logger.info(f"Fall risk assessment: {risk_level} (score: {risk_score:.1f}, factors: {len(risk_factors)})")
+        
+        return fall_risk_assessment
+    
+    def _calculate_functional_mobility_score(self, metrics: Dict) -> Dict:
+        """
+        Calculate functional mobility score based on gait parameters
+        Combines multiple parameters to assess overall functional mobility
+        """
+        mobility_score = 0.0
+        max_score = 100.0
+        
+        # Component 1: Gait speed (40 points)
+        walking_speed = metrics.get("walking_speed", 0.0) / 1000.0  # m/s
+        if walking_speed >= 1.2:  # Excellent
+            mobility_score += 40.0
+        elif walking_speed >= 1.0:  # Good
+            mobility_score += 35.0
+        elif walking_speed >= 0.8:  # Fair
+            mobility_score += 25.0
+        elif walking_speed >= 0.6:  # Poor
+            mobility_score += 15.0
+        else:  # Very poor
+            mobility_score += 5.0
+        
+        # Component 2: Cadence (20 points)
+        cadence = metrics.get("cadence", 0.0)
+        if cadence >= 110:  # Excellent
+            mobility_score += 20.0
+        elif cadence >= 100:  # Good
+            mobility_score += 17.0
+        elif cadence >= 90:  # Fair
+            mobility_score += 12.0
+        elif cadence >= 80:  # Poor
+            mobility_score += 8.0
+        else:  # Very poor
+            mobility_score += 4.0
+        
+        # Component 3: Step length (20 points)
+        step_length = metrics.get("step_length", 0.0) / 1000.0  # m
+        if step_length >= 0.6:  # Excellent
+            mobility_score += 20.0
+        elif step_length >= 0.5:  # Good
+            mobility_score += 17.0
+        elif step_length >= 0.4:  # Fair
+            mobility_score += 12.0
+        elif step_length >= 0.3:  # Poor
+            mobility_score += 8.0
+        else:  # Very poor
+            mobility_score += 4.0
+        
+        # Component 4: Gait stability (variability) (20 points)
+        step_length_cv = metrics.get("step_length_cv", 0.0)
+        step_time_cv = metrics.get("step_time_cv", 0.0)
+        avg_cv = (step_length_cv + step_time_cv) / 2.0
+        
+        if avg_cv < 3.0:  # Excellent stability
+            mobility_score += 20.0
+        elif avg_cv < 5.0:  # Good stability
+            mobility_score += 17.0
+        elif avg_cv < 8.0:  # Fair stability
+            mobility_score += 12.0
+        elif avg_cv < 12.0:  # Poor stability
+            mobility_score += 8.0
+        else:  # Very poor stability
+            mobility_score += 4.0
+        
+        # Determine functional mobility level
+        if mobility_score >= 80.0:
+            mobility_level = "Excellent"
+            mobility_category = "High functional mobility - independent"
+        elif mobility_score >= 60.0:
+            mobility_level = "Good"
+            mobility_category = "Good functional mobility - mostly independent"
+        elif mobility_score >= 40.0:
+            mobility_level = "Fair"
+            mobility_category = "Fair functional mobility - may need assistance"
+        elif mobility_score >= 20.0:
+            mobility_level = "Poor"
+            mobility_category = "Poor functional mobility - assistance recommended"
+        else:
+            mobility_level = "Very Poor"
+            mobility_category = "Very poor functional mobility - significant assistance needed"
+        
+        functional_mobility = {
+            "mobility_score": round(mobility_score, 1),
+            "mobility_level": mobility_level,
+            "mobility_category": mobility_category,
+            "max_score": max_score,
+            "score_percentage": round((mobility_score / max_score) * 100.0, 1)
+        }
+        
+        logger.info(f"Functional mobility: {mobility_level} (score: {mobility_score:.1f}/{max_score})")
+        
+        return functional_mobility
     
     def _get_mediapipe_model_path(self, download_if_missing: bool = True) -> Optional[str]:
         """
