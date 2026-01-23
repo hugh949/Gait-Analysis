@@ -672,7 +672,8 @@ class AzureSQLService:
                     return True
                 return False
         except Exception as e:
-            logger.error(f"Failed to update analysis: {e}")
+            logger.error(f"Failed to update analysis {analysis_id}: {e}", exc_info=True)
+            logger.error(f"Update data: {updates}")
             return False
     
     def update_analysis_sync(self, analysis_id: str, updates: Dict) -> bool:

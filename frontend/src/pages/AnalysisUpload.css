@@ -215,10 +215,16 @@
 }
 
 .time-elapsed,
-.time-remaining {
+.time-remaining,
+.finalizing-indicator {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.finalizing-indicator {
+  color: var(--apple-blue);
+  font-weight: 500;
 }
 
 /* Step Cards */
@@ -376,7 +382,17 @@
   letter-spacing: -0.01em;
 }
 
+.step-number-label {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
 .step-card.active .step-title {
+  color: var(--apple-blue);
+}
+
+.step-card.active .step-number-label {
   color: var(--apple-blue);
 }
 

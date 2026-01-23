@@ -630,7 +630,7 @@ export default function AnalysisUpload() {
           </div>
         )}
         
-        {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 95 && (
+        {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98 && (
           <div className="info-message">
             <p>💾 Finalizing analysis and saving results to database... This will take just a moment.</p>
           </div>
@@ -679,12 +679,20 @@ export default function AnalysisUpload() {
                     {currentStep === 'metrics_calculation' && 'Step 3 of 4'}
                     {currentStep === 'report_generation' && 'Step 4 of 4'}
                   </span>
-                  <span className="overall-progress-percent">{stepProgress}%</span>
+                  <span className="overall-progress-percent">
+                    {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98
+                      ? '99%' // Cap at 99% when finalizing to show it's not truly complete
+                      : `${stepProgress}%`}
+                  </span>
                 </div>
                 <div className="overall-progress-bar-container">
                   <div 
                     className="overall-progress-bar" 
-                    style={{ width: `${stepProgress}%` }}
+                    style={{ 
+                      width: `${status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98
+                        ? 99 // Cap visual progress at 99% when finalizing
+                        : stepProgress}%` 
+                    }}
                   ></div>
                 </div>
                 <p className="overall-progress-message">
@@ -694,9 +702,14 @@ export default function AnalysisUpload() {
                   <span className="time-elapsed">
                     Elapsed: {Math.floor((Date.now() - startTime) / 1000)}s
                   </span>
-                  {stepProgress > 0 && stepProgress < 100 && (
+                  {status === 'processing' && stepProgress > 0 && stepProgress < 100 && (
                     <span className="time-remaining">
                       Est. remaining: {Math.floor(((Date.now() - startTime) / stepProgress) * (100 - stepProgress) / 1000)}s
+                    </span>
+                  )}
+                  {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98 && (
+                    <span className="finalizing-indicator">
+                      Finalizing...
                     </span>
                   )}
                 </div>
@@ -717,7 +730,9 @@ export default function AnalysisUpload() {
                   )}
                 </div>
                 <div className="step-content">
-                  <div className="step-title">Pose Estimation</div>
+                  <div className="step-title">
+                    <span className="step-number-label">Step 1:</span> Pose Estimation
+                  </div>
                   <div className="step-description">
                     {currentStep === 'pose_estimation' ? stepMessage || 'Extracting 2D keypoints from video frames...' : 'Extracting 2D keypoints from video'}
                   </div>
@@ -745,7 +760,9 @@ export default function AnalysisUpload() {
                   )}
                 </div>
                 <div className="step-content">
-                  <div className="step-title">3D Lifting</div>
+                  <div className="step-title">
+                    <span className="step-number-label">Step 2:</span> 3D Lifting
+                  </div>
                   <div className="step-description">
                     {currentStep === '3d_lifting' ? stepMessage || 'Converting 2D keypoints to 3D space...' : 'Converting to 3D pose'}
                   </div>
@@ -773,7 +790,9 @@ export default function AnalysisUpload() {
                   )}
                 </div>
                 <div className="step-content">
-                  <div className="step-title">Metrics Calculation</div>
+                  <div className="step-title">
+                    <span className="step-number-label">Step 3:</span> Metrics Calculation
+                  </div>
                   <div className="step-description">
                     {currentStep === 'metrics_calculation' ? stepMessage || 'Computing gait metrics and patterns...' : 'Computing gait metrics'}
                   </div>
@@ -788,20 +807,22 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === 'report_generation' ? 'active' : currentStep && ['pose_estimation', '3d_lifting', 'metrics_calculation'].includes(currentStep) ? 'pending' : 'pending'}`}>
+              <div className={`step-card ${currentStep === 'report_generation' && status === 'processing' ? 'active' : currentStep === 'report_generation' && status === 'completed' ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep === 'report_generation' ? (
+                  {currentStep === 'report_generation' && status === 'completed' ? (
+                    <div className="step-checkmark">✓</div>
+                  ) : currentStep === 'report_generation' && status === 'processing' ? (
                     <div className="step-spinner">
                       <Loader2 className="spinner-icon" />
                     </div>
-                  ) : currentStep && ['pose_estimation', '3d_lifting', 'metrics_calculation'].includes(currentStep) ? (
-                    <div className="step-number">4</div>
                   ) : (
                     <div className="step-number">4</div>
                   )}
                 </div>
                 <div className="step-content">
-                  <div className="step-title">Report Generation</div>
+                  <div className="step-title">
+                    <span className="step-number-label">Step 4:</span> Report Generation
+                  </div>
                   <div className="step-description">
                     {currentStep === 'report_generation' 
                       ? (stepMessage || 'Generating detailed analysis reports...')
@@ -809,7 +830,7 @@ export default function AnalysisUpload() {
                       ? 'Waiting for previous steps...'
                       : 'Generating analysis reports'}
                   </div>
-                  {currentStep === 'report_generation' && stepProgress > 0 && (
+                  {currentStep === 'report_generation' && status === 'processing' && stepProgress > 0 && stepProgress < 100 && (
                     <div className="step-progress-indicator">
                       <div className="step-progress-track">
                         <div className="step-progress-fill" style={{ width: `${stepProgress}%` }}></div>

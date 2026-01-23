@@ -1922,96 +1922,157 @@ async def process_analysis_azure(
         await asyncio.sleep(0.5)
         
         completion_success = False
-        max_db_retries = 10  # Increased retries for critical final update
+        max_db_retries = 15  # Increased retries for critical final update
+        last_error = None
+        
         for retry in range(max_db_retries):
             try:
-                await db_service.update_analysis(analysis_id, {
+                # Try async update first
+                update_result = await db_service.update_analysis(analysis_id, {
                     'status': 'completed',
                     'current_step': 'report_generation',
                     'step_progress': 100,
                     'step_message': 'Analysis complete!',
                     'metrics': metrics
                 })
-                completion_success = True
+                
+                if not update_result:
+                    # Update returned False - try sync method as fallback
+                    if hasattr(db_service, 'update_analysis_sync'):
+                        logger.info(f"[{request_id}] Async update returned False, trying sync update (attempt {retry + 1})")
+                        sync_result = db_service.update_analysis_sync(analysis_id, {
+                            'status': 'completed',
+                            'current_step': 'report_generation',
+                            'step_progress': 100,
+                            'step_message': 'Analysis complete! (sync)',
+                            'metrics': metrics
+                        })
+                        if not sync_result:
+                            raise Exception("Both async and sync updates returned False")
+                    else:
+                        raise Exception("Update returned False and sync method not available")
                 
                 # CRITICAL: Verify the update was successful by reading it back
-                await asyncio.sleep(0.2)  # Small delay for database consistency
+                await asyncio.sleep(0.3)  # Small delay for database consistency
                 verification = await db_service.get_analysis(analysis_id)
-                if verification and verification.get('status') == 'completed' and verification.get('metrics'):
-                    logger.info(f"[{request_id}] ✅ Verification passed - analysis marked as completed with metrics")
-                else:
-                    logger.warning(f"[{request_id}] ⚠️ Verification: status={verification.get('status') if verification else 'None'}, has_metrics={bool(verification.get('metrics') if verification else False)}")
-                    # Don't fail - just log warning
-                logger.info(
-                    f"[{request_id}] Analysis completed successfully",
-                    extra={
-                        "analysis_id": analysis_id,
-                        "patient_id": patient_id,
-                        "metrics_count": len(metrics),
-                        "has_symmetry": "step_time_symmetry" in metrics or "step_length_symmetry" in metrics,
-                        "fallback_metrics": metrics.get('fallback_metrics', False)
-                    }
-                )
                 
-                # Log key metrics for monitoring
-                logger.info(
-                    f"[{request_id}] Key metrics",
-                    extra={
-                        "analysis_id": analysis_id,
-                        "cadence": metrics.get('cadence'),
-                        "walking_speed": metrics.get('walking_speed'),
-                        "step_length": metrics.get('step_length')
-                    }
-                )
-                break  # Success - exit retry loop
+                if verification and verification.get('status') == 'completed':
+                    if verification.get('metrics'):
+                        completion_success = True
+                        logger.info(f"[{request_id}] ✅ Verification passed - analysis marked as completed with metrics")
+                    else:
+                        logger.warning(f"[{request_id}] ⚠️ Status is 'completed' but no metrics in verification - retrying with metrics")
+                        # Try one more update with metrics
+                        await asyncio.sleep(0.2)
+                        await db_service.update_analysis(analysis_id, {'metrics': metrics})
+                        verification2 = await db_service.get_analysis(analysis_id)
+                        if verification2 and verification2.get('metrics'):
+                            completion_success = True
+                            logger.info(f"[{request_id}] ✅ Metrics added on retry")
+                else:
+                    logger.warning(f"[{request_id}] ⚠️ Verification failed: status={verification.get('status') if verification else 'None'}, has_metrics={bool(verification.get('metrics') if verification else False)}")
+                if completion_success:
+                    logger.info(
+                        f"[{request_id}] Analysis completed successfully",
+                        extra={
+                            "analysis_id": analysis_id,
+                            "patient_id": patient_id,
+                            "metrics_count": len(metrics),
+                            "has_symmetry": "step_time_symmetry" in metrics or "step_length_symmetry" in metrics,
+                            "fallback_metrics": metrics.get('fallback_metrics', False)
+                        }
+                    )
+                    
+                    # Log key metrics for monitoring
+                    logger.info(
+                        f"[{request_id}] Key metrics",
+                        extra={
+                            "analysis_id": analysis_id,
+                            "cadence": metrics.get('cadence'),
+                            "walking_speed": metrics.get('walking_speed'),
+                            "step_length": metrics.get('step_length')
+                        }
+                    )
+                    break  # Success - exit retry loop
+                    
             except Exception as e:
+                last_error = e
                 if retry < max_db_retries - 1:
+                    # Progressive backoff: 0.3s, 0.6s, 0.9s, 1.2s, etc.
+                    delay = 0.3 * (retry + 1)
                     logger.warning(
-                        f"[{request_id}] Failed to mark analysis as completed (attempt {retry + 1}/{max_db_retries}): {e}. Retrying...",
-                        extra={"analysis_id": analysis_id},
+                        f"[{request_id}] Failed to mark analysis as completed (attempt {retry + 1}/{max_db_retries}): {e}. Retrying in {delay}s...",
+                        extra={"analysis_id": analysis_id, "error_type": type(e).__name__, "error_details": str(e)},
                         exc_info=True
                     )
-                    await asyncio.sleep(0.3 * (retry + 1))  # Progressive delay
+                    await asyncio.sleep(delay)
                     continue
                 else:
                     logger.error(
                         f"[{request_id}] CRITICAL: Failed to mark analysis as completed after {max_db_retries} attempts: {e}",
-                        extra={"analysis_id": analysis_id},
+                        extra={"analysis_id": analysis_id, "error_type": type(e).__name__, "error_details": str(e)},
                         exc_info=True
                     )
                     # CRITICAL: Even if database update fails, the analysis is complete
                     # Log this as a warning but don't fail - metrics are in memory
                     logger.warning(
                         f"[{request_id}] Analysis processing completed but database update failed. Metrics are available in memory.",
-                        extra={"analysis_id": analysis_id, "metrics": metrics}
+                        extra={"analysis_id": analysis_id, "metrics": metrics, "metrics_count": len(metrics) if metrics else 0}
+                    )
+                    # Log the actual update data that failed
+                    logger.error(
+                        f"[{request_id}] Failed update data: status='completed', step='report_generation', progress=100, metrics_count={len(metrics) if metrics else 0}",
+                        extra={"analysis_id": analysis_id, "last_error": str(last_error) if last_error else "Unknown"}
                     )
         
         if not completion_success:
-            # Last resort: try one more time with a longer delay
+            # Last resort: try sync method and then one more async attempt
             try:
-                await asyncio.sleep(1.0)
-                await db_service.update_analysis(analysis_id, {
-                    'status': 'completed',
-                    'current_step': 'report_generation',
-                    'step_progress': 100,
-                    'step_message': 'Analysis complete! (final retry)',
-                    'metrics': metrics
-                })
-                logger.info(f"[{request_id}] Analysis completion update succeeded on final retry")
+                # Try sync method first
+                if hasattr(db_service, 'update_analysis_sync'):
+                    logger.info(f"[{request_id}] Trying sync update as last resort")
+                    sync_success = db_service.update_analysis_sync(analysis_id, {
+                        'status': 'completed',
+                        'current_step': 'report_generation',
+                        'step_progress': 100,
+                        'step_message': 'Analysis complete! (sync final retry)',
+                        'metrics': metrics
+                    })
+                    if sync_success:
+                        await asyncio.sleep(0.5)
+                        verification = await db_service.get_analysis(analysis_id)
+                        if verification and verification.get('status') == 'completed' and verification.get('metrics'):
+                            completion_success = True
+                            logger.info(f"[{request_id}] ✅ Sync final retry verification passed")
                 
-                # Verify final retry
-                await asyncio.sleep(0.3)
-                verification = await db_service.get_analysis(analysis_id)
-                if verification and verification.get('status') == 'completed' and verification.get('metrics'):
-                    logger.info(f"[{request_id}] ✅ Final retry verification passed")
-                else:
-                    logger.error(f"[{request_id}] ❌ Final retry verification failed - metrics may not be saved")
+                # If sync didn't work, try async one more time
+                if not completion_success:
+                    await asyncio.sleep(1.0)
+                    await db_service.update_analysis(analysis_id, {
+                        'status': 'completed',
+                        'current_step': 'report_generation',
+                        'step_progress': 100,
+                        'step_message': 'Analysis complete! (async final retry)',
+                        'metrics': metrics
+                    })
+                    logger.info(f"[{request_id}] Analysis completion update attempted on final async retry")
+                    
+                    # Verify final retry
+                    await asyncio.sleep(0.5)
+                    verification = await db_service.get_analysis(analysis_id)
+                    if verification and verification.get('status') == 'completed' and verification.get('metrics'):
+                        completion_success = True
+                        logger.info(f"[{request_id}] ✅ Final async retry verification passed")
+                    else:
+                        logger.error(f"[{request_id}] ❌ Final retry verification failed - metrics may not be saved")
+                        logger.error(f"[{request_id}] ⚠️ Analysis can be manually completed using /api/v1/analysis/{analysis_id}/force-complete")
             except Exception as final_error:
                 logger.critical(
                     f"[{request_id}] CRITICAL: All attempts to mark analysis as completed failed. Analysis is complete but status may not be updated.",
                     extra={"analysis_id": analysis_id, "error": str(final_error)},
                     exc_info=True
                 )
+                logger.error(f"[{request_id}] ⚠️ Analysis can be manually completed using /api/v1/analysis/{analysis_id}/force-complete")
                 # Don't raise - processing is complete, just status update failed
     
     except asyncio.TimeoutError as e:
@@ -2293,6 +2354,250 @@ async def get_analysis(
         raise DatabaseError(
             f"Failed to retrieve analysis {analysis_id}",
             details={"error": str(e), "analysis_id": analysis_id}
+        )
+
+
+@router.post(
+    "/{analysis_id}/force-complete",
+    responses={
+        200: {"description": "Analysis marked as completed"},
+        404: {"model": ErrorResponse, "description": "Analysis not found"},
+        400: {"model": ErrorResponse, "description": "Analysis cannot be completed"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+        503: {"model": ErrorResponse, "description": "Service unavailable"}
+    }
+)
+async def force_complete_analysis(
+    analysis_id: str = PathParam(..., description="Analysis identifier", pattern="^[a-f0-9-]{36}$")
+) -> JSONResponse:
+    """
+    Admin endpoint to manually mark a stuck analysis as completed.
+    This is a recovery mechanism for analyses that are stuck in 'processing' status
+    but have actually completed processing (have metrics but status wasn't updated).
+    
+    Args:
+        analysis_id: UUID of the analysis to force complete
+        
+    Returns:
+        JSONResponse with completion status
+        
+    Raises:
+        HTTPException: 404 if not found, 400 if cannot be completed, 500/503 on errors
+    """
+    request_id = str(uuid.uuid4())[:8]
+    logger.info(f"[ADMIN-{request_id}] Force complete analysis request", extra={"analysis_id": analysis_id})
+    
+    # Validate UUID format
+    try:
+        uuid.UUID(analysis_id)
+    except ValueError:
+        logger.warning(f"[ADMIN-{request_id}] Invalid UUID format: {analysis_id}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "VALIDATION_ERROR",
+                "message": f"Invalid analysis ID format: {analysis_id}",
+                "details": {"provided": analysis_id, "expected_format": "UUID"}
+            }
+        )
+    
+    if db_service is None:
+        logger.error(f"[ADMIN-{request_id}] Database service not available")
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "SERVICE_UNAVAILABLE",
+                "message": "Database service is not available",
+                "details": {}
+            }
+        )
+    
+    try:
+        # Get current analysis state
+        analysis = await db_service.get_analysis(analysis_id)
+        if not analysis:
+            logger.warning(f"[ADMIN-{request_id}] Analysis not found: {analysis_id}")
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "NOT_FOUND",
+                    "message": f"Analysis {analysis_id} not found",
+                    "details": {}
+                }
+            )
+        
+        current_status = analysis.get('status', 'unknown')
+        current_step = analysis.get('current_step', 'unknown')
+        step_progress = analysis.get('step_progress', 0)
+        metrics = analysis.get('metrics', {})
+        
+        logger.info(
+            f"[ADMIN-{request_id}] Current analysis state",
+            extra={
+                "analysis_id": analysis_id,
+                "status": current_status,
+                "step": current_step,
+                "progress": step_progress,
+                "has_metrics": bool(metrics and len(metrics) > 0)
+            }
+        )
+        
+        # Check if analysis can be force completed
+        if current_status == 'completed':
+            logger.info(f"[ADMIN-{request_id}] Analysis already completed")
+            return JSONResponse({
+                "status": "success",
+                "message": "Analysis is already completed",
+                "analysis_id": analysis_id,
+                "current_status": current_status
+            })
+        
+        if current_status == 'failed':
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "CANNOT_COMPLETE",
+                    "message": "Cannot force complete a failed analysis",
+                    "details": {"current_status": current_status}
+                }
+            )
+        
+        # Check if we have metrics (required for completion)
+        if not metrics or len(metrics) == 0:
+            # Try to get metrics from checkpoint if available
+            from app.services.checkpoint_manager import CheckpointManager
+            checkpoint_manager = CheckpointManager(analysis_id=analysis_id)
+            step3_checkpoint = checkpoint_manager.load_step_3()
+            
+            if step3_checkpoint and step3_checkpoint.get('metrics'):
+                metrics = step3_checkpoint.get('metrics')
+                logger.info(f"[ADMIN-{request_id}] Loaded metrics from checkpoint")
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": "NO_METRICS",
+                        "message": "Cannot force complete analysis without metrics. Analysis may not have finished processing.",
+                        "details": {
+                            "current_status": current_status,
+                            "current_step": current_step,
+                            "step_progress": step_progress
+                        }
+                    }
+                )
+        
+        # Validate metrics have core values
+        has_core_metrics = (
+            metrics.get('cadence') is not None or
+            metrics.get('walking_speed') is not None or
+            metrics.get('step_length') is not None
+        )
+        
+        if not has_core_metrics:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "INVALID_METRICS",
+                    "message": "Metrics exist but don't have core values (cadence, walking_speed, or step_length)",
+                    "details": {"metrics_keys": list(metrics.keys()) if metrics else []}
+                }
+            )
+        
+        # Force complete with multiple retry strategies
+        completion_success = False
+        max_retries = 5
+        
+        for retry in range(max_retries):
+            try:
+                # Try standard update
+                success = await db_service.update_analysis(analysis_id, {
+                    'status': 'completed',
+                    'current_step': 'report_generation',
+                    'step_progress': 100,
+                    'step_message': 'Analysis completed (force complete)',
+                    'metrics': metrics
+                })
+                
+                if success:
+                    # Verify the update
+                    await asyncio.sleep(0.3)
+                    verification = await db_service.get_analysis(analysis_id)
+                    if verification and verification.get('status') == 'completed':
+                        completion_success = True
+                        logger.info(f"[ADMIN-{request_id}] ✅ Force complete successful (attempt {retry + 1})")
+                        break
+                    else:
+                        logger.warning(f"[ADMIN-{request_id}] Update succeeded but verification failed (attempt {retry + 1})")
+                else:
+                    logger.warning(f"[ADMIN-{request_id}] Update returned False (attempt {retry + 1})")
+                    
+            except Exception as e:
+                logger.warning(
+                    f"[ADMIN-{request_id}] Force complete attempt {retry + 1} failed: {e}",
+                    exc_info=True
+                )
+            
+            if retry < max_retries - 1:
+                await asyncio.sleep(0.5 * (retry + 1))
+        
+        if not completion_success:
+            # Last resort: try sync update if available
+            try:
+                if hasattr(db_service, 'update_analysis_sync'):
+                    logger.info(f"[ADMIN-{request_id}] Trying sync update as last resort")
+                    sync_success = db_service.update_analysis_sync(analysis_id, {
+                        'status': 'completed',
+                        'current_step': 'report_generation',
+                        'step_progress': 100,
+                        'step_message': 'Analysis completed (force complete - sync)',
+                        'metrics': metrics
+                    })
+                    if sync_success:
+                        await asyncio.sleep(0.5)
+                        verification = await db_service.get_analysis(analysis_id)
+                        if verification and verification.get('status') == 'completed':
+                            completion_success = True
+                            logger.info(f"[ADMIN-{request_id}] ✅ Force complete successful via sync update")
+            except Exception as sync_error:
+                logger.error(f"[ADMIN-{request_id}] Sync update also failed: {sync_error}", exc_info=True)
+        
+        if completion_success:
+            return JSONResponse({
+                "status": "success",
+                "message": "Analysis successfully marked as completed",
+                "analysis_id": analysis_id,
+                "metrics_count": len(metrics) if metrics else 0,
+                "report_url": f"/report/{analysis_id}"
+            })
+        else:
+            logger.error(f"[ADMIN-{request_id}] ❌ All force complete attempts failed")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "UPDATE_FAILED",
+                    "message": "Failed to update analysis status after multiple attempts",
+                    "details": {
+                        "analysis_id": analysis_id,
+                        "attempts": max_retries
+                    }
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"[ADMIN-{request_id}] Error force completing analysis: {e}",
+            extra={"analysis_id": analysis_id},
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "INTERNAL_ERROR",
+                "message": f"Failed to force complete analysis: {str(e)}",
+                "details": {"analysis_id": analysis_id}
+            }
         )
 
 
