@@ -1889,6 +1889,25 @@ async def process_analysis_azure(
         
         # STEP 4: Final update: Mark as completed with metrics - CRITICAL with retry logic
         # This is the most important update - must succeed
+        # CRITICAL: Validate metrics exist and have meaningful data before marking as completed
+        if not metrics or len(metrics) == 0:
+            error_msg = "CRITICAL: Cannot mark as completed - no metrics calculated"
+            logger.error(f"[{request_id}] ❌ {error_msg}")
+            raise GaitMetricsError(error_msg, details={"analysis_id": analysis_id})
+        
+        # Validate that we have at least one core metric (cadence, walking_speed, or step_length)
+        has_core_metrics = (
+            metrics.get('cadence') is not None or
+            metrics.get('walking_speed') is not None or
+            metrics.get('step_length') is not None
+        )
+        
+        if not has_core_metrics:
+            error_msg = "CRITICAL: Cannot mark as completed - no core metrics (cadence, walking_speed, or step_length)"
+            logger.error(f"[{request_id}] ❌ {error_msg}")
+            logger.error(f"[{request_id}] Available metrics keys: {list(metrics.keys())}")
+            raise GaitMetricsError(error_msg, details={"analysis_id": analysis_id, "available_metrics": list(metrics.keys())})
+        
         completion_success = False
         max_db_retries = 10  # Increased retries for critical final update
         for retry in range(max_db_retries):
