@@ -85,6 +85,17 @@
   white-space: pre-line;
 }
 
+.info-message {
+  background: #007AFF;
+  color: white;
+  padding: 1rem;
+  border-radius: var(--apple-border-radius-small);
+  margin-top: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* Upload Progress */
 .progress-container {
   margin-top: 1.5rem;

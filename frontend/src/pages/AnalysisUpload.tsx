@@ -624,9 +624,15 @@ export default function AnalysisUpload() {
           </div>
         )}
 
-        {error && (
+        {error && status !== 'processing' && (
           <div className="error">
             {error}
+          </div>
+        )}
+        
+        {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 95 && (
+          <div className="info-message">
+            <p>💾 Finalizing analysis and saving results to database... This will take just a moment.</p>
           </div>
         )}
 
@@ -839,14 +845,14 @@ export default function AnalysisUpload() {
                       if (data.status === 'completed' && hasValidMetrics) {
                         navigate(`/report/${analysisId}`)
                       } else {
-                        // Not truly complete - resume processing
+                        // Not truly complete - resume processing automatically
                         console.warn('Analysis not truly complete - resuming processing')
-                        setError('Analysis is still being finalized. Please wait a moment...')
+                        // Don't set error - just update status and continue
                         setStatus('processing')
                         setCurrentStep(data.current_step || 'report_generation')
-                        setStepProgress(data.step_progress || 95)
-                        setStepMessage('Finalizing report...')
-                        // Resume polling
+                        setStepProgress(data.step_progress || 98)
+                        setStepMessage(data.step_message || 'Saving analysis results...')
+                        // Resume polling immediately
                         if (analysisId) {
                           pollAnalysisStatus(analysisId)
                         }
