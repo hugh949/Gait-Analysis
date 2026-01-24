@@ -817,9 +817,21 @@ class GaitAnalysisService:
         
         # STEP 3: Calculate gait metrics - with comprehensive error handling and fallback
         logger.info("=" * 80)
+        logger.info("=" * 80)
         logger.info("🎯 ========== STEP 3: GAIT METRICS CALCULATION STARTING ==========")
-        logger.info(f"🎯 Input: {len(frames_3d_keypoints)} 3D keypoint frames")
-        logger.info(f"🎯 FPS: {video_fps}, Reference length: {reference_length_mm}mm")
+        logger.info(f"🎯 [STEP 3 ENTRY] Analysis ID: {analysis_id if analysis_id else 'None'}")
+        logger.info(f"🎯 [STEP 3 ENTRY] Input validation:")
+        logger.info(f"🎯   - frames_3d_keypoints: type={type(frames_3d_keypoints)}, length={len(frames_3d_keypoints) if frames_3d_keypoints else 0}")
+        logger.info(f"🎯   - frame_timestamps: type={type(frame_timestamps)}, length={len(frame_timestamps) if frame_timestamps else 0}")
+        logger.info(f"🎯   - video_fps: {video_fps}")
+        logger.info(f"🎯   - reference_length_mm: {reference_length_mm}")
+        if frames_3d_keypoints and len(frames_3d_keypoints) > 0:
+            first_frame = frames_3d_keypoints[0]
+            logger.info(f"🎯   - First frame type: {type(first_frame)}")
+            if isinstance(first_frame, dict):
+                logger.info(f"🎯   - First frame keys: {list(first_frame.keys())[:10]}")
+            elif isinstance(first_frame, (list, np.ndarray)):
+                logger.info(f"🎯   - First frame length: {len(first_frame)}")
         logger.info("=" * 80)
         
         # CRITICAL: Validate that we have data from Step 2 before proceeding
@@ -849,23 +861,31 @@ class GaitAnalysisService:
             frames_3d_keypoints = frames_3d_keypoints[:min_length]
             logger.warning(f"⚠️ Truncated to {min_length} frames to match counts")
         
-        logger.info(f"✅ Step 3 validation passed: {len(frames_3d_keypoints)} 3D keypoint frames, {len(frame_timestamps)} timestamps")
-        logger.info(f"✅ Starting actual metrics calculation with {len(frames_3d_keypoints)} frames...")
+        logger.info(f"✅ [STEP 3 VALIDATION] All inputs validated successfully")
+        logger.info(f"✅   - 3D keypoint frames: {len(frames_3d_keypoints)}")
+        logger.info(f"✅   - Timestamps: {len(frame_timestamps)}")
+        logger.info(f"✅   - FPS: {video_fps}")
+        logger.info(f"✅   - Reference length: {reference_length_mm}mm")
+        logger.info(f"✅ [STEP 3] Starting actual metrics calculation with {len(frames_3d_keypoints)} frames...")
         
         if progress_callback:
             try:
                 progress_callback(72, f"Starting gait metrics calculation with {len(frames_3d_keypoints)} frames...")
                 progress_callback(75, "Calculating gait parameters...")
+                logger.info(f"✅ [STEP 3] Progress callbacks sent (72%, 75%)")
             except Exception as e:
-                logger.warning(f"Error in progress callback during metrics calculation: {e}")
+                logger.warning(f"⚠️ [STEP 3] Error in progress callback: {e}")
         
         metrics = {}
         try:
             # CRITICAL: Actually call the metrics calculation function
-            logger.info(f"🔍 Calling _calculate_gait_metrics with {len(frames_3d_keypoints)} frames...")
-            logger.info(f"🔍 Input validation: frames_3d_keypoints type={type(frames_3d_keypoints)}, length={len(frames_3d_keypoints)}")
-            logger.info(f"🔍 Input validation: frame_timestamps type={type(frame_timestamps)}, length={len(frame_timestamps)}")
-            logger.info(f"🔍 Input validation: fps={video_fps}, reference_length_mm={reference_length_mm}")
+            logger.info("=" * 80)
+            logger.info(f"🔍 [STEP 3] CALLING _calculate_gait_metrics()")
+            logger.info(f"🔍   - Input frames: {len(frames_3d_keypoints)}")
+            logger.info(f"🔍   - Input timestamps: {len(frame_timestamps)}")
+            logger.info(f"🔍   - FPS: {video_fps}")
+            logger.info(f"🔍   - Reference length: {reference_length_mm}mm")
+            logger.info("=" * 80)
             
             import time
             start_time = time.time()
@@ -877,10 +897,28 @@ class GaitAnalysisService:
                 progress_callback
             )
             calculation_time = time.time() - start_time
-            logger.info(f"✅ Gait metrics calculated in {calculation_time:.2f}s: {len(metrics)} metrics")
-            logger.info(f"✅ Metrics keys: {list(metrics.keys())[:10]}..." if len(metrics) > 10 else f"✅ Metrics keys: {list(metrics.keys())}")
+            
+            logger.info("=" * 80)
+            logger.info(f"✅ [STEP 3] _calculate_gait_metrics() RETURNED")
+            logger.info(f"✅   - Calculation time: {calculation_time:.2f}s")
+            logger.info(f"✅   - Metrics count: {len(metrics) if metrics else 0}")
+            logger.info(f"✅   - Metrics type: {type(metrics)}")
+            if metrics:
+                logger.info(f"✅   - Metrics keys ({len(metrics)}): {list(metrics.keys())[:15]}")
+                logger.info(f"✅   - Has cadence: {metrics.get('cadence') is not None}")
+                logger.info(f"✅   - Has walking_speed: {metrics.get('walking_speed') is not None}")
+                logger.info(f"✅   - Has step_length: {metrics.get('step_length') is not None}")
+                logger.info(f"✅   - Is fallback: {metrics.get('fallback_metrics', False)}")
+            else:
+                logger.error(f"❌ [STEP 3] _calculate_gait_metrics() returned EMPTY metrics!")
+            logger.info("=" * 80)
             
             # CRITICAL: Validate that metrics were actually calculated
+            logger.info(f"🔍 [STEP 3] Validating returned metrics...")
+            logger.info(f"🔍   - metrics is None: {metrics is None}")
+            logger.info(f"🔍   - metrics is empty dict: {metrics == {}}")
+            logger.info(f"🔍   - metrics length: {len(metrics) if metrics else 0}")
+            
             if not metrics:
                 error_msg = "CRITICAL: _calculate_gait_metrics returned empty metrics! Calculation may have failed silently."
                 logger.error(f"❌ {error_msg}")
@@ -1023,6 +1061,13 @@ class GaitAnalysisService:
             else:
                 raise ValueError(error_msg)
         
+        logger.info("=" * 80)
+        logger.info("🔍 [STEP 3] Constructing result dictionary...")
+        logger.info(f"🔍   - metrics to include: {len(metrics) if metrics else 0} metrics")
+        logger.info(f"🔍   - metrics type: {type(metrics)}")
+        logger.info(f"🔍   - steps_completed: {steps_completed}")
+        logger.info("=" * 80)
+        
         result = {
             "status": "completed",
             "analysis_type": "advanced_gait_analysis_v2_professional",
@@ -1035,20 +1080,37 @@ class GaitAnalysisService:
             "steps_completed": steps_completed  # Track which steps completed
         }
         
+        logger.info(f"✅ [STEP 3] Result dictionary constructed")
+        logger.info(f"✅   - Result keys: {list(result.keys())}")
+        logger.info(f"✅   - Result has 'metrics' key: {'metrics' in result}")
+        logger.info(f"✅   - Result['metrics'] is None: {result.get('metrics') is None}")
+        logger.info(f"✅   - Result['metrics'] is empty: {result.get('metrics') == {}}")
+        logger.info(f"✅   - Result['metrics'] length: {len(result.get('metrics', {}))}")
+        
         # CRITICAL: Validate metrics are in result before returning
         if 'metrics' not in result or not result['metrics']:
             error_msg = "CRITICAL: Result prepared but metrics are missing!"
-            logger.error(f"❌ {error_msg}")
-            logger.error(f"❌ Result keys: {list(result.keys())}")
+            logger.error(f"❌ [STEP 3] {error_msg}")
+            logger.error(f"❌   - Result keys: {list(result.keys())}")
+            logger.error(f"❌   - 'metrics' in result: {'metrics' in result}")
+            logger.error(f"❌   - result['metrics']: {result.get('metrics')}")
             raise ValueError(error_msg)
         
         if result['metrics'].get('fallback_metrics', False):
             error_msg = "CRITICAL: Result contains fallback metrics - Step 3 failed!"
-            logger.error(f"❌ {error_msg}")
+            logger.error(f"❌ [STEP 3] {error_msg}")
+            logger.error(f"❌   - Metrics: {list(result['metrics'].keys())}")
             raise ValueError(error_msg)
         
-        logger.info(f"✅ Result prepared: {frames_processed_count} frames processed, {len(metrics)} metrics calculated")
-        logger.info(f"✅ Metrics in result: {len(result['metrics'])} metrics, has_core={bool(result['metrics'].get('cadence') or result['metrics'].get('walking_speed') or result['metrics'].get('step_length'))}")
+        logger.info("=" * 80)
+        logger.info(f"✅ [STEP 3] RESULT VALIDATION PASSED")
+        logger.info(f"✅   - Frames processed: {frames_processed_count}")
+        logger.info(f"✅   - Metrics in result: {len(result['metrics'])} metrics")
+        logger.info(f"✅   - Has cadence: {result['metrics'].get('cadence') is not None}")
+        logger.info(f"✅   - Has walking_speed: {result['metrics'].get('walking_speed') is not None}")
+        logger.info(f"✅   - Has step_length: {result['metrics'].get('step_length') is not None}")
+        logger.info(f"✅   - Is fallback: {result['metrics'].get('fallback_metrics', False)}")
+        logger.info("=" * 80)
         
         if progress_callback:
             try:

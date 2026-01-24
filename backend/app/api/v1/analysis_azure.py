@@ -1659,16 +1659,38 @@ async def process_analysis_azure(
             
             # CRITICAL: Validate that metrics exist and are not fallback
             # This is the PRIMARY source of metrics - use it directly, don't re-extract
+            logger.info("=" * 80)
+            logger.info(f"[{request_id}] 🎯 ========== STEP 4: REPORT GENERATION STARTING ==========")
+            logger.info(f"[{request_id}] 🎯 [STEP 4 ENTRY] Analysis ID: {analysis_id}")
+            logger.info(f"[{request_id}] 🎯 [STEP 4 ENTRY] Extracting metrics from analysis_result...")
+            logger.info(f"[{request_id}] 🎯   - analysis_result type: {type(analysis_result)}")
+            logger.info(f"[{request_id}] 🎯   - analysis_result keys: {list(analysis_result.keys())}")
+            logger.info(f"[{request_id}] 🎯   - 'metrics' in analysis_result: {'metrics' in analysis_result}")
+            
             metrics = analysis_result.get('metrics', {})
             
-            logger.info(
-                f"[{request_id}] 🔍 Metrics validation: has_metrics={bool(metrics)}, count={len(metrics) if metrics else 0}, is_fallback={metrics.get('fallback_metrics', False) if metrics else None}"
-            )
+            logger.info("=" * 80)
+            logger.info(f"[{request_id}] 🔍 [STEP 4] METRICS EXTRACTION")
+            logger.info(f"[{request_id}] 🔍   - metrics variable type: {type(metrics)}")
+            logger.info(f"[{request_id}] 🔍   - metrics is None: {metrics is None}")
+            logger.info(f"[{request_id}] 🔍   - metrics is empty dict: {metrics == {}}")
+            logger.info(f"[{request_id}] 🔍   - metrics length: {len(metrics) if metrics else 0}")
+            if metrics:
+                logger.info(f"[{request_id}] 🔍   - metrics keys: {list(metrics.keys())[:15]}")
+                logger.info(f"[{request_id}] 🔍   - has cadence: {metrics.get('cadence') is not None}")
+                logger.info(f"[{request_id}] 🔍   - has walking_speed: {metrics.get('walking_speed') is not None}")
+                logger.info(f"[{request_id}] 🔍   - has step_length: {metrics.get('step_length') is not None}")
+                logger.info(f"[{request_id}] 🔍   - is fallback: {metrics.get('fallback_metrics', False)}")
+            logger.info("=" * 80)
+            
+            logger.info(f"[{request_id}] 🔍 [STEP 4] Starting metrics validation...")
             
             if not metrics or len(metrics) == 0:
                 error_msg = "CRITICAL: Video processing completed but metrics are missing!"
-                logger.error(f"[{request_id}] ❌ {error_msg}")
-                logger.error(f"[{request_id}] Analysis result keys: {list(analysis_result.keys())}")
+                logger.error(f"[{request_id}] ❌ [STEP 4] {error_msg}")
+                logger.error(f"[{request_id}] ❌   - metrics is None: {metrics is None}")
+                logger.error(f"[{request_id}] ❌   - metrics length: {len(metrics) if metrics else 0}")
+                logger.error(f"[{request_id}] ❌   - analysis_result keys: {list(analysis_result.keys())}")
                 raise VideoProcessingError(
                     error_msg,
                     details={
@@ -1678,10 +1700,13 @@ async def process_analysis_azure(
                     }
                 )
             
+            logger.info(f"[{request_id}] ✅ [STEP 4] Metrics exist: {len(metrics)} metrics")
+            
             if metrics.get('fallback_metrics', False):
                 error_msg = "CRITICAL: Video processing returned fallback metrics - Step 3 likely failed!"
-                logger.error(f"[{request_id}] ❌ {error_msg}")
-                logger.error(f"[{request_id}] Metrics keys: {list(metrics.keys())}")
+                logger.error(f"[{request_id}] ❌ [STEP 4] {error_msg}")
+                logger.error(f"[{request_id}] ❌   - fallback_metrics flag: {metrics.get('fallback_metrics')}")
+                logger.error(f"[{request_id}] ❌   - Metrics keys: {list(metrics.keys())}")
                 raise VideoProcessingError(
                     error_msg,
                     details={
@@ -1692,16 +1717,24 @@ async def process_analysis_azure(
                     }
                 )
             
+            logger.info(f"[{request_id}] ✅ [STEP 4] Metrics are not fallback")
+            
             # Validate core metrics exist
             has_core_metrics = (
                 metrics.get('cadence') is not None or
                 metrics.get('walking_speed') is not None or
                 metrics.get('step_length') is not None
             )
+            logger.info(f"[{request_id}] 🔍 [STEP 4] Core metrics check:")
+            logger.info(f"[{request_id}] 🔍   - cadence: {metrics.get('cadence')}")
+            logger.info(f"[{request_id}] 🔍   - walking_speed: {metrics.get('walking_speed')}")
+            logger.info(f"[{request_id}] 🔍   - step_length: {metrics.get('step_length')}")
+            logger.info(f"[{request_id}] 🔍   - has_core_metrics: {has_core_metrics}")
+            
             if not has_core_metrics:
                 error_msg = "CRITICAL: Metrics missing core values (cadence, walking_speed, step_length)!"
-                logger.error(f"[{request_id}] ❌ {error_msg}")
-                logger.error(f"[{request_id}] Available metrics: {list(metrics.keys())}")
+                logger.error(f"[{request_id}] ❌ [STEP 4] {error_msg}")
+                logger.error(f"[{request_id}] ❌   - Available metrics: {list(metrics.keys())}")
                 raise VideoProcessingError(
                     error_msg,
                     details={
@@ -1709,6 +1742,9 @@ async def process_analysis_azure(
                         "metrics_keys": list(metrics.keys())
                     }
                 )
+            
+            logger.info(f"[{request_id}] ✅ [STEP 4] Metrics validation PASSED - all checks passed")
+            logger.info("=" * 80)
             
             logger.info(
                 f"[{request_id}] ✅ Video analysis completed successfully: {frames_processed} frames processed, {len(metrics)} metrics calculated",
@@ -1770,30 +1806,37 @@ async def process_analysis_azure(
         )
         
         # STEP 4: Update progress: Report generation - with retry logic
+        logger.info(f"[{request_id}] 🔍 [STEP 4] Updating progress to 'report_generation' (95%)...")
         max_db_retries = 5
+        progress_update_success = False
         for retry in range(max_db_retries):
             try:
-                await db_service.update_analysis(analysis_id, {
+                logger.info(f"[{request_id}] 🔍 [STEP 4] Progress update attempt {retry + 1}/{max_db_retries}")
+                update_result = await db_service.update_analysis(analysis_id, {
                     'current_step': 'report_generation',
                     'step_progress': 95,
                     'step_message': 'Generating analysis report...'
                 })
+                logger.info(f"[{request_id}] ✅ [STEP 4] Progress update result: {update_result}")
+                progress_update_success = True
                 break  # Success
             except Exception as e:
+                logger.warning(f"[{request_id}] ⚠️ [STEP 4] Progress update attempt {retry + 1} failed: {e}")
                 if retry < max_db_retries - 1:
-                    logger.warning(
-                        f"[{request_id}] Failed to update progress for report generation (attempt {retry + 1}/{max_db_retries}): {e}. Retrying...",
-                        extra={"analysis_id": analysis_id}
-                    )
                     await asyncio.sleep(0.2 * (retry + 1))
                     continue
                 else:
                     logger.error(
-                        f"[{request_id}] Failed to update progress for report generation after {max_db_retries} attempts: {e}",
+                        f"[{request_id}] ❌ [STEP 4] Progress update failed after {max_db_retries} attempts: {e}",
                         extra={"analysis_id": analysis_id},
                         exc_info=True
                     )
                     # Continue anyway - not critical
+        
+        if progress_update_success:
+            logger.info(f"[{request_id}] ✅ [STEP 4] Progress updated successfully")
+        else:
+            logger.warning(f"[{request_id}] ⚠️ [STEP 4] Progress update failed but continuing...")
         
         # CRITICAL: Stop heartbeat before final updates
         # But keep it running until we're sure the analysis is saved
@@ -1949,21 +1992,37 @@ async def process_analysis_azure(
                 await asyncio.sleep(0.3)  # Small delay for database consistency
                 verification = await db_service.get_analysis(analysis_id)
                 
+                logger.info(f"[{request_id}] 🔍 [STEP 4] Verification check (attempt {retry + 1}):")
+                logger.info(f"[{request_id}] 🔍   - verification is None: {verification is None}")
+                if verification:
+                    logger.info(f"[{request_id}] 🔍   - verification status: {verification.get('status')}")
+                    logger.info(f"[{request_id}] 🔍   - verification has metrics: {bool(verification.get('metrics'))}")
+                    logger.info(f"[{request_id}] 🔍   - verification metrics count: {len(verification.get('metrics', {}))}")
+                
                 if verification and verification.get('status') == 'completed':
                     if verification.get('metrics'):
                         completion_success = True
-                        logger.info(f"[{request_id}] ✅ Verification passed - analysis marked as completed with metrics")
+                        logger.info("=" * 80)
+                        logger.info(f"[{request_id}] ✅ [STEP 4] COMPLETION VERIFICATION PASSED")
+                        logger.info(f"[{request_id}] ✅   - Status: completed")
+                        logger.info(f"[{request_id}] ✅   - Has metrics: True")
+                        logger.info(f"[{request_id}] ✅   - Metrics count: {len(verification.get('metrics', {}))}")
+                        logger.info("=" * 80)
                     else:
-                        logger.warning(f"[{request_id}] ⚠️ Status is 'completed' but no metrics in verification - retrying with metrics")
+                        logger.warning(f"[{request_id}] ⚠️ [STEP 4] Status is 'completed' but no metrics - retrying...")
                         # Try one more update with metrics
                         await asyncio.sleep(0.2)
                         await db_service.update_analysis(analysis_id, {'metrics': metrics})
                         verification2 = await db_service.get_analysis(analysis_id)
                         if verification2 and verification2.get('metrics'):
                             completion_success = True
-                            logger.info(f"[{request_id}] ✅ Metrics added on retry")
+                            logger.info(f"[{request_id}] ✅ [STEP 4] Metrics added on retry - verification passed")
+                        else:
+                            logger.error(f"[{request_id}] ❌ [STEP 4] Metrics retry failed")
                 else:
-                    logger.warning(f"[{request_id}] ⚠️ Verification failed: status={verification.get('status') if verification else 'None'}, has_metrics={bool(verification.get('metrics') if verification else False)}")
+                    logger.warning(f"[{request_id}] ⚠️ [STEP 4] Verification failed:")
+                    logger.warning(f"[{request_id}] ⚠️   - Status: {verification.get('status') if verification else 'None'}")
+                    logger.warning(f"[{request_id}] ⚠️   - Has metrics: {bool(verification.get('metrics') if verification else False)}")
                 if completion_success:
                     logger.info(
                         f"[{request_id}] Analysis completed successfully",
