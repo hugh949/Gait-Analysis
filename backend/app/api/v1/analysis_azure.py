@@ -381,7 +381,7 @@ async def upload_video(
             logger.info(f"[{request_id}] 🔍 Validating video quality for gait analysis...")
             quality_result = None
             if tmp_path and os.path.exists(tmp_path):
-            try:
+                try:
                 # Import with error handling - if import fails, skip validation
                 try:
                     from app.services.video_quality_validator import VideoQualityValidator
@@ -672,8 +672,8 @@ async def upload_video(
             
             # Process in background
             try:
-            # view_type is now a string, not an enum
-            view_type_str = str(view_type)
+                # view_type is now a string, not an enum
+                view_type_str = str(view_type)
             
             # CRITICAL: Start keep-alive heartbeat IMMEDIATELY after scheduling
             # This ensures the analysis stays alive even before processing starts
