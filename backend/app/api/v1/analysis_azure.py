@@ -145,7 +145,7 @@ if db_service is None:
 async def upload_video(
     file: UploadFile = File(...),
     patient_id: Optional[str] = Query(None, max_length=100, description="Patient identifier"),
-    view_type: ViewType = Query(ViewType.FRONT, description="Camera view type"),
+    view_type: str = Query("front", description="Camera view type"),
     reference_length_mm: Optional[float] = Query(None, gt=0, le=10000, description="Reference length in mm"),
     fps: float = Query(30.0, gt=0, le=120, description="Video frames per second"),
     request: Request = None,
@@ -380,11 +380,11 @@ async def upload_video(
                             pose_landmarker=gait_service.pose_landmarker if gait_service else None
                         )
                         
-                        quality_result = validator.validate_video_for_gait_analysis(
-                            video_path=tmp_path,
-                            view_type=view_type.value if hasattr(view_type, 'value') else str(view_type),
-                            sample_frames=20
-                        )
+                    quality_result = validator.validate_video_for_gait_analysis(
+                        video_path=tmp_path,
+                        view_type=str(view_type),
+                        sample_frames=20
+                    )
                         
                         logger.info(f"[{request_id}] 🔍 Video quality validation results:")
                         logger.info(f"[{request_id}] 🔍   - Quality score: {quality_result.get('quality_score', 0):.1f}%")
@@ -624,8 +624,8 @@ async def upload_video(
         
         # Process in background
         try:
-            # Convert ViewType enum to string if needed
-            view_type_str = view_type.value if isinstance(view_type, ViewType) else str(view_type)
+            # view_type is now a string, not an enum
+            view_type_str = str(view_type)
             
             # CRITICAL: Start keep-alive heartbeat IMMEDIATELY after scheduling
             # This ensures the analysis stays alive even before processing starts
