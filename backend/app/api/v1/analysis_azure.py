@@ -874,7 +874,7 @@ async def upload_video(
                 status_code=500,
                 detail=f"File upload processing failed: {str(file_upload_error)}"
             )
-            
+        
     except HTTPException:
         # Let FastAPI handle HTTPException - don't intercept
         raise
