@@ -39,10 +39,17 @@ from app.core.schemas import (
 router = APIRouter()
 
 # CRITICAL: Add a simple test endpoint to verify router is working
+# This must be defined BEFORE service initialization to ensure it's registered
 @router.get("/test")
 async def test_endpoint():
     """Test endpoint to verify router is registered"""
     return {"status": "ok", "message": "Analysis router is working", "endpoint": "/api/v1/analysis/test"}
+
+# CRITICAL: Log router creation to verify it exists
+logger.info(f"🔍 Router created: {router}, type: {type(router)}")
+logger.info(f"🔍 Router has routes attr: {hasattr(router, 'routes')}")
+if hasattr(router, 'routes'):
+    logger.info(f"🔍 Initial route count: {len(router.routes)}")
 
 # Initialize services with error handling
 storage_service: Optional[AzureStorageService] = None
@@ -131,6 +138,8 @@ def get_gait_analysis_service() -> Optional[GaitAnalysisService]:
 if db_service is None:
     logger.critical("Database service not initialized - API will not function correctly")
 
+# CRITICAL: Log router state before defining upload endpoint
+logger.info(f"🔍 Router before upload endpoint: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
 
 @router.post(
     "/upload",
@@ -153,6 +162,8 @@ async def upload_video(
 ) -> AnalysisResponse:
     """
     Upload video for gait analysis using Azure native services
+    
+    CRITICAL: This endpoint must be registered at /api/v1/analysis/upload
     
     Flow:
     1. Validate and save uploaded file
@@ -633,6 +644,9 @@ async def upload_video(
             logger.info(f"[{request_id}] ✅ Background processing task scheduled for analysis {analysis_id}", extra={"analysis_id": analysis_id})
             logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
             logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
+            
+            # CRITICAL: Log router state after upload endpoint definition
+            logger.info(f"🔍 Router after upload endpoint: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
             
             # CRITICAL: Final verification - ensure analysis is visible before returning
             if db_service and db_service._use_mock:
