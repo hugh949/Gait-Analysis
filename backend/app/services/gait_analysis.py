@@ -764,7 +764,9 @@ class GaitAnalysisService:
                 except Exception as e:
                     logger.warning(f"Error updating progress at 63%: {e}")
             
-            frames_3d_keypoints = self._lift_to_3d(frames_2d_keypoints, view_type)
+            frames_3d_keypoints = self._lift_to_3d(
+                frames_2d_keypoints, view_type, progress_callback=progress_callback
+            )
             logger.info(f"✅ 3D lifting complete: {len(frames_3d_keypoints)} frames successfully lifted to 3D")
             
             # CRITICAL: Update progress after 3D lifting completes
@@ -1342,16 +1344,22 @@ class GaitAnalysisService:
         else:
             return 'unknown'
     
-    def _lift_to_3d(self, frames_2d_keypoints: List[Dict], view_type: str) -> List[Dict]:
+    def _lift_to_3d(
+        self,
+        frames_2d_keypoints: List[Dict],
+        view_type: str,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
+    ) -> List[Dict]:
         """
         Advanced 3D reconstruction with improved biomechanical models
         Professional-grade 3D lifting with constraint validation
         """
-        logger.debug(f"Starting 3D lifting: {len(frames_2d_keypoints)} frames, view_type={view_type}")
+        total_frames = len(frames_2d_keypoints)
+        logger.info(f"[STEP 2] Starting 3D lifting: {total_frames} frames, view_type={view_type}")
         
         if view_type == "auto" or not view_type:
             detected_view = self._detect_view_angle(frames_2d_keypoints)
-            logger.info(f"Auto-detected view angle: {detected_view}")
+            logger.info(f"[STEP 2] Auto-detected view angle: {detected_view}")
             view_type = detected_view
         
         frames_3d = []
@@ -1362,7 +1370,9 @@ class GaitAnalysisService:
             'foot': 250.0,   # Ankle to toe
         }
         
-        logger.debug(f"Using biomechanical constraints: {leg_segment_lengths}")
+        # Progress every N frames (63–70% UI during Step 2). Min 1% of total, max 100 frames.
+        progress_interval = max(1, min(100, total_frames // 20))
+        last_log_frame = 0
         
         for i, keypoints_2d in enumerate(frames_2d_keypoints):
             keypoints_3d = {}
@@ -1389,6 +1399,20 @@ class GaitAnalysisService:
                         keypoints_3d[name]['z'] = alpha * keypoints_3d[name]['z'] + (1 - alpha) * prev_keypoints[name]['z']
             
             frames_3d.append(keypoints_3d)
+            
+            # Progress and logging during loop so UI doesn’t appear stuck at 63%
+            if (i + 1) % progress_interval == 0 or i == total_frames - 1:
+                pct_done = (i + 1) / total_frames
+                # Internal 52–75 maps to UI 63–70% for Step 2
+                internal_pct = 52 + int(23 * pct_done)
+                if progress_callback:
+                    try:
+                        progress_callback(internal_pct, f"3D lifting... {i + 1}/{total_frames} frames")
+                    except Exception:
+                        pass
+                if (i + 1) - last_log_frame >= 100 or i == total_frames - 1:
+                    logger.info(f"[STEP 2] 3D lifting progress: {i + 1}/{total_frames} frames ({100 * pct_done:.1f}%)")
+                    last_log_frame = i + 1
         
         # Log 3D lifting statistics
         if len(frames_3d) > 0:
