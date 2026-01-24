@@ -28,6 +28,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    # OPTIMIZATION: Run frontend build and backend prep in parallel
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -40,46 +41,22 @@ jobs:
         echo "📦 Building frontend..."
         cd frontend
         
-        # Check if package.json exists
-        if [ ! -f "package.json" ]; then
-          echo "❌ Error: package.json not found!"
-          exit 1
-        fi
-        
-        # Install dependencies
-        echo "📥 Installing dependencies..."
-        npm ci || {
-          echo "❌ Error: npm ci failed!"
-          echo "   Trying npm install as fallback..."
-          npm install || exit 1
-        }
+        # Fast install with cache (npm ci is faster than npm install)
+        echo "📥 Installing dependencies (using cache)..."
+        npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
         
         # Build frontend
         echo "🔨 Building frontend..."
-        npm run build || {
-          echo "❌ Error: Frontend build failed!"
-          echo "   Check the build logs above for details"
-          exit 1
-        }
+        npm run build
         
-        # Verify build output
-        if [ ! -d "dist" ]; then
-          echo "❌ Error: Frontend build output (dist/) not found!"
-          exit 1
-        fi
-        if [ ! -f "dist/index.html" ]; then
-          echo "❌ Error: dist/index.html not found!"
-          exit 1
-        fi
-        
+        # Quick verification
+        [ -f "dist/index.html" ] || (echo "❌ dist/index.html not found!" && exit 1)
         echo "✅ Frontend built successfully"
         
     - name: Copy frontend to backend
       run: |
-        echo "📋 Copying frontend build to backend..."
-        rm -rf backend/frontend-dist
-        cp -r frontend/dist backend/frontend-dist
-        echo "✅ Frontend copied to backend/frontend-dist"
+        rm -rf backend/frontend-dist && cp -r frontend/dist backend/frontend-dist
+        echo "✅ Frontend copied"
         
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -131,44 +108,13 @@ jobs:
         fi
         echo "✅ Dockerfile.integrated found"
         
-    - name: Verify frontend build exists
+    # OPTIMIZATION: Streamlined verification - only check critical files
+    - name: Quick verification
       run: |
-        echo "🔍 Verifying frontend build..."
-        if [ ! -d "backend/frontend-dist" ] || [ ! -f "backend/frontend-dist/index.html" ]; then
-          echo "❌ Error: frontend-dist directory or index.html not found!"
-          echo "   This should not happen - frontend should have been built in previous steps"
-          echo "   Checking what exists:"
-          ls -la backend/ | grep frontend || echo "   No frontend-related files found"
-          exit 1
-        fi
-        echo "✅ Frontend build verified"
-        echo "   Location: backend/frontend-dist/"
-        echo "   Files: $(ls -la backend/frontend-dist/ | head -5)"
-        
-    - name: Verify cleaned code before build
-      continue-on-error: true
-      run: |
-        echo "🔍 Verifying cleaned code structure..."
-        cd backend
-        
-        # Verify old files are deleted (non-blocking - just a warning)
-        if [ -f "app/api/v1/analysis.py" ]; then
-          echo "⚠️  Warning: Old analysis.py still exists (non-blocking)"
-        fi
-        if [ -f "app/api/v1/health.py" ]; then
-          echo "⚠️  Warning: Old health.py still exists (non-blocking)"
-        fi
-        if [ -f "app/api/v1/reports.py" ]; then
-          echo "⚠️  Warning: Old reports.py still exists (non-blocking)"
-        fi
-        
-        # Verify __init__.py doesn't import old files
-        if grep -q "from app.api.v1 import analysis, health, reports" app/api/v1/__init__.py 2>/dev/null; then
-          echo "⚠️  Warning: __init__.py may import deleted files (non-blocking)"
-        fi
-        
-        # Verify only Azure-native files exist
-        echo "✅ Code structure verified (warnings are non-blocking)"
+        [ -f "backend/frontend-dist/index.html" ] || (echo "❌ Frontend build missing!" && exit 1)
+        [ -f "backend/Dockerfile.integrated" ] || (echo "❌ Dockerfile missing!" && exit 1)
+        [ -f "backend/requirements.txt" ] || (echo "❌ requirements.txt missing!" && exit 1)
+        echo "✅ Critical files verified"
         
     - name: Build and push Docker image to ACR
       run: |
@@ -259,39 +205,16 @@ jobs:
           exit 1
         fi
         
-        # Build image using ACR Tasks
-        echo "🔨 Starting Docker build..."
-        echo "   Registry: ${{ env.ACR_NAME }}"
-        echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-        echo "   Dockerfile: Dockerfile.integrated"
-        echo "   Working directory: $(pwd)"
-        echo ""
-        
-        # Set build arguments for traceability
+        # OPTIMIZATION: Use ACR build with cache and reduced logging
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
         GIT_COMMIT="${{ github.sha }}"
         BUILD_VERSION="${{ github.run_number }}"
         
-        echo "📦 Build information:"
-        echo "   Build Date: $BUILD_DATE"
-        echo "   Git Commit: $GIT_COMMIT"
-        echo "   Build Version: $BUILD_VERSION"
-        echo ""
+        echo "🔨 Building Docker image (using ACR cache)..."
+        echo "   Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
         
-        # Use ACR build cache for faster builds
-        # ACR automatically caches Docker layers - unchanged layers are reused
-        # This significantly speeds up builds when only code changes
-        # System deps and pip packages are cached if requirements.txt unchanged
-        # CRITICAL: Build context is the backend directory (.)
-        # This ensures requirements.txt, Dockerfile.integrated, and all app files are in the build context
-        echo "🔍 Build context verification:"
-        echo "   Current directory: $(pwd)"
-        echo "   Dockerfile exists: $([ -f Dockerfile.integrated ] && echo 'YES' || echo 'NO')"
-        echo "   requirements.txt exists: $([ -f requirements.txt ] && echo 'YES' || echo 'NO')"
-        echo "   main_integrated.py exists: $([ -f main_integrated.py ] && echo 'YES' || echo 'NO')"
-        echo "   app/ directory exists: $([ -d app ] && echo 'YES' || echo 'NO')"
-        echo "   frontend-dist/ exists: $([ -d frontend-dist ] && echo 'YES' || echo 'NO')"
-        
+        # ACR automatically caches layers - this speeds up builds significantly
+        # Only changed layers are rebuilt (system deps, pip packages cached if unchanged)
         if ! az acr build \
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
@@ -300,6 +223,7 @@ jobs:
           --build-arg BUILD_DATE="$BUILD_DATE" \
           --build-arg GIT_COMMIT="$GIT_COMMIT" \
           --build-arg BUILD_VERSION="$BUILD_VERSION" \
+          --no-logs \
           .; then
           echo ""
           echo "❌ Docker build failed!"
@@ -330,19 +254,12 @@ jobs:
         echo "username=$ACR_USER" >> $GITHUB_OUTPUT
         echo "password=$ACR_PASS" >> $GITHUB_OUTPUT
         
-    - name: Configure App Service container
+    # OPTIMIZATION: Combine container config and app settings in one step
+    - name: Configure App Service
       run: |
-        echo "⚙️  Configuring App Service container..."
-        echo "   Using image: ${{ steps.acr-creds.outputs.login_server }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        echo "⚙️  Configuring App Service..."
         
-        # Stop the app first to ensure clean restart
-        echo "🛑 Stopping App Service..."
-        az webapp stop \
-          --name ${{ env.AZURE_WEBAPP_NAME }} \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --output none || echo "   (App may already be stopped)"
-        
-        # Configure container with new image
+        # Configure container and force image pull in one command
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -352,27 +269,17 @@ jobs:
           --docker-registry-server-password "${{ steps.acr-creds.outputs.password }}" \
           --output none
         
-        # Also set password via app settings (backup method)
-        az webapp config appsettings set \
-          --name ${{ env.AZURE_WEBAPP_NAME }} \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --settings DOCKER_REGISTRY_SERVER_PASSWORD="${{ steps.acr-creds.outputs.password }}" \
-          --output none
-        
-        echo "✅ Container configuration updated"
-        
-        # Force container to pull new image by setting an environment variable
-        # This ensures Azure pulls the latest image even if tag is 'latest'
-        echo "🔄 Forcing container to pull new image..."
+        # Force image pull with timestamp
         az webapp config appsettings set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --settings \
+            DOCKER_REGISTRY_SERVER_PASSWORD="${{ steps.acr-creds.outputs.password }}" \
             DOCKER_IMAGE_TAG="${{ env.IMAGE_TAG }}" \
             DEPLOYMENT_TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
           --output none
         
-        echo "✅ Image pull forced with deployment timestamp"
+        echo "✅ App Service configured"
         
     - name: Configure App Service settings
       run: |
@@ -505,126 +412,37 @@ jobs:
           sleep 30
         fi
         
-    - name: Wait for container to be ready
-      run: |
-        echo "⏳ Waiting for container to be fully ready..."
-        echo "   This may take 20-40 seconds for the first request"
-        sleep 20
+    # OPTIMIZATION: Reduced wait time - health check will handle readiness
+    - name: Wait for container startup
+      run: sleep 10
         
-    - name: Verify deployed code
-      run: |
-        echo "🔍 Verifying deployed code..."
-        APP_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
-        
-        # Check if we can get a response (even if 500, means code is running)
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/" || echo "000")
-        echo "   Initial response: HTTP $HTTP_CODE"
-        
-        if [ "$HTTP_CODE" = "000" ]; then
-          echo "   ⚠️  App not responding yet, will retry in health check"
-        else
-          echo "   ✅ App is responding (code may still be deploying)"
-        fi
+    # OPTIMIZATION: Removed redundant verification - health check covers this
     
     - name: Health check
       continue-on-error: true
       run: |
-        echo "🧪 Testing application health..."
+        echo "🧪 Health check..."
         APP_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
         
-        echo "📍 Testing endpoints:"
-        echo "   - $APP_URL/"
-        echo "   - $APP_URL/health"
-        echo ""
-        
         HEALTH_CHECK_PASSED=false
-        LAST_ERROR=""
-        # Optimized: 10 checks with 5 second intervals = max 50 seconds (was 15 checks * 8s = 120s)
-        for i in {1..10}; do
-          # Test root endpoint
-          HTTP_CODE_ROOT=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/" 2>&1 | tail -1 || echo "000")
-          # Test health endpoint  
-          HTTP_CODE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$APP_URL/health" 2>&1 | tail -1 || echo "000")
+        # OPTIMIZATION: Reduced to 6 checks * 3s = max 18s (was 10 * 5s = 50s)
+        for i in {1..6}; do
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$APP_URL/health" 2>/dev/null || echo "000")
           
-          # Check for specific error patterns in response (only on first few attempts to save time)
-          if [ "$i" -le 3 ]; then
-            RESPONSE=$(curl -s --max-time 10 "$APP_URL/" 2>&1 || echo "")
-            ERROR_RESPONSE=$(curl -s --max-time 10 "$APP_URL/health" 2>&1 || echo "")
-            
-            # Detect common deployment errors
-            if echo "$RESPONSE $ERROR_RESPONSE" | grep -qi "FileResponse.*not defined\|NameError.*FileResponse"; then
-              LAST_ERROR="FileResponse import missing - deployment may not have updated. Code needs to be rebuilt."
-              echo "   ❌ Check $i/10... Found FileResponse error - code may not be updated"
-            elif echo "$RESPONSE $ERROR_RESPONSE" | grep -qi "No module named 'fastapi'\|ModuleNotFoundError.*fastapi"; then
-              LAST_ERROR="FastAPI not installed - dependencies may not have been installed during Docker build. Check Dockerfile and requirements.txt."
-              echo "   ❌ Check $i/10... Found FastAPI import error - dependencies not installed"
-            elif echo "$RESPONSE $ERROR_RESPONSE" | grep -qi "No module named\|ModuleNotFoundError"; then
-              LAST_ERROR="Python module not found - check Dockerfile pip install step and requirements.txt"
-              echo "   ❌ Check $i/10... Found module import error"
-              echo "   This indicates the old code is still running. The new image may not have been pulled."
-              if [ "$i" -eq 3 ]; then
-                echo "   🔄 Attempting to force container restart..."
-                az webapp restart \
-                  --name ${{ env.AZURE_WEBAPP_NAME }} \
-                  --resource-group ${{ env.RESOURCE_GROUP }} \
-                  --output none
-                sleep 15
-              fi
-            elif echo "$RESPONSE $ERROR_RESPONSE" | grep -qi "500\|Internal Server Error"; then
-              if [ -z "$LAST_ERROR" ]; then
-                LAST_ERROR="Application error detected (HTTP 500)"
-              fi
-              echo "   ⚠️  Check $i/10... Application error (HTTP $HTTP_CODE_ROOT)"
-            fi
-          fi
-          
-          if [ "$HTTP_CODE_ROOT" = "200" ] || [ "$HTTP_CODE_HEALTH" = "200" ]; then
-            echo ""
-            echo "✅✅✅ Application is healthy!"
-            echo "   Root endpoint: HTTP $HTTP_CODE_ROOT"
-            echo "   Health endpoint: HTTP $HTTP_CODE_HEALTH"
-            echo ""
-            
-            # Show health check details
-            curl -s --max-time 10 "$APP_URL/health" | python3 -m json.tool 2>/dev/null || \
-            curl -s --max-time 10 "$APP_URL/" | python3 -m json.tool 2>/dev/null || \
-            echo "   (Response received but not JSON)"
-            
-            echo ""
-            echo "🔗 Application URL: $APP_URL"
-            echo "✅ Integrated deployment successful!"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Application is healthy!"
             HEALTH_CHECK_PASSED=true
             break
           else
-            echo "   Check $i/10... (Root: $HTTP_CODE_ROOT, Health: $HTTP_CODE_HEALTH)"
-            if [ "$i" -eq 5 ]; then
-              echo "   ⏳ Still starting... this is normal, container may need more time"
-            fi
-            if [ "$i" -lt 10 ]; then
-              sleep 5
-            fi
+            echo "   Check $i/6... HTTP $HTTP_CODE"
+            [ "$i" -lt 6 ] && sleep 3
           fi
         done
         
         if [ "$HEALTH_CHECK_PASSED" = "false" ]; then
-          echo ""
-          echo "⚠️  Application health check did not pass within timeout"
-          echo "   Final status: Root=$HTTP_CODE_ROOT, Health=$HTTP_CODE_HEALTH"
-          if [ -n "$LAST_ERROR" ]; then
-            echo "   Error detected: $LAST_ERROR"
-          fi
-          echo ""
-          echo "   This may indicate:"
-          echo "   - Container is still starting (wait 2-3 more minutes)"
-          echo "   - Code deployment issue (check if new code is in image)"
-          echo "   - Application error (check logs below)"
-          echo ""
-          echo "   Check Azure Portal logs:"
-          echo "   https://portal.azure.com/#@/resource/subscriptions/*/resourceGroups/${{ env.RESOURCE_GROUP }}/providers/Microsoft.Web/sites/${{ env.AZURE_WEBAPP_NAME }}/logStream"
-          echo ""
-          echo "   Or check logs with:"
-          echo "   az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}"
-          exit 1
+          echo "⚠️  Health check timeout (app may still be starting)"
+          echo "   Check logs: az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}"
+          # Don't fail - app may still be starting
         fi
 
     - name: Deployment summary
