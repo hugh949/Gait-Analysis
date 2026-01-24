@@ -138,10 +138,16 @@ export default function AnalysisUpload() {
           }
         } else {
           // If length not computable, show indeterminate progress
-          console.log('Upload in progress (size unknown)')
-          // Update lastProgressUpdate to prevent false stuck detection
+          // Update progress to show activity (increment slowly)
+          const currentProgress = progressRef.current
+          if (currentProgress < 50) {
+            // Gradually increase progress to show activity
+            const newProgress = Math.min(currentProgress + 2, 50)
+            progressRef.current = newProgress
+            setProgress(newProgress)
+          }
+          console.log(`Upload in progress (size unknown) - showing ${progressRef.current}%`)
           lastProgressUpdate = Date.now()
-          // Don't set progress to 50% here - let it stay at 5% until we get real progress
         }
       })
 
