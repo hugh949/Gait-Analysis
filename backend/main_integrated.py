@@ -59,12 +59,23 @@ except Exception as e:
 
 # CRITICAL: Import router with detailed error handling
 analysis_router = None
+router_import_error = None
 try:
-    from app.api.v1.analysis_azure import router as imported_router
-    analysis_router = imported_router
+    # CRITICAL: Import the module first to catch any import errors
+    import app.api.v1.analysis_azure as analysis_module
+    logger.info("✓ Analysis module imported successfully")
+    
+    # Then get the router
+    if hasattr(analysis_module, 'router'):
+        analysis_router = analysis_module.router
+        logger.info(f"✓ Analysis router extracted from module: {type(analysis_router)}")
+    else:
+        logger.error("❌ CRITICAL: Module imported but 'router' attribute not found!")
+        logger.error(f"❌ Module attributes: {dir(analysis_module)}")
+        router_import_error = "Router attribute not found in module"
     
     # Verify router has endpoints registered
-    if hasattr(analysis_router, 'routes'):
+    if analysis_router and hasattr(analysis_router, 'routes'):
         route_count = len(analysis_router.routes)
         logger.info(f"✓ Analysis router imported - checking {route_count} routes...")
         
@@ -80,23 +91,28 @@ try:
             logger.error("❌ CRITICAL: Analysis router has 0 routes!")
             logger.error("❌ This will cause 404 errors on all API endpoints!")
             logger.error("❌ Check if endpoints are properly decorated with @router.post/@router.get")
-    else:
+            router_import_error = "Router has 0 routes"
+    elif analysis_router:
         logger.error("❌ CRITICAL: Analysis router has no 'routes' attribute!")
+        router_import_error = "Router has no routes attribute"
         
 except ImportError as e:
     logger.error(f"❌ CRITICAL: Failed to import analysis router: {e}", exc_info=True)
     logger.error("❌ This will cause 404 errors on all API endpoints!")
     analysis_router = None
+    router_import_error = str(e)
 except Exception as e:
     logger.error(f"❌ CRITICAL: Unexpected error importing analysis router: {e}", exc_info=True)
     logger.error("❌ This will cause 404 errors on all API endpoints!")
     analysis_router = None
+    router_import_error = str(e)
 
 # Only create fallback router if import completely failed
 if analysis_router is None:
     from fastapi import APIRouter
     analysis_router = APIRouter()
     logger.warning("⚠️ Using empty fallback router - app will start but API endpoints will not work")
+    logger.warning(f"⚠️ Import error: {router_import_error}")
     logger.warning("⚠️ Check startup logs for import errors above")
 
 # Import testing router (for development/testing only)
