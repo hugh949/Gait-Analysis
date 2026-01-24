@@ -143,13 +143,13 @@ if db_service is None:
     }
 )
 async def upload_video(
-    request: Request,
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     patient_id: Optional[str] = Query(None, max_length=100, description="Patient identifier"),
     view_type: ViewType = Query(ViewType.FRONT, description="Camera view type"),
     reference_length_mm: Optional[float] = Query(None, gt=0, le=10000, description="Reference length in mm"),
-    fps: float = Query(30.0, gt=0, le=120, description="Video frames per second")
+    fps: float = Query(30.0, gt=0, le=120, description="Video frames per second"),
+    request: Request = None,
+    background_tasks: BackgroundTasks = None
 ) -> AnalysisResponse:
     """
     Upload video for gait analysis using Azure native services
@@ -184,7 +184,9 @@ async def upload_video(
     logger.info(f"[{request_id}] Patient ID: {patient_id}, View: {view_type}, FPS: {fps}")
     
     # Log estimated file size from Content-Length header if available
-    content_length = request.headers.get("content-length")
+    content_length = None
+    if request:
+        content_length = request.headers.get("content-length")
     if content_length:
         try:
             estimated_size_mb = int(content_length) / (1024 * 1024)
