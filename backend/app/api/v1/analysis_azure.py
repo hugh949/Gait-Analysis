@@ -707,8 +707,8 @@ async def upload_video(
                                         'step_message': f'Analysis recreated by keep-alive (heartbeat #{keepalive_count})'
                                     })
                                     logger.info(f"[{request_id}] ✅ Keep-alive: Recreated analysis {analysis_id} (heartbeat #{keepalive_count})")
-                            except Exception as keepalive_error:
-                                logger.error(f"[{request_id}] ❌ Keep-alive error on heartbeat #{keepalive_count}: {keepalive_error}", exc_info=True)
+                        except Exception as keepalive_error:
+                            logger.error(f"[{request_id}] ❌ Keep-alive error on heartbeat #{keepalive_count}: {keepalive_error}", exc_info=True)
                     except asyncio.CancelledError:
                         logger.warning(f"[{request_id}] 🛑 Keep-alive CANCELLED after {keepalive_count} heartbeats - this should not happen!")
                         # Try to restart keep-alive if cancelled (shouldn't happen, but safety)
