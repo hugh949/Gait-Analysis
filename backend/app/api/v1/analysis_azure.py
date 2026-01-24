@@ -172,6 +172,17 @@ async def upload_video(
     analysis_id = None
     patient_id_val = patient_id  # Store for use in exception handlers
     
+    # CRITICAL: Log immediately at function entry to catch 502 errors
+    try:
+        logger.info("=" * 80)
+        logger.info(f"[{request_id}] 🚀 ========== UPLOAD ENDPOINT CALLED ==========")
+        logger.info(f"[{request_id}] 🚀 Timestamp: {datetime.utcnow().isoformat()}")
+        logger.info(f"[{request_id}] 🚀 Function entry successful - endpoint is accessible")
+        logger.info("=" * 80)
+    except Exception as early_log_error:
+        # Even logging failed - this is critical
+        print(f"CRITICAL: Failed to log at upload endpoint entry: {early_log_error}")
+    
     try:
         # MINIMAL START - just log
         

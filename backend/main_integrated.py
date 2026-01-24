@@ -31,6 +31,7 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 import os
 import asyncio
+from datetime import datetime
 
 # Import request logging middleware
 try:
@@ -677,6 +678,29 @@ async def root(request: Request):
         }
     )
 
+
+@app.post("/api/v1/test-upload")
+async def test_upload_endpoint():
+    """Test endpoint to verify upload endpoint is accessible (for debugging 502 errors)"""
+    try:
+        logger.info("=" * 80)
+        logger.info("🧪 TEST UPLOAD ENDPOINT CALLED")
+        logger.info(f"🧪 Timestamp: {datetime.utcnow().isoformat()}")
+        logger.info("=" * 80)
+        return JSONResponse({
+            "status": "success",
+            "message": "Upload endpoint is accessible",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Test upload endpoint error: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Test endpoint failed: {str(e)}"
+            }
+        )
 
 @app.get("/health")
 async def health_check():
