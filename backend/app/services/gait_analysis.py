@@ -1452,8 +1452,17 @@ class GaitAnalysisService:
                 ])
         
         if len(left_ankle_positions) < 5 or len(right_ankle_positions) < 5:
-            logger.warning(f"Insufficient ankle positions: left={len(left_ankle_positions)}, right={len(right_ankle_positions)}")
-            return self._empty_metrics()
+            error_msg = f"CRITICAL: Insufficient ankle positions extracted! left={len(left_ankle_positions)}, right={len(right_ankle_positions)}, need at least 5 each."
+            logger.error(f"❌ {error_msg}")
+            logger.error(f"❌ This means the 3D keypoints don't have enough valid ankle data!")
+            logger.error(f"❌ Total frames processed: {len(frames_3d_keypoints)}")
+            raise GaitMetricsError(error_msg, details={
+                "left_ankle_count": len(left_ankle_positions),
+                "right_ankle_count": len(right_ankle_positions),
+                "required_count": 5,
+                "total_frames": len(frames_3d_keypoints),
+                "step_2_status": "INSUFFICIENT_ANKLE_DATA"
+            })
         
         left_ankle_positions = np.array(left_ankle_positions)
         right_ankle_positions = np.array(right_ankle_positions)
