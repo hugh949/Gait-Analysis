@@ -1169,28 +1169,30 @@ export default function AnalysisUpload() {
               
               <div className={`step-card ${
                 (() => {
-                  const currentStatus: UploadStatus = status
-                  const isReportGen = currentStep === 'report_generation'
-                  if (isReportGen) {
-                    if (currentStatus === 'failed') return 'failed'
-                    if (currentStatus === 'completed') return 'completed'
+                  // Extract to avoid type narrowing
+                  const s: UploadStatus = status
+                  const step = currentStep
+                  if (step === 'report_generation') {
+                    if (s === 'failed') return 'failed'
+                    if (s === 'completed') return 'completed'
                     return 'active'
                   }
-                  if (currentStatus === 'completed') return 'completed'
+                  if (s === 'completed') return 'completed'
                   return 'pending'
                 })()
               }`}>
                 <div className="step-indicator">
                   {(() => {
-                    const currentStatus: UploadStatus = status
-                    const isReportGen = currentStep === 'report_generation'
-                    if (currentStatus === 'failed' && isReportGen) {
+                    // Extract to avoid type narrowing
+                    const s: UploadStatus = status
+                    const step = currentStep
+                    if (s === 'failed' && step === 'report_generation') {
                       return <div className="step-error">✗</div>
                     }
-                    if (currentStatus === 'completed') {
+                    if (s === 'completed') {
                       return <div className="step-checkmark">✓</div>
                     }
-                    if (isReportGen) {
+                    if (step === 'report_generation') {
                       return (
                         <div className="step-spinner">
                           <Loader2 className="spinner-icon" />
