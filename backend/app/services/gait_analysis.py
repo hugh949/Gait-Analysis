@@ -913,13 +913,13 @@ class GaitAnalysisService:
                 logger.error(f"❌ [STEP 3] _calculate_gait_metrics() returned EMPTY metrics!")
             logger.info("=" * 80)
             
-            # CRITICAL: Validate that metrics were actually calculated
-            logger.info(f"🔍 [STEP 3] Validating returned metrics...")
-            logger.info(f"🔍   - metrics is None: {metrics is None}")
-            logger.info(f"🔍   - metrics is empty dict: {metrics == {}}")
-            logger.info(f"🔍   - metrics length: {len(metrics) if metrics else 0}")
-            
-            if not metrics:
+        # CRITICAL: Validate that metrics were actually calculated
+        logger.info(f"🔍 [STEP 3] Validating returned metrics...")
+        logger.info(f"🔍   - metrics is None: {metrics is None}")
+        logger.info(f"🔍   - metrics is empty dict: {metrics == {}}")
+        logger.info(f"🔍   - metrics length: {len(metrics) if metrics else 0}")
+        
+        if not metrics:
                 error_msg = "CRITICAL: _calculate_gait_metrics returned empty metrics! Calculation may have failed silently."
                 logger.error(f"❌ {error_msg}")
                 raise GaitMetricsError(error_msg, details={
