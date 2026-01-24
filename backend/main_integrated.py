@@ -57,29 +57,47 @@ except Exception as e:
     settings = MinimalSettings()
     logger.warning("Using minimal settings - app may have limited functionality")
 
+# CRITICAL: Import router with detailed error handling
+analysis_router = None
 try:
-    from app.api.v1.analysis_azure import router as analysis_router
+    from app.api.v1.analysis_azure import router as imported_router
+    analysis_router = imported_router
+    
     # Verify router has endpoints registered
-    if hasattr(analysis_router, 'routes') and len(analysis_router.routes) > 0:
-        logger.info(f"✓ Analysis router imported successfully with {len(analysis_router.routes)} routes")
-        for route in analysis_router.routes:
-            if hasattr(route, 'path') and hasattr(route, 'methods'):
-                methods = list(route.methods) if hasattr(route.methods, '__iter__') else [str(route.methods)]
-                logger.info(f"  Route: {methods} {route.path}")
+    if hasattr(analysis_router, 'routes'):
+        route_count = len(analysis_router.routes)
+        logger.info(f"✓ Analysis router imported - checking {route_count} routes...")
+        
+        if route_count > 0:
+            logger.info(f"✓ Analysis router has {route_count} routes")
+            for route in analysis_router.routes:
+                if hasattr(route, 'path') and hasattr(route, 'methods'):
+                    methods = list(route.methods) if hasattr(route.methods, '__iter__') else [str(route.methods)]
+                    logger.info(f"  Route: {methods} {route.path}")
+                elif hasattr(route, 'path'):
+                    logger.info(f"  Route: {route.path}")
+        else:
+            logger.error("❌ CRITICAL: Analysis router has 0 routes!")
+            logger.error("❌ This will cause 404 errors on all API endpoints!")
+            logger.error("❌ Check if endpoints are properly decorated with @router.post/@router.get")
     else:
-        logger.error("❌ CRITICAL: Analysis router imported but has no routes - endpoints will not be available!")
-        logger.error("❌ This will cause 404 errors on all API endpoints!")
-        # Create minimal router to allow app to start - better than crashing
-        from fastapi import APIRouter
-        analysis_router = APIRouter()
-        logger.warning("⚠️ Using minimal router - app will start but API endpoints will not work")
-except Exception as e:
+        logger.error("❌ CRITICAL: Analysis router has no 'routes' attribute!")
+        
+except ImportError as e:
     logger.error(f"❌ CRITICAL: Failed to import analysis router: {e}", exc_info=True)
     logger.error("❌ This will cause 404 errors on all API endpoints!")
-    # Create minimal router to allow app to start - better than crashing
+    analysis_router = None
+except Exception as e:
+    logger.error(f"❌ CRITICAL: Unexpected error importing analysis router: {e}", exc_info=True)
+    logger.error("❌ This will cause 404 errors on all API endpoints!")
+    analysis_router = None
+
+# Only create fallback router if import completely failed
+if analysis_router is None:
     from fastapi import APIRouter
     analysis_router = APIRouter()
-    logger.warning("⚠️ Using minimal router due to import error - app will start but API endpoints will not work")
+    logger.warning("⚠️ Using empty fallback router - app will start but API endpoints will not work")
+    logger.warning("⚠️ Check startup logs for import errors above")
 
 # Import testing router (for development/testing only)
 try:
@@ -300,31 +318,43 @@ app.add_middleware(
 
 # API routes - must be registered before catch-all
 # These routes are more specific and will match before the catch-all
-try:
-    app.include_router(analysis_router, prefix="/api/v1/analysis", tags=["analysis"])
-    logger.info("✓ Analysis router registered at /api/v1/analysis")
-    
-    # Verify the upload endpoint is registered (non-blocking)
-    upload_route_found = False
-    for route in app.routes:
-        if hasattr(route, 'path') and '/upload' in route.path and '/api/v1/analysis' in route.path:
-            upload_route_found = True
-            methods = list(route.methods) if hasattr(route.methods, '__iter__') else [str(route.methods)]
-            logger.info(f"✓ Upload endpoint found: {methods} {route.path}")
-            break
-    
-    if not upload_route_found:
-        logger.error("❌ CRITICAL: Upload endpoint not found after router registration!")
-        logger.error("❌ This will cause 404 errors on file uploads!")
-        # Log all registered routes for debugging (but don't crash)
-        logger.error("Registered routes:")
+if analysis_router:
+    try:
+        app.include_router(analysis_router, prefix="/api/v1/analysis", tags=["analysis"])
+        logger.info("✓ Analysis router registered at /api/v1/analysis")
+        
+        # CRITICAL: Verify the upload endpoint is registered
+        upload_route_found = False
+        test_route_found = False
         for route in app.routes:
             if hasattr(route, 'path'):
-                logger.error(f"  {route.path}")
-except Exception as e:
-    logger.error(f"❌ CRITICAL: Failed to register analysis router: {e}", exc_info=True)
-    logger.error("⚠️ App will continue to start but API endpoints will not work")
-    # Don't raise - allow app to start so we can see logs
+                route_path = route.path
+                if '/upload' in route_path and '/api/v1/analysis' in route_path:
+                    upload_route_found = True
+                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else ['POST']
+                    logger.info(f"✓ Upload endpoint found: {methods} {route_path}")
+                elif '/test' in route_path and '/api/v1/analysis' in route_path:
+                    test_route_found = True
+                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else ['GET']
+                    logger.info(f"✓ Test endpoint found: {methods} {route_path}")
+        
+        if not upload_route_found:
+            logger.error("❌ CRITICAL: Upload endpoint not found after router registration!")
+            logger.error("❌ This will cause 404 errors on file uploads!")
+            logger.error("❌ Available routes:")
+            for route in app.routes:
+                if hasattr(route, 'path'):
+                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                    logger.error(f"  {methods} {route.path}")
+        else:
+            logger.info("✅ Upload endpoint is registered and available")
+            
+    except Exception as e:
+        logger.error(f"❌ CRITICAL: Failed to register analysis router: {e}", exc_info=True)
+        logger.error("⚠️ App will continue to start but API endpoints will not work")
+else:
+    logger.error("❌ CRITICAL: analysis_router is None - cannot register routes!")
+    logger.error("❌ This will cause 404 errors on all API endpoints!")
 
 # Include testing router if available
 if testing_router:
