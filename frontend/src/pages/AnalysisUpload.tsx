@@ -173,34 +173,53 @@ export default function AnalysisUpload() {
             
             // Try to extract detailed error from response
             let errorMessage = `Upload failed: ${xhr.status} ${xhr.statusText}`
-            try {
-              const response = JSON.parse(xhr.responseText)
-              if (response.detail) {
-                if (typeof response.detail === 'string') {
-                  errorMessage = `Upload failed: ${xhr.status} - ${response.detail}`
-                } else if (response.detail.message) {
-                  errorMessage = `Upload failed: ${xhr.status} - ${response.detail.message}`
-                  if (response.detail.details) {
-                    errorMessage += `\n\nDetails: ${JSON.stringify(response.detail.details, null, 2)}`
+            
+            // Handle specific HTTP status codes with helpful messages
+            if (xhr.status === 502) {
+              errorMessage = `Upload failed: Bad Gateway (502)\n\n` +
+                `The backend server is temporarily unavailable. This usually means:\n\n` +
+                `• The server is restarting or deploying\n` +
+                `• The server is overloaded\n` +
+                `• There's a network/proxy issue\n\n` +
+                `Please try:\n` +
+                `1. Wait 30-60 seconds and try again\n` +
+                `2. Check if the server is running\n` +
+                `3. Try with a smaller file if the issue persists`
+            } else if (xhr.status === 500) {
+              errorMessage = `Upload failed: Internal Server Error (500)\n\n` +
+                `The server encountered an error processing your upload.\n\n` +
+                `Please try:\n` +
+                `1. Wait a moment and try again\n` +
+                `2. Try with a smaller file (<50 MB)\n` +
+                `3. Check the file format (MP4, AVI, MOV, MKV)`
+            } else if (xhr.status === 503) {
+              errorMessage = `Upload failed: Service Unavailable (503)\n\n` +
+                `The service is temporarily unavailable.\n\n` +
+                `Please wait a few moments and try again.`
+            } else {
+              // Try to parse error details from response
+              try {
+                const response = JSON.parse(xhr.responseText)
+                if (response.detail) {
+                  if (typeof response.detail === 'string') {
+                    errorMessage = `Upload failed: ${xhr.status} - ${response.detail}`
+                  } else if (response.detail.message) {
+                    errorMessage = `Upload failed: ${xhr.status} - ${response.detail.message}`
+                    if (response.detail.details) {
+                      errorMessage += `\n\nDetails: ${JSON.stringify(response.detail.details, null, 2)}`
+                    }
+                  } else if (response.detail.error) {
+                    errorMessage = `Upload failed: ${xhr.status} - ${response.detail.error}: ${response.detail.message || 'Unknown error'}`
                   }
-                } else if (response.detail.error) {
-                  errorMessage = `Upload failed: ${xhr.status} - ${response.detail.error}: ${response.detail.message || 'Unknown error'}`
+                }
+              } catch (e) {
+                // If response isn't JSON, use the raw text if available
+                if (xhr.responseText && xhr.responseText.length > 0) {
+                  errorMessage = `Upload failed: ${xhr.status} - ${xhr.responseText.substring(0, 500)}`
                 }
               }
-            } catch (e) {
-              // If response isn't JSON, use the raw text if available
-              if (xhr.responseText && xhr.responseText.length > 0) {
-                errorMessage = `Upload failed: ${xhr.status} - ${xhr.responseText.substring(0, 500)}`
-              }
             }
-            try {
-              const errorData = JSON.parse(xhr.responseText)
-              if (errorData.detail) {
-                errorMessage += ` - ${errorData.detail}`
-              }
-            } catch (e) {
-              // Ignore parse errors
-            }
+            
             reject(new Error(errorMessage))
           }
         }
@@ -292,10 +311,72 @@ export default function AnalysisUpload() {
       pollAnalysisStatus(id)
     } catch (err: any) {
       console.error('Upload error:', err)
-      setError(err.message || 'Upload failed. Please try again.')
+      
+      // CRITICAL: Clear ALL state when upload fails to prevent misleading UI
       setStatus('failed')
+      setAnalysisId(null)
+      setCurrentStep(null)
+      setStepProgress(0)
+      setStepMessage('')
       progressRef.current = 0
       setProgress(0)
+      
+      // Clear any stored analysis ID
+      localStorage.removeItem('lastAnalysisId')
+      
+      // Clear polling timeout if any
+      clearPollTimeout()
+      
+      // Abort XHR if still active
+      if (xhrRef.current) {
+        xhrRef.current.abort()
+        xhrRef.current = null
+      }
+      
+      // Provide better error messages for specific error codes
+      let errorMessage = err.message || 'Upload failed. Please try again.'
+      
+      // Handle 502 Bad Gateway specifically
+      if (errorMessage.includes('502') || errorMessage.includes('Bad Gateway')) {
+        errorMessage = `Upload failed: Server Error (502 Bad Gateway)\n\n` +
+          `The backend server is temporarily unavailable. This usually means:\n\n` +
+          `• The server is restarting or deploying\n` +
+          `• The server is overloaded\n` +
+          `• There's a network/proxy issue\n\n` +
+          `Please try:\n` +
+          `1. Wait 30-60 seconds and try again\n` +
+          `2. Check if the server is running\n` +
+          `3. Try with a smaller file if the issue persists\n\n` +
+          `If the problem continues, the server may need to be restarted.`
+      } else if (errorMessage.includes('500')) {
+        errorMessage = `Upload failed: Internal Server Error (500)\n\n` +
+          `The server encountered an error processing your upload.\n\n` +
+          `Please try:\n` +
+          `1. Wait a moment and try again\n` +
+          `2. Try with a smaller file (<50 MB)\n` +
+          `3. Check the file format (MP4, AVI, MOV, MKV)\n\n` +
+          `If the problem persists, contact support.`
+      } else if (errorMessage.includes('503')) {
+        errorMessage = `Upload failed: Service Unavailable (503)\n\n` +
+          `The service is temporarily unavailable.\n\n` +
+          `Please wait a few moments and try again.`
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+        errorMessage = `Upload failed: Request Timeout\n\n` +
+          `The upload took too long to complete.\n\n` +
+          `Please try:\n` +
+          `1. Use a smaller file (<50 MB)\n` +
+          `2. Check your internet connection\n` +
+          `3. Try again`
+      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+        errorMessage = `Upload failed: Network Error\n\n` +
+          `Unable to connect to the server.\n\n` +
+          `Please check:\n` +
+          `1. Your internet connection\n` +
+          `2. If the server is running\n` +
+          `3. Try again in a moment`
+      }
+      
+      setError(errorMessage)
     }
   }
 
@@ -551,6 +632,21 @@ export default function AnalysisUpload() {
   useEffect(() => {
     const checkExistingAnalysis = async () => {
       try {
+        // CRITICAL: Don't resume if we're in a failed state - clear everything first
+        if (status === 'failed') {
+          // Clear all state if we're in failed state
+          setStatus('idle')
+          setAnalysisId(null)
+          setCurrentStep(null)
+          setStepProgress(0)
+          setStepMessage('')
+          setError(null)
+          setProgress(0)
+          progressRef.current = 0
+          localStorage.removeItem('lastAnalysisId')
+          return
+        }
+        
         // First, try to get any processing analyses from the list
         const listResponse = await fetch(`${API_URL}/api/v1/analysis/list`)
         if (listResponse.ok) {
@@ -724,7 +820,69 @@ export default function AnalysisUpload() {
           </div>
         )}
 
-        {error && (status === 'failed' || status === 'idle') && (
+        {/* Show error message prominently when upload fails */}
+        {error && status === 'failed' && (
+          <div className="error" style={{ 
+            marginTop: '1rem', 
+            padding: '1rem', 
+            backgroundColor: '#fee', 
+            border: '2px solid #f00', 
+            borderRadius: '8px',
+            maxWidth: '100%'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '1.1em' }}>
+              ❌ Upload Failed
+            </div>
+            {error.split('\n').map((line, idx) => (
+              <div key={idx} style={{ marginBottom: '0.25rem' }}>{line}</div>
+            ))}
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #fcc' }}>
+              <button 
+                onClick={() => {
+                  // Reset all state for retry
+                  setError(null)
+                  setStatus('idle')
+                  setFile(null)
+                  setAnalysisId(null)
+                  setCurrentStep(null)
+                  setStepProgress(0)
+                  setStepMessage('')
+                  setProgress(0)
+                  progressRef.current = 0
+                  localStorage.removeItem('lastAnalysisId')
+                  clearPollTimeout()
+                  if (xhrRef.current) {
+                    xhrRef.current.abort()
+                    xhrRef.current = null
+                  }
+                }}
+                className="btn btn-primary"
+                style={{ marginRight: '0.5rem' }}
+              >
+                Try Again
+              </button>
+              <button 
+                onClick={() => {
+                  setFile(null)
+                  setError(null)
+                  setStatus('idle')
+                  setAnalysisId(null)
+                  setCurrentStep(null)
+                  setStepProgress(0)
+                  setStepMessage('')
+                  setProgress(0)
+                  progressRef.current = 0
+                }}
+                className="btn btn-secondary"
+              >
+                Select Different File
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Show error for other states (idle) */}
+        {error && status === 'idle' && (
           <div className="error">
             {error.split('\n').map((line, idx) => (
               <div key={idx}>{line}</div>
@@ -807,7 +965,9 @@ export default function AnalysisUpload() {
           </div>
         )}
 
-        {(status === 'processing' || status === 'failed') && (
+        {/* Show processing steps when processing OR when processing failed (but not when upload failed) */}
+        {/* Upload failures don't have currentStep set, so we check for that */}
+        {(status === 'processing' || (status === 'failed' && currentStep !== null)) && (
           <div className="processing-details apple-style">
             <div className="processing-header">
               <div className="processing-title-row">
@@ -874,9 +1034,9 @@ export default function AnalysisUpload() {
             )}
 
             <div className="processing-steps apple-steps">
-              <div className={`step-card ${status === 'failed' && currentStep === 'pose_estimation' ? 'failed' : currentStep === 'pose_estimation' ? 'active' : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${currentStep === 'pose_estimation' ? (status === 'failed' ? 'failed' : 'active') : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {status === 'failed' && currentStep === 'pose_estimation' ? (
+                  {currentStep === 'pose_estimation' && status === 'failed' ? (
                     <div className="step-error">✗</div>
                   ) : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? (
                     <div className="step-checkmark">✓</div>
@@ -906,9 +1066,9 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${status === 'failed' && currentStep === '3d_lifting' ? 'failed' : currentStep === '3d_lifting' ? 'active' : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${currentStep === '3d_lifting' ? (status === 'failed' ? 'failed' : 'active') : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {status === 'failed' && currentStep === '3d_lifting' ? (
+                  {currentStep === '3d_lifting' && status === 'failed' ? (
                     <div className="step-error">✗</div>
                   ) : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? (
                     <div className="step-checkmark">✓</div>
@@ -938,9 +1098,9 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${status === 'failed' && currentStep === 'metrics_calculation' ? 'failed' : currentStep === 'metrics_calculation' ? 'active' : currentStep === 'report_generation' ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${currentStep === 'metrics_calculation' ? (status === 'failed' ? 'failed' : 'active') : currentStep === 'report_generation' ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {status === 'failed' && currentStep === 'metrics_calculation' ? (
+                  {currentStep === 'metrics_calculation' && status === 'failed' ? (
                     <div className="step-error">✗</div>
                   ) : currentStep === 'report_generation' ? (
                     <div className="step-checkmark">✓</div>
@@ -970,9 +1130,9 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${status === 'failed' && currentStep === 'report_generation' ? 'failed' : currentStep === 'report_generation' ? 'active' : 'pending'}`}>
+              <div className={`step-card ${currentStep === 'report_generation' ? (status === 'failed' ? 'failed' : 'active') : 'pending'}`}>
                 <div className="step-indicator">
-                  {status === 'failed' && currentStep === 'report_generation' ? (
+                  {currentStep === 'report_generation' && status === 'failed' ? (
                     <div className="step-error">✗</div>
                   ) : currentStep === 'report_generation' ? (
                     <div className="step-spinner">
