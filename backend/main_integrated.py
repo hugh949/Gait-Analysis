@@ -334,6 +334,35 @@ app.add_middleware(
 
 # API routes - must be registered before catch-all
 # These routes are more specific and will match before the catch-all
+
+# CRITICAL: Always attempt to register the upload endpoint, even if router fails
+# This ensures the endpoint exists regardless of router import/registration issues
+def ensure_upload_endpoint_registered():
+    """Ensure upload endpoint is registered, using fallback if needed"""
+    upload_route_found = False
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            route_path = route.path
+            if route_path == "/api/v1/analysis/upload" or (route_path.endswith("/upload") and "/api/v1/analysis" in route_path):
+                methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                if 'POST' in methods or 'post' in str(methods).lower():
+                    upload_route_found = True
+                    logger.info(f"✓ Upload endpoint confirmed: {methods} {route_path}")
+                    break
+    
+    if not upload_route_found:
+        logger.warning("⚠️ Upload endpoint not found - attempting direct registration...")
+        try:
+            from app.api.v1.analysis_azure import upload_video
+            # Register the function directly - FastAPI will handle it
+            app.add_api_route("/api/v1/analysis/upload", upload_video, methods=["POST"], tags=["analysis"])
+            logger.info("✅ Upload endpoint registered directly")
+            return True
+        except Exception as fallback_error:
+            logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
+            return False
+    return True
+
 if analysis_router:
     try:
         app.include_router(analysis_router, prefix="/api/v1/analysis", tags=["analysis"])
@@ -357,50 +386,25 @@ if analysis_router:
         if not upload_route_found:
             logger.error("❌ CRITICAL: Upload endpoint not found after router registration!")
             logger.error("❌ This will cause 404 errors on file uploads!")
-            logger.error("❌ Available routes:")
-            for route in app.routes:
-                if hasattr(route, 'path'):
-                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
-                    logger.error(f"  {methods} {route.path}")
-            
-            # CRITICAL FALLBACK: Register upload endpoint directly if router failed
-            logger.warning("⚠️ Attempting to register upload endpoint directly as fallback...")
-            try:
-                from app.api.v1.analysis_azure import upload_video
-                # Register the function directly - FastAPI will handle it
-                app.add_api_route("/api/v1/analysis/upload", upload_video, methods=["POST"], tags=["analysis"])
-                logger.info("✅ Upload endpoint registered directly as fallback")
-            except Exception as fallback_error:
-                logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
+            ensure_upload_endpoint_registered()
         else:
             logger.info("✅ Upload endpoint is registered and available")
             
     except Exception as e:
         logger.error(f"❌ CRITICAL: Failed to register analysis router: {e}", exc_info=True)
         logger.error("⚠️ App will continue to start but API endpoints will not work")
-        
-        # CRITICAL FALLBACK: Try to register upload endpoint directly
-        logger.warning("⚠️ Attempting to register upload endpoint directly as fallback...")
-        try:
-            from app.api.v1.analysis_azure import upload_video
-            # Register the function directly - FastAPI will handle it
-            app.add_api_route("/api/v1/analysis/upload", upload_video, methods=["POST"], tags=["analysis"])
-            logger.info("✅ Upload endpoint registered directly as fallback")
-        except Exception as fallback_error:
-            logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
+        ensure_upload_endpoint_registered()
 else:
     logger.error("❌ CRITICAL: analysis_router is None - cannot register routes!")
     logger.error("❌ This will cause 404 errors on all API endpoints!")
-    
-    # CRITICAL FALLBACK: Try to register upload endpoint directly
-    logger.warning("⚠️ Attempting to register upload endpoint directly as fallback...")
-    try:
-        from app.api.v1.analysis_azure import upload_video
-        # Register the function directly - FastAPI will handle it
-        app.add_api_route("/api/v1/analysis/upload", upload_video, methods=["POST"], tags=["analysis"])
-        logger.info("✅ Upload endpoint registered directly as fallback")
-    except Exception as fallback_error:
-        logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
+    ensure_upload_endpoint_registered()
+
+# CRITICAL: Final verification that upload endpoint exists
+final_check = ensure_upload_endpoint_registered()
+if final_check:
+    logger.info("✅ Upload endpoint verification passed")
+else:
+    logger.error("❌ CRITICAL: Upload endpoint could not be registered - uploads will fail!")
 
 # Include testing router if available
 if testing_router:
