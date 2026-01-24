@@ -482,43 +482,43 @@ async def upload_video(
             logger.error(f"[{request_id}] File name: {file.filename}")
             
             try:
-            # Include quality validation results in analysis data
-            analysis_data = {
-                'id': analysis_id,
-                'patient_id': patient_id,
-                'filename': file.filename,
-                'video_url': video_url,
-                'status': 'processing',
-                'current_step': 'pose_estimation',
-                'step_progress': 0,
-                'step_message': 'Upload complete. Starting analysis...'
-            }
-            
-            # Add quality validation results if available
-            if quality_result:
-                analysis_data.update({
-                    'video_quality_score': quality_result.get('quality_score', 0),
-                    'video_quality_valid': quality_result.get('is_valid', False),
-                    'video_quality_issues': quality_result.get('issues', []),
-                    'video_quality_recommendations': quality_result.get('recommendations', []),
-                    'pose_detection_rate': quality_result.get('pose_detection_rate', 0)
-                })
+                # Include quality validation results in analysis data
+                analysis_data = {
+                    'id': analysis_id,
+                    'patient_id': patient_id,
+                    'filename': file.filename,
+                    'video_url': video_url,
+                    'status': 'processing',
+                    'current_step': 'pose_estimation',
+                    'step_progress': 0,
+                    'step_message': 'Upload complete. Starting analysis...'
+                }
                 
-                # Update step message with quality info
-                quality_score = quality_result.get('quality_score', 0)
-                if quality_score < 60:
-                    analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - May affect accuracy. Starting analysis...'
-                elif quality_score < 80:
-                    analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - Good. Starting analysis...'
-                else:
-                    analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - Excellent. Starting analysis...'
-            
-            logger.error(f"[{request_id}] About to call db_service.create_analysis")
-            logger.error(f"[{request_id}] db_service available: {db_service is not None}")
-            logger.error(f"[{request_id}] db_service._use_mock: {db_service._use_mock if db_service else None}")
-            
-            # Create analysis record - this will save to file and verify it's readable
-            creation_success = await db_service.create_analysis(analysis_data)
+                # Add quality validation results if available
+                if quality_result:
+                    analysis_data.update({
+                        'video_quality_score': quality_result.get('quality_score', 0),
+                        'video_quality_valid': quality_result.get('is_valid', False),
+                        'video_quality_issues': quality_result.get('issues', []),
+                        'video_quality_recommendations': quality_result.get('recommendations', []),
+                        'pose_detection_rate': quality_result.get('pose_detection_rate', 0)
+                    })
+                    
+                    # Update step message with quality info
+                    quality_score = quality_result.get('quality_score', 0)
+                    if quality_score < 60:
+                        analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - May affect accuracy. Starting analysis...'
+                    elif quality_score < 80:
+                        analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - Good. Starting analysis...'
+                    else:
+                        analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - Excellent. Starting analysis...'
+                
+                logger.error(f"[{request_id}] About to call db_service.create_analysis")
+                logger.error(f"[{request_id}] db_service available: {db_service is not None}")
+                logger.error(f"[{request_id}] db_service._use_mock: {db_service._use_mock if db_service else None}")
+                
+                # Create analysis record - this will save to file and verify it's readable
+                creation_success = await db_service.create_analysis(analysis_data)
             
             logger.error(f"[{request_id}] create_analysis returned: {creation_success}")
             
