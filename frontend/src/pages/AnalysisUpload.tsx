@@ -736,7 +736,7 @@ export default function AnalysisUpload() {
           </div>
         )}
 
-        {status === 'processing' && (
+        {(status === 'processing' || status === 'failed') && (
           <div className="processing-details apple-style">
             <div className="processing-header">
               <div className="processing-title-row">
