@@ -656,22 +656,18 @@ async def upload_video(
                 
                 logger.error(f"[{request_id}] ========== ANALYSIS RECORD CREATION COMPLETE ==========")
             except Exception as e:
-            logger.error(f"[{request_id}] ❌❌❌ ERROR CREATING ANALYSIS RECORD ❌❌❌", exc_info=True)
-            logger.error(f"[{request_id}] Error: {type(e).__name__}: {e}")
-            if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
-            logger.error(f"[{request_id}] Exception creating analysis record: {e}", exc_info=True)
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "error": "DATABASE_ERROR",
-                    "message": "Failed to create analysis record",
-                    "details": {"error": str(e)}
-                }
-            )
+                logger.error(f"[{request_id}] ❌❌❌ ERROR CREATING ANALYSIS RECORD ❌❌❌", exc_info=True)
+                logger.error(f"[{request_id}] Error: {type(e).__name__}: {e}")
+                if tmp_path and os.path.exists(tmp_path):
+                    try:
+                        os.unlink(tmp_path)
+                    except:
+                        pass
+                logger.error(f"[{request_id}] Exception creating analysis record: {e}", exc_info=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to create analysis record: {str(e)}"
+                )
             
             # Process in background
             try:
