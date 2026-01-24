@@ -1168,24 +1168,33 @@ export default function AnalysisUpload() {
               </div>
               
               <div className={`step-card ${
-                status === 'completed' 
-                  ? 'completed'
-                  : currentStep === 'report_generation'
-                    ? (status === 'failed' ? 'failed' : 'active')
+                currentStep === 'report_generation'
+                  ? status === 'failed'
+                    ? 'failed'
+                    : status === 'completed'
+                      ? 'completed'
+                      : 'active'
+                  : status === 'completed'
+                    ? 'completed'
                     : 'pending'
               }`}>
                 <div className="step-indicator">
-                  {status === 'failed' && currentStep === 'report_generation' ? (
-                    <div className="step-error">✗</div>
-                  ) : status === 'completed' ? (
-                    <div className="step-checkmark">✓</div>
-                  ) : currentStep === 'report_generation' ? (
-                    <div className="step-spinner">
-                      <Loader2 className="spinner-icon" />
-                    </div>
-                  ) : (
-                    <div className="step-number">4</div>
-                  )}
+                  {(() => {
+                    if (status === 'failed' && currentStep === 'report_generation') {
+                      return <div className="step-error">✗</div>
+                    }
+                    if (status === 'completed') {
+                      return <div className="step-checkmark">✓</div>
+                    }
+                    if (currentStep === 'report_generation') {
+                      return (
+                        <div className="step-spinner">
+                          <Loader2 className="spinner-icon" />
+                        </div>
+                      )
+                    }
+                    return <div className="step-number">4</div>
+                  })()}
                 </div>
                 <div className="step-content">
                   <div className="step-title">
