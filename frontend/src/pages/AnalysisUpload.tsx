@@ -1171,22 +1171,24 @@ export default function AnalysisUpload() {
                 currentStep === 'report_generation'
                   ? status === 'failed'
                     ? 'failed'
-                    : status === 'completed'
+                    : (status as UploadStatus) === 'completed'
                       ? 'completed'
                       : 'active'
-                  : status === 'completed'
+                  : (status as UploadStatus) === 'completed'
                     ? 'completed'
                     : 'pending'
               }`}>
                 <div className="step-indicator">
                   {(() => {
-                    if (status === 'failed' && currentStep === 'report_generation') {
+                    const currentStatus: UploadStatus = status
+                    const isReportGen = currentStep === 'report_generation'
+                    if (currentStatus === 'failed' && isReportGen) {
                       return <div className="step-error">✗</div>
                     }
-                    if (status === 'completed') {
+                    if (currentStatus === 'completed') {
                       return <div className="step-checkmark">✓</div>
                     }
-                    if (currentStep === 'report_generation') {
+                    if (isReportGen) {
                       return (
                         <div className="step-spinner">
                           <Loader2 className="spinner-icon" />
