@@ -43,7 +43,29 @@ class AzureSQLService:
     _last_file_mtime: float = 0.0
     
     def __init__(self):
-        """Initialize Azure SQL Database connection"""
+        """Initialize database connection - tries Table Storage first, then SQL, then mock"""
+        # Priority 1: Try Azure Table Storage (cheap, reliable, uses existing storage account)
+        storage_conn = os.getenv(
+            "AZURE_STORAGE_CONNECTION_STRING",
+            getattr(settings, "AZURE_STORAGE_CONNECTION_STRING", None) if settings else None
+        )
+        
+        if storage_conn:
+            try:
+                from azure.data.tables import TableServiceClient
+                table_service = TableServiceClient.from_connection_string(storage_conn)
+                self.table_name = "gaitanalyses"
+                table_service.create_table_if_not_exists(table_name=self.table_name)
+                self.table_client = table_service.get_table_client(table_name=self.table_name)
+                self._use_table = True
+                self._use_mock = False
+                self.connection_string = None
+                logger.info(f"✅ Using Azure Table Storage: table '{self.table_name}'")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to initialize Table Storage: {e}, falling back to SQL/mock")
+        
+        # Priority 2: Try Azure SQL Database
         self.server = os.getenv(
             "AZURE_SQL_SERVER",
             getattr(settings, "AZURE_SQL_SERVER", None) if settings else None
@@ -61,17 +83,9 @@ class AzureSQLService:
             getattr(settings, "AZURE_SQL_PASSWORD", None) if settings else None
         )
         
-        if not all([self.server, self.username, self.password]):
-            logger.warning("Azure SQL not configured - using file-based mock storage")
-            self.connection_string = None
-            self._use_mock = True
-            # Ensure class variable exists (in case it was cleared)
-            if not hasattr(AzureSQLService, '_mock_storage') or AzureSQLService._mock_storage is None:
-                AzureSQLService._mock_storage = {}
-            # Load from file if it exists (persist across restarts)
-            self._load_mock_storage()
-        else:
+        if all([self.server, self.username, self.password]):
             self._use_mock = False
+            self._use_table = False
             # Build connection string
             driver = "{ODBC Driver 18 for SQL Server}"
             self.connection_string = (
@@ -84,10 +98,22 @@ class AzureSQLService:
                 f"TrustServerCertificate=no;"
                 f"Connection Timeout=30;"
             )
-            logger.info(f"Azure SQL initialized: {self.server}/{self.database}")
-            
+            logger.info(f"✅ Using Azure SQL Database: {self.server}/{self.database}")
             # Initialize database schema
             self._init_schema()
+            return
+        
+        # Priority 3: Fallback to file-based mock storage (unreliable in multi-worker)
+        logger.warning("⚠️  No database configured - using file-based mock storage (unreliable in multi-worker environments)")
+        logger.warning("⚠️  RECOMMENDED: Configure Azure Table Storage or SQL Database for reliability")
+        self.connection_string = None
+        self._use_mock = True
+        self._use_table = False
+        # Ensure class variable exists (in case it was cleared)
+        if not hasattr(AzureSQLService, '_mock_storage') or AzureSQLService._mock_storage is None:
+            AzureSQLService._mock_storage = {}
+        # Load from file if it exists (persist across restarts)
+        self._load_mock_storage()
     
     def _start_file_watcher(self):
         """Start a background thread that watches the storage file and reloads it when it changes"""
@@ -458,6 +484,37 @@ class AzureSQLService:
     
     async def create_analysis(self, analysis_data: Dict) -> bool:
         """Create new analysis record"""
+        # Priority 1: Use Table Storage if available
+        if hasattr(self, '_use_table') and self._use_table:
+            try:
+                from datetime import datetime
+                analysis_id = analysis_data.get('id')
+                if not analysis_id:
+                    logger.error("Analysis data missing 'id' field")
+                    return False
+                
+                entity = {
+                    'PartitionKey': 'analyses',
+                    'RowKey': analysis_id,
+                    'patient_id': analysis_data.get('patient_id'),
+                    'filename': analysis_data.get('filename', ''),
+                    'video_url': analysis_data.get('video_url'),
+                    'status': analysis_data.get('status', 'processing'),
+                    'current_step': analysis_data.get('current_step', 'pose_estimation'),
+                    'step_progress': analysis_data.get('step_progress', 0),
+                    'step_message': analysis_data.get('step_message', 'Initializing...'),
+                    'metrics': json.dumps(analysis_data.get('metrics', {})),
+                    'created_at': datetime.utcnow().isoformat(),
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+                
+                self.table_client.create_entity(entity=entity)
+                logger.info(f"✅ Created analysis {analysis_id} in Table Storage")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to create analysis in Table Storage: {e}", exc_info=True)
+                return False
+        
         if self._use_mock:
             # CRITICAL: Reload from file first to ensure we don't overwrite existing data
             self._load_mock_storage()
@@ -657,10 +714,40 @@ class AzureSQLService:
     
     async def update_analysis(self, analysis_id: str, updates: Dict) -> bool:
         """
-        Update analysis record with extensive logging.
-        CRITICAL: During active processing, NEVER reload from file - it can overwrite in-memory data.
-        In-memory storage is the source of truth during active processing.
+        Update analysis record
         """
+        # Priority 1: Use Table Storage if available
+        if hasattr(self, '_use_table') and self._use_table:
+            try:
+                from azure.core.exceptions import ResourceNotFoundError
+                from datetime import datetime
+                
+                # Get existing entity
+                entity = self.table_client.get_entity(
+                    partition_key='analyses',
+                    row_key=analysis_id
+                )
+                
+                # Update fields
+                for key, value in updates.items():
+                    if key in ['status', 'current_step', 'step_progress', 'step_message', 'video_url']:
+                        entity[key] = value
+                    elif key == 'metrics':
+                        entity['metrics'] = json.dumps(value)
+                
+                entity['updated_at'] = datetime.utcnow().isoformat()
+                
+                # Update entity
+                self.table_client.update_entity(entity=entity)
+                logger.debug(f"✅ Updated analysis {analysis_id} in Table Storage")
+                return True
+            except ResourceNotFoundError:
+                logger.warning(f"Analysis {analysis_id} not found in Table Storage for update")
+                return False
+            except Exception as e:
+                logger.error(f"Failed to update analysis in Table Storage: {e}", exc_info=True)
+                return False
+        
         logger.info(f"📝 UPDATE: Updating analysis {analysis_id} with fields: {list(updates.keys())}")
         if self._use_mock:
             # CRITICAL: Check in-memory storage FIRST (source of truth during processing)
@@ -736,10 +823,33 @@ class AzureSQLService:
     
     def update_analysis_sync(self, analysis_id: str, updates: Dict) -> bool:
         """
-        Synchronous version of update_analysis for use from threads.
-        OPTIMIZED: Updates in-memory immediately, batches file writes every 1 second.
-        This ensures the analysis is always visible in-memory while reducing file I/O overhead.
+        Synchronous version of update_analysis for use from threads (e.g., heartbeat).
+        For Table Storage, we use asyncio.run() to call the async method.
         """
+        # Priority 1: Use Table Storage if available (via async wrapper)
+        if hasattr(self, '_use_table') and self._use_table:
+            try:
+                import asyncio
+                # For sync operations, run async update in a new event loop
+                # This is safe because we're in a thread (heartbeat thread)
+                try:
+                    # Try to get existing loop
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # Loop is running - create new one in thread
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                except RuntimeError:
+                    # No loop exists - create new one
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                result = loop.run_until_complete(self.update_analysis(analysis_id, updates))
+                return result
+            except Exception as e:
+                logger.error(f"Failed to update analysis in Table Storage (sync): {e}", exc_info=True)
+                return False
+        
         if self._use_mock:
             # CRITICAL: Always ensure analysis exists in memory before updating
             # If not in memory, try to load from file first (for cross-worker scenarios)
@@ -832,20 +942,39 @@ class AzureSQLService:
     
     async def get_analysis(self, analysis_id: str) -> Optional[Dict]:
         """
-        Get analysis record with ROBUST multi-worker support.
-        CRITICAL: This method ALWAYS checks in-memory storage FIRST, then file.
-        In-memory storage is the source of truth during active processing.
-        
-        CRITICAL ARCHITECTURE: In-memory-first approach for maximum reliability.
-        In-memory storage is checked FIRST because:
-        1. It's the fastest (no file I/O)
-        2. It's updated immediately by heartbeat thread
-        3. It's the source of truth during active processing
-        4. File is only used as a fallback if in-memory doesn't have it
-        
-        If analysis is not found in memory, we reload from file and merge into memory.
-        This ensures all workers eventually see the analysis, but in-memory takes precedence.
+        Get analysis record - uses Table Storage, SQL, or mock storage based on configuration
         """
+        # Priority 1: Use Table Storage if available (most reliable)
+        if hasattr(self, '_use_table') and self._use_table:
+            try:
+                from azure.core.exceptions import ResourceNotFoundError
+                entity = self.table_client.get_entity(
+                    partition_key='analyses',
+                    row_key=analysis_id
+                )
+                
+                analysis = {
+                    'id': entity.get('RowKey'),
+                    'patient_id': entity.get('patient_id'),
+                    'filename': entity.get('filename'),
+                    'video_url': entity.get('video_url'),
+                    'status': entity.get('status'),
+                    'current_step': entity.get('current_step'),
+                    'step_progress': entity.get('step_progress', 0),
+                    'step_message': entity.get('step_message'),
+                    'metrics': json.loads(entity.get('metrics', '{}')) if isinstance(entity.get('metrics'), str) else entity.get('metrics', {}),
+                    'created_at': entity.get('created_at'),
+                    'updated_at': entity.get('updated_at')
+                }
+                logger.debug(f"✅ Retrieved analysis {analysis_id} from Table Storage")
+                return analysis
+            except ResourceNotFoundError:
+                logger.debug(f"Analysis {analysis_id} not found in Table Storage")
+                return None
+            except Exception as e:
+                logger.error(f"Failed to get analysis from Table Storage: {e}", exc_info=True)
+                return None
+        
         if self._use_mock:
             import os
             import threading
@@ -1089,6 +1218,38 @@ class AzureSQLService:
     
     async def list_analyses(self, limit: int = 50) -> List[Dict]:
         """List all analyses, ordered by most recent first"""
+        # Priority 1: Use Table Storage if available
+        if hasattr(self, '_use_table') and self._use_table:
+            try:
+                entities = self.table_client.query_entities(
+                    query_filter="PartitionKey eq 'analyses'"
+                )
+                
+                analyses = []
+                for entity in entities:
+                    analysis = {
+                        'id': entity.get('RowKey'),
+                        'patient_id': entity.get('patient_id'),
+                        'filename': entity.get('filename'),
+                        'video_url': entity.get('video_url'),
+                        'status': entity.get('status'),
+                        'current_step': entity.get('current_step'),
+                        'step_progress': entity.get('step_progress', 0),
+                        'step_message': entity.get('step_message'),
+                        'metrics': json.loads(entity.get('metrics', '{}')) if isinstance(entity.get('metrics'), str) else entity.get('metrics', {}),
+                        'created_at': entity.get('created_at'),
+                        'updated_at': entity.get('updated_at')
+                    }
+                    analyses.append(analysis)
+                
+                # Sort by updated_at descending (most recent first)
+                analyses.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
+                logger.debug(f"✅ Listed {len(analyses[:limit])} analyses from Table Storage")
+                return analyses[:limit]
+            except Exception as e:
+                logger.error(f"Failed to list analyses from Table Storage: {e}", exc_info=True)
+                return []
+        
         if self._use_mock:
             # Reload from file to ensure we have latest data
             self._load_mock_storage()
