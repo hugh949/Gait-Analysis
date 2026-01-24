@@ -376,11 +376,11 @@ async def upload_video(
             logger.info(f"[{request_id}] Generated analysis ID: {analysis_id}")
             
             # CRITICAL: Validate video quality BEFORE uploading to blob storage
-        # This allows us to provide immediate feedback to user
-        # NOTE: Validation is optional - if it fails, we continue without it
-        logger.info(f"[{request_id}] 🔍 Validating video quality for gait analysis...")
-        quality_result = None
-        if tmp_path and os.path.exists(tmp_path):
+            # This allows us to provide immediate feedback to user
+            # NOTE: Validation is optional - if it fails, we continue without it
+            logger.info(f"[{request_id}] 🔍 Validating video quality for gait analysis...")
+            quality_result = None
+            if tmp_path and os.path.exists(tmp_path):
             try:
                 # Import with error handling - if import fails, skip validation
                 try:
@@ -432,7 +432,7 @@ async def upload_video(
                 # Catch any unexpected errors in the validation block
                 logger.warning(f"[{request_id}] Unexpected error during video quality validation: {outer_error}", exc_info=True)
                 logger.warning(f"[{request_id}] Processing will continue without quality validation")
-                quality_result = None
+                        quality_result = None
             else:
                 logger.warning(f"[{request_id}] ⚠️ Cannot validate video quality - temp file not accessible")
             
@@ -840,7 +840,7 @@ async def upload_video(
                 })
             except:
                 pass
-            logger.error(f"[{request_id}] Failed to schedule video analysis: {e}", exc_info=True)
+                logger.error(f"[{request_id}] Failed to schedule video analysis: {e}", exc_info=True)
                 # Don't fail the upload - analysis is created, just log the error
                 # The analysis will remain in 'processing' status
             
