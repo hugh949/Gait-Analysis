@@ -3031,9 +3031,14 @@ async def get_analysis(
             extra={"analysis_id": analysis_id, "error_type": type(e).__name__},
             exc_info=True
         )
-        raise DatabaseError(
-            f"Failed to retrieve analysis {analysis_id}",
-            details={"error": str(e), "analysis_id": analysis_id}
+        # Convert to HTTPException so frontend gets proper error response
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "DATABASE_ERROR",
+                "message": f"Failed to retrieve analysis {analysis_id}",
+                "details": {"error": str(e), "analysis_id": analysis_id}
+            }
         )
 
 

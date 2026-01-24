@@ -342,12 +342,43 @@ export default function AnalysisUpload() {
       // Store analysis ID in localStorage for resume capability
       localStorage.setItem('lastAnalysisId', id)
 
-      // Start polling immediately - backend should have analysis ready
-      // Reduced delay from 2000ms to 500ms for faster response
-      // Backend verification ensures analysis is readable before returning
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      pollAnalysisStatus(id)
+      // Verify analysis exists before starting to poll
+      // This helps catch issues early
+      try {
+        const verifyUrl = `${API_URL}/api/v1/analysis/${id}`
+        console.log('Verifying analysis exists before polling:', verifyUrl)
+        const verifyResponse = await fetch(verifyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        })
+        
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json()
+          console.log('✅ Analysis verified, status:', verifyData.status)
+          // Start polling - analysis exists
+          pollAnalysisStatus(id)
+        } else if (verifyResponse.status === 404) {
+          // Analysis not found yet - wait a bit and retry once
+          console.log('⚠️ Analysis not found immediately, waiting 2s and retrying...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          const retryResponse = await fetch(verifyUrl)
+          if (retryResponse.ok) {
+            console.log('✅ Analysis found on retry, starting polling')
+            pollAnalysisStatus(id)
+          } else {
+            throw new Error(`Analysis not found after upload (${retryResponse.status}). The analysis may not have been created properly.`)
+          }
+        } else {
+          throw new Error(`Failed to verify analysis: ${verifyResponse.status} ${verifyResponse.statusText}`)
+        }
+      } catch (verifyErr: any) {
+        console.error('Verification error:', verifyErr)
+        // Still try to poll - might be a transient issue
+        console.log('⚠️ Verification failed, but starting polling anyway (may be transient)')
+        pollAnalysisStatus(id)
+      }
     } catch (err: any) {
       console.error('Upload error:', err)
       
@@ -463,8 +494,24 @@ export default function AnalysisUpload() {
         
         if (!response.ok) {
           consecutiveErrors++
+          const errorText = await response.text().catch(() => response.statusText)
+          console.error(`❌ Status fetch error (attempt ${consecutiveErrors}/${maxConsecutiveErrors}): ${response.status} ${response.statusText}`, errorText)
+          
+          // Handle specific error codes
+          if (response.status === 500 || response.status === 503) {
+            // Server errors - might be transient, retry with backoff
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              setStatus('failed')
+              setError(`Server error while fetching analysis status (${response.status}). The backend may be restarting or overloaded. Please try uploading again in a moment.`)
+              setAnalysisId(null)
+              return
+            }
+            schedulePoll(3000 * consecutiveErrors)
+            return
+          }
+          
           if (consecutiveErrors >= maxConsecutiveErrors) {
-            throw new Error(`Failed to fetch analysis status after ${maxConsecutiveErrors} attempts: ${response.statusText}`)
+            throw new Error(`Failed to fetch analysis status after ${maxConsecutiveErrors} attempts: ${response.status} ${response.statusText}`)
           }
           schedulePoll(3000 * consecutiveErrors)
           return
@@ -558,13 +605,25 @@ export default function AnalysisUpload() {
       } catch (err: any) {
         console.error('Polling error:', err)
         consecutiveErrors++
+        
+        // Check if it's a network error (no response) vs HTTP error
+        const isNetworkError = err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Failed to fetch')
+        const errorMessage = isNetworkError 
+          ? `Network error while fetching analysis status. Please check your connection and try again.`
+          : `Failed to get analysis status after ${consecutiveErrors} attempts. ${err.message || 'Please try uploading again.'}`
+        
         if (consecutiveErrors >= maxConsecutiveErrors) {
           setStatus('failed')
-          setError(`Failed to get analysis status after ${maxConsecutiveErrors} attempts. ${err.message || 'Please try uploading again.'}`)
+          setError(`Failed to get analysis status after ${maxConsecutiveErrors} attempts.\n\n${errorMessage}\n\nPlease review Log Stream for more details.`)
           setAnalysisId(null)
+          clearPollTimeout()
           return
         }
-        schedulePoll(3000 * consecutiveErrors)
+        
+        // Exponential backoff for retries
+        const retryDelay = Math.min(3000 * Math.pow(2, consecutiveErrors - 1), 30000) // Cap at 30s
+        console.log(`Retrying status fetch in ${retryDelay}ms (attempt ${consecutiveErrors + 1}/${maxConsecutiveErrors})`)
+        schedulePoll(retryDelay)
       }
     }
 
