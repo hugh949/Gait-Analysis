@@ -14,8 +14,8 @@ from loguru import logger
 from app.core.schemas import AnalysisResponse, AnalysisStatus
 from app.core.exceptions import VideoProcessingError, DatabaseError, StorageError
 from app.core.exceptions import gait_error_to_http
-from app.api.v1.analysis_azure import get_gait_analysis_service
 from app.services.checkpoint_manager import CheckpointManager
+
 from app.core.database_azure_sql import AzureSQLService
 from app.services.azure_storage import AzureStorageService
 
@@ -121,8 +121,9 @@ async def execute_step_1(
             'step_message': 'Executing Step 1: 2D Pose Estimation...'
         })
         
-        # Get gait analysis service
-        gait_service = get_gait_analysis_service()
+        # Get gait analysis service (lazy import to avoid circular dependency)
+        from app.api.v1.analysis_azure import get_gait_analysis_service as _get_service
+        gait_service = _get_service()
         if not gait_service:
             raise HTTPException(status_code=503, detail="Gait analysis service not available")
         
@@ -219,8 +220,9 @@ async def execute_step_2(
             'step_message': 'Executing Step 2: 3D Lifting...'
         })
         
-        # Get gait analysis service
-        gait_service = get_gait_analysis_service()
+        # Get gait analysis service (lazy import to avoid circular dependency)
+        from app.api.v1.analysis_azure import get_gait_analysis_service as _get_service
+        gait_service = _get_service()
         if not gait_service:
             raise HTTPException(status_code=503, detail="Gait analysis service not available")
         
@@ -321,8 +323,9 @@ async def execute_step_3(
             'step_message': 'Executing Step 3: Gait Metrics Calculation...'
         })
         
-        # Get gait analysis service
-        gait_service = get_gait_analysis_service()
+        # Get gait analysis service (lazy import to avoid circular dependency)
+        from app.api.v1.analysis_azure import get_gait_analysis_service as _get_service
+        gait_service = _get_service()
         if not gait_service:
             raise HTTPException(status_code=503, detail="Gait analysis service not available")
         
