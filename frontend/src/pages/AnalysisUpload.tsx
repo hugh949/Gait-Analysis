@@ -1167,11 +1167,17 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === 'report_generation' ? (status === 'failed' ? 'failed' : status === 'completed' ? 'completed' : 'active') : status === 'completed' ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${
+                status === 'completed' 
+                  ? 'completed'
+                  : currentStep === 'report_generation'
+                    ? (status === 'failed' ? 'failed' : 'active')
+                    : 'pending'
+              }`}>
                 <div className="step-indicator">
-                  {currentStep === 'report_generation' && status === 'failed' ? (
+                  {status === 'failed' && currentStep === 'report_generation' ? (
                     <div className="step-error">✗</div>
-                  ) : (currentStep === 'report_generation' && status === 'completed') || (status === 'completed' && currentStep === 'report_generation') ? (
+                  ) : status === 'completed' ? (
                     <div className="step-checkmark">✓</div>
                   ) : currentStep === 'report_generation' ? (
                     <div className="step-spinner">
