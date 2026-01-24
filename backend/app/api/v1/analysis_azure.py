@@ -438,42 +438,41 @@ async def upload_video(
             
             # Upload to Azure Blob Storage (or keep temp file in mock mode)
             try:
-            if storage_service is None:
-                logger.warning(f"[{request_id}] Storage service not available, using mock mode")
-                video_url = tmp_path  # Use temp file directly in mock mode
-            else:
-                blob_name = f"{analysis_id}{file_ext}"
-                logger.debug(f"[{request_id}] Uploading to blob storage: {blob_name}")
-                video_url = await storage_service.upload_video(tmp_path, blob_name)
-                
-                # In mock mode, video_url will be "mock://..." - use temp file directly
-                if video_url and video_url.startswith('mock://'):
-                    video_url = tmp_path
-                    logger.info(f"[{request_id}] Mock mode: Using temp file directly")
-                elif video_url:
-                    # Real storage - clean up temp file
+                if storage_service is None:
+                    logger.warning(f"[{request_id}] Storage service not available, using mock mode")
+                    video_url = tmp_path  # Use temp file directly in mock mode
+                else:
+                    blob_name = f"{analysis_id}{file_ext}"
+                    logger.debug(f"[{request_id}] Uploading to blob storage: {blob_name}")
+                    video_url = await storage_service.upload_video(tmp_path, blob_name)
+                    
+                    # In mock mode, video_url will be "mock://..." - use temp file directly
+                    if video_url and video_url.startswith('mock://'):
+                        video_url = tmp_path
+                        logger.info(f"[{request_id}] Mock mode: Using temp file directly")
+                    elif video_url:
+                        # Real storage - clean up temp file
+                        try:
+                            os.unlink(tmp_path)
+                            tmp_path = None
+                            logger.debug(f"[{request_id}] Cleaned up temp file after blob upload")
+                        except OSError as e:
+                            logger.warning(f"[{request_id}] Failed to clean up temp file: {e}")
+            except Exception as e:
+                logger.error(f"[{request_id}] Error uploading to storage: {e}", exc_info=True)
+                if tmp_path and os.path.exists(tmp_path):
                     try:
                         os.unlink(tmp_path)
-                        tmp_path = None
-                        logger.debug(f"[{request_id}] Cleaned up temp file after blob upload")
-                    except OSError as e:
-                        logger.warning(f"[{request_id}] Failed to clean up temp file: {e}")
-        except Exception as e:
-            logger.error(f"[{request_id}] Error uploading to storage: {e}", exc_info=True)
-            if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
-            logger.error(f"[{request_id}] Error uploading to storage: {e}", exc_info=True)
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "error": "STORAGE_ERROR",
-                    "message": "Failed to upload file to storage",
-                    "details": {"error": str(e)}
-                }
-            )
+                    except:
+                        pass
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "error": "STORAGE_ERROR",
+                        "message": "Failed to upload file to storage",
+                        "details": {"error": str(e)}
+                    }
+                )
             
             # Store metadata in Azure SQL Database
             logger.error(f"[{request_id}] ========== CREATING ANALYSIS RECORD ==========")
