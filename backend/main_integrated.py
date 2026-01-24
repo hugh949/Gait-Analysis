@@ -340,26 +340,55 @@ app.add_middleware(
 def ensure_upload_endpoint_registered():
     """Ensure upload endpoint is registered, using fallback if needed"""
     upload_route_found = False
+    exact_path_found = False
     for route in app.routes:
         if hasattr(route, 'path'):
             route_path = route.path
-            if route_path == "/api/v1/analysis/upload" or (route_path.endswith("/upload") and "/api/v1/analysis" in route_path):
+            # Check for exact match first
+            if route_path == "/api/v1/analysis/upload":
                 methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
-                if 'POST' in methods or 'post' in str(methods).lower():
+                if 'POST' in methods or 'post' in str(methods).lower() or not methods:
+                    exact_path_found = True
                     upload_route_found = True
-                    logger.info(f"✓ Upload endpoint confirmed: {methods} {route_path}")
+                    logger.info(f"✓ Upload endpoint confirmed (exact match): {methods} {route_path}")
                     break
+            # Check for partial match
+            elif '/upload' in route_path and '/api/v1/analysis' in route_path:
+                methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                if 'POST' in methods or 'post' in str(methods).lower() or not methods:
+                    upload_route_found = True
+                    logger.info(f"✓ Upload endpoint confirmed (partial match): {methods} {route_path}")
+                    if not exact_path_found:
+                        logger.warning(f"⚠️ Route path is {route_path}, expected /api/v1/analysis/upload")
     
     if not upload_route_found:
         logger.warning("⚠️ Upload endpoint not found - attempting direct registration...")
         try:
             from app.api.v1.analysis_azure import upload_video
-            # Register the function directly - FastAPI will handle it
-            app.add_api_route("/api/v1/analysis/upload", upload_video, methods=["POST"], tags=["analysis"])
-            logger.info("✅ Upload endpoint registered directly")
-            return True
+            # CRITICAL: Use add_api_route with explicit path and methods
+            # This ensures the route is registered exactly as expected
+            app.add_api_route(
+                path="/api/v1/analysis/upload",
+                endpoint=upload_video,
+                methods=["POST"],
+                tags=["analysis"],
+                name="upload_video_fallback"
+            )
+            logger.info("✅ Upload endpoint registered directly via add_api_route")
+            
+            # Verify it was registered
+            for route in app.routes:
+                if hasattr(route, 'path') and route.path == "/api/v1/analysis/upload":
+                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                    logger.info(f"✓ Verified registered route: {methods} {route.path}")
+                    return True
+            
+            logger.error("❌ Route registration appeared to succeed but route not found in app.routes!")
+            return False
         except Exception as fallback_error:
             logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
+            import traceback
+            logger.error(f"❌ Traceback: {traceback.format_exc()}")
             return False
     return True
 
@@ -432,6 +461,30 @@ async def api_health_check():
         "service": "Gait Analysis API",
         "version": "3.0.0"
     }
+
+# CRITICAL: Add a simple test upload endpoint to verify routing works
+# This is a minimal endpoint that just returns an error, but proves the route exists
+@app.post("/api/v1/analysis/upload-test")
+async def test_upload_endpoint():
+    """Test endpoint to verify POST routing works"""
+    return {"status": "route_exists", "message": "Upload route is accessible", "path": "/api/v1/analysis/upload-test"}
+
+# CRITICAL: Register upload endpoint DIRECTLY as a backup, before router registration
+# This ensures it exists even if everything else fails
+try:
+    from app.api.v1.analysis_azure import upload_video
+    # Register directly on the app - this will work even if router fails
+    app.add_api_route(
+        path="/api/v1/analysis/upload",
+        endpoint=upload_video,
+        methods=["POST"],
+        tags=["analysis"],
+        name="upload_video_direct"
+    )
+    logger.info("✅ Upload endpoint registered DIRECTLY on app (backup registration)")
+except Exception as direct_error:
+    logger.error(f"❌ Failed to register upload endpoint directly: {direct_error}", exc_info=True)
+    logger.warning("⚠️ Will rely on router registration instead")
 
 # CRITICAL: Add startup event to verify routes after app is fully initialized
 @app.on_event("startup")
