@@ -2198,6 +2198,11 @@ async def process_analysis_azure(
             raise GaitMetricsError(error_msg, details={"analysis_id": analysis_id, "available_metrics": list(metrics.keys())})
         
         # CRITICAL: Update progress to show we're saving results
+        # Determine which database backend is being used
+        use_table_storage = hasattr(db_service, '_use_table') and db_service._use_table
+        use_sql = not use_table_storage and not db_service._use_mock
+        use_mock = db_service._use_mock
+        
         logger.info("=" * 80)
         logger.info(f"[{request_id}] 🎯 [STEP 4] ========== DATABASE SAVE PHASE STARTING ==========")
         logger.info(f"[{request_id}] 🎯 [STEP 4] Preparing to save {len(metrics) if metrics else 0} metrics to database")
