@@ -14,7 +14,7 @@ from loguru import logger
 from app.core.schemas import AnalysisResponse, AnalysisStatus
 from app.core.exceptions import VideoProcessingError, DatabaseError, StorageError
 from app.core.exceptions import gait_error_to_http
-from app.services.gait_analysis import get_gait_analysis_service
+from app.api.v1.analysis_azure import get_gait_analysis_service
 from app.services.checkpoint_manager import CheckpointManager
 from app.core.database_azure_sql import AzureSQLService
 from app.services.azure_storage import AzureStorageService
