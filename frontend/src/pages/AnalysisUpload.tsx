@@ -1168,15 +1168,17 @@ export default function AnalysisUpload() {
               </div>
               
               <div className={`step-card ${
-                currentStep === 'report_generation'
-                  ? status === 'failed'
-                    ? 'failed'
-                    : (status as UploadStatus) === 'completed'
-                      ? 'completed'
-                      : 'active'
-                  : (status as UploadStatus) === 'completed'
-                    ? 'completed'
-                    : 'pending'
+                (() => {
+                  const currentStatus: UploadStatus = status
+                  const isReportGen = currentStep === 'report_generation'
+                  if (isReportGen) {
+                    if (currentStatus === 'failed') return 'failed'
+                    if (currentStatus === 'completed') return 'completed'
+                    return 'active'
+                  }
+                  if (currentStatus === 'completed') return 'completed'
+                  return 'pending'
+                })()
               }`}>
                 <div className="step-indicator">
                   {(() => {
