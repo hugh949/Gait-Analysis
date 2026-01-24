@@ -489,57 +489,14 @@ export default function AnalysisUpload() {
         
         // Use real progress data from backend
         if (analysisStatus === 'completed') {
-          // CRITICAL: Only mark as completed if:
-          // 1. Metrics exist AND have meaningful data
-          // 2. All 4 steps are marked as completed in steps_completed
-          // This prevents showing "View Report" when processing isn't truly done
-          const hasValidMetrics = data.metrics && 
-            Object.keys(data.metrics).length > 0 &&
-            (data.metrics.cadence || data.metrics.walking_speed || data.metrics.step_length)
-          
-          // Check if all steps are completed
-          const stepsCompleted = data.steps_completed || {}
-          const allStepsComplete = (
-            stepsCompleted.step_1_pose_estimation === true &&
-            stepsCompleted.step_2_3d_lifting === true &&
-            stepsCompleted.step_3_metrics_calculation === true &&
-            stepsCompleted.step_4_report_generation === true
-          )
-          
-          console.log('📊 Completion check:', {
-            status: analysisStatus,
-            hasValidMetrics,
-            allStepsComplete,
-            stepsCompleted,
-            stepProgress: data.step_progress,
-            currentStep: data.current_step
-          })
-          
-          if (hasValidMetrics && allStepsComplete) {
-            setStatus('completed')
-            setCurrentStep('report_generation')
-            setStepProgress(100)
-            setStepMessage(data.step_message || 'Analysis complete! Reports ready.')
-            clearPollTimeout()
-            console.log('✅ Analysis completed with valid metrics and all steps complete')
-          } else {
-            setStatus('processing')
-            setCurrentStep('report_generation')
-            setStepProgress(data.step_progress || 98)
-            if (!hasValidMetrics) {
-              setStepMessage('Saving analysis results to database...')
-            } else if (!allStepsComplete) {
-              const incompleteSteps = []
-              if (stepsCompleted.step_1_pose_estimation !== true) incompleteSteps.push('Step 1')
-              if (stepsCompleted.step_2_3d_lifting !== true) incompleteSteps.push('Step 2')
-              if (stepsCompleted.step_3_metrics_calculation !== true) incompleteSteps.push('Step 3')
-              if (stepsCompleted.step_4_report_generation !== true) incompleteSteps.push('Step 4')
-              setStepMessage(`Completing steps: ${incompleteSteps.join(', ')}...`)
-            } else {
-              setStepMessage(data.step_message || 'Saving analysis results to database...')
-            }
-            schedulePoll(1000)
-          }
+          // Backend has marked analysis as completed - this is the natural completion
+          // Trust the backend's status and display completion
+          setStatus('completed')
+          setCurrentStep('report_generation')
+          setStepProgress(100)
+          setStepMessage(data.step_message || 'Analysis complete! Report ready.')
+          clearPollTimeout()
+          console.log('✅ Analysis completed naturally - backend set status to completed')
         } else if (analysisStatus === 'processing') {
           // CRITICAL: Handle case where stepProgress=100 but status is still 'processing'
           // This happens when backend says "complete" but database update hasn't finished
@@ -560,17 +517,10 @@ export default function AnalysisUpload() {
           setStepProgress(backendProgress)
           setStepMessage(backendMessage)
           
-          // CRITICAL FIX: If stepProgress=100 and we're in report_generation, mark as completed immediately
-          // This ensures Step 4 turns green and shows the View Report button
-          if (mappedStep === 'report_generation' && backendProgress >= 100) {
-            console.log('✅ Step 4 reached 100% - marking as completed')
-            setStatus('completed')
-            setCurrentStep('report_generation')
-            setStepProgress(100)
-            setStepMessage('Analysis complete! Report ready.')
-            clearPollTimeout()
-            return
-          }
+          // CRITICAL: Do NOT force completion - wait for backend to set status='completed'
+          // Step 4 should complete naturally when backend finishes saving to database
+          // Only update UI state, don't force status change
+          // The backend will set status='completed' when Step 4 is truly done
           
           console.log(`Progress update: ${backendStep} - ${backendProgress}% - ${backendMessage}`)
           
