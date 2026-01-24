@@ -1374,9 +1374,44 @@ class GaitAnalysisService:
         progress_callback: Optional[Callable] = None
     ) -> Dict:
         """Advanced gait parameter calculation with improved accuracy"""
+        # CRITICAL: Log function entry with detailed diagnostics
+        logger.info("=" * 80)
+        logger.info("🔍 ========== _calculate_gait_metrics CALLED ==========")
+        logger.info(f"🔍 Input: frames_3d_keypoints type={type(frames_3d_keypoints)}, length={len(frames_3d_keypoints) if frames_3d_keypoints else 0}")
+        logger.info(f"🔍 Input: timestamps type={type(timestamps)}, length={len(timestamps) if timestamps else 0}")
+        logger.info(f"🔍 Input: fps={fps}, reference_length_mm={reference_length_mm}")
+        logger.info("=" * 80)
+        
+        if not frames_3d_keypoints or len(frames_3d_keypoints) == 0:
+            error_msg = "CRITICAL: _calculate_gait_metrics received empty frames_3d_keypoints!"
+            logger.error(f"❌ {error_msg}")
+            raise GaitMetricsError(error_msg, details={"input_length": 0})
+        
         if len(frames_3d_keypoints) < 10:
-            logger.warning("Not enough frames for gait analysis")
-            return self._empty_metrics()
+            error_msg = f"CRITICAL: Not enough frames for gait analysis! Received {len(frames_3d_keypoints)} frames, need at least 10."
+            logger.error(f"❌ {error_msg}")
+            logger.error(f"❌ This means Step 2 (3D Lifting) did not produce enough valid frames!")
+            raise GaitMetricsError(error_msg, details={
+                "frames_received": len(frames_3d_keypoints),
+                "frames_required": 10,
+                "step_2_status": "INSUFFICIENT_DATA"
+            })
+        
+        # Validate first frame structure
+        if frames_3d_keypoints and len(frames_3d_keypoints) > 0:
+            first_frame = frames_3d_keypoints[0]
+            logger.info(f"🔍 First frame type: {type(first_frame)}, keys: {list(first_frame.keys())[:5] if isinstance(first_frame, dict) else 'NOT_A_DICT'}")
+            if isinstance(first_frame, dict):
+                has_ankles = 'left_ankle' in first_frame and 'right_ankle' in first_frame
+                logger.info(f"🔍 First frame has ankle keypoints: {has_ankles}")
+                if not has_ankles:
+                    error_msg = "CRITICAL: frames_3d_keypoints missing required ankle keypoints! Expected dict with 'left_ankle' and 'right_ankle' keys."
+                    logger.error(f"❌ {error_msg}")
+                    logger.error(f"❌ First frame keys: {list(first_frame.keys())}")
+                    raise GaitMetricsError(error_msg, details={
+                        "first_frame_keys": list(first_frame.keys()),
+                        "expected_keys": ["left_ankle", "right_ankle"]
+                    })
         
         if progress_callback:
             try:
