@@ -584,28 +584,28 @@ async def upload_video(
                 verification_passed = False
                 
                 while verification_attempts < max_verification_attempts:
-                try:
-                    verification_analysis = await db_service.get_analysis(analysis_id)
-                    if verification_analysis and verification_analysis.get('id') == analysis_id:
-                        logger.error(f"[{request_id}] ✅✅✅ VERIFIED: Analysis is immediately readable after creation (attempt {verification_attempts + 1}) ✅✅✅")
-                        verification_passed = True
-                        break
-                    else:
+                    try:
+                        verification_analysis = await db_service.get_analysis(analysis_id)
+                        if verification_analysis and verification_analysis.get('id') == analysis_id:
+                            logger.error(f"[{request_id}] ✅✅✅ VERIFIED: Analysis is immediately readable after creation (attempt {verification_attempts + 1}) ✅✅✅")
+                            verification_passed = True
+                            break
+                        else:
+                            verification_attempts += 1
+                            if verification_attempts < max_verification_attempts:
+                                logger.warning(f"[{request_id}] ⚠️ Analysis not yet readable (attempt {verification_attempts}/{max_verification_attempts}), retrying...")
+                                await asyncio.sleep(0.2)  # Increased from 0.1s to 0.2s
+                                continue
+                            else:
+                                logger.error(f"[{request_id}] ❌ Analysis not immediately readable after {max_verification_attempts} attempts")
+                    except Exception as e:
                         verification_attempts += 1
                         if verification_attempts < max_verification_attempts:
-                            logger.warning(f"[{request_id}] ⚠️ Analysis not yet readable (attempt {verification_attempts}/{max_verification_attempts}), retrying...")
-                            await asyncio.sleep(0.2)  # Increased from 0.1s to 0.2s
+                            logger.warning(f"[{request_id}] ⚠️ Verification read failed (attempt {verification_attempts}/{max_verification_attempts}), retrying: {e}")
+                            await asyncio.sleep(0.2)
                             continue
                         else:
-                            logger.error(f"[{request_id}] ❌ Analysis not immediately readable after {max_verification_attempts} attempts")
-                except Exception as e:
-                    verification_attempts += 1
-                    if verification_attempts < max_verification_attempts:
-                        logger.warning(f"[{request_id}] ⚠️ Verification read failed (attempt {verification_attempts}/{max_verification_attempts}), retrying: {e}")
-                        await asyncio.sleep(0.2)
-                        continue
-                    else:
-                        logger.error(f"[{request_id}] ❌ Could not verify analysis after creation: {e}", exc_info=True)
+                            logger.error(f"[{request_id}] ❌ Could not verify analysis after creation: {e}", exc_info=True)
                 
                 if not verification_passed:
                 logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis verification failed after {max_verification_attempts} attempts ❌❌❌")
