@@ -636,8 +636,6 @@ async def upload_video(
             logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
             logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
             
-            # CRITICAL: Log router state after upload endpoint definition
-            logger.info(f"🔍 Router after upload endpoint: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
             
             # CRITICAL: Final verification - ensure analysis is visible before returning
             if db_service and db_service._use_mock:
