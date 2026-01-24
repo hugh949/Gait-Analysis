@@ -52,6 +52,7 @@ export default function AnalysisUpload() {
   const navigate = useNavigate()
   const xhrRef = useRef<XMLHttpRequest | null>(null)
   const pollingIntervalRef = useRef<number | null>(null)
+  const progressRef = useRef<number>(0) // Track progress in ref for closure access
   const [startTime] = useState<number>(Date.now())
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +108,7 @@ export default function AnalysisUpload() {
     // Set status and show progress bar immediately
     setStatus('uploading')
     setError(null)
+    progressRef.current = 1 // Update ref
     setProgress(1) // Show progress bar immediately (1% so it's visible)
 
     try {
@@ -126,7 +128,9 @@ export default function AnalysisUpload() {
           const percentComplete = (e.loaded / e.total) * 100
           const elapsed = Date.now() - lastProgressUpdate
           console.log(`Upload progress: ${percentComplete.toFixed(1)}% (${(e.loaded / 1024 / 1024).toFixed(2)} MB / ${(e.total / 1024 / 1024).toFixed(2)} MB) - ${(elapsed / 1000).toFixed(1)}s since last update`)
-          setProgress(Math.max(percentComplete, 1)) // Ensure at least 1% is shown
+          const newProgress = Math.max(percentComplete, 1)
+          progressRef.current = newProgress // Update ref for closure access
+          setProgress(newProgress) // Ensure at least 1% is shown
           lastProgressUpdate = Date.now()
           // Clear any stuck upload error if we're making progress
           if (error && error.includes('stuck')) {
@@ -151,7 +155,7 @@ export default function AnalysisUpload() {
         // This prevents false positives when backend is processing large files
         progressCheckInterval = setInterval(() => {
           const timeSinceLastProgress = Date.now() - lastProgressUpdate
-          const currentProgress = progress
+          const currentProgress = progressRef.current // Use ref to get current progress value
           // Only show warning if:
           // 1. No progress updates for 2 minutes (120 seconds) - increased from 30 seconds
           // 2. Progress is still at initial 5% or less (truly stuck, not just slow)
@@ -160,7 +164,7 @@ export default function AnalysisUpload() {
           const stuckThreshold = isLargeFile ? 180000 : 120000 // 3 min for large files, 2 min for smaller
           
           if (timeSinceLastProgress > stuckThreshold && currentProgress <= 5) {
-            console.warn(`⚠️ Upload appears stuck - no progress for ${(timeSinceLastProgress / 1000).toFixed(0)} seconds`)
+            console.warn(`⚠️ Upload appears stuck - no progress for ${(timeSinceLastProgress / 1000).toFixed(0)} seconds, current progress: ${currentProgress}%`)
             // Don't set error immediately - just log a warning
             // The upload might still be processing on the backend
             if (timeSinceLastProgress > 300000) { // Only show error after 5 minutes of no progress
@@ -317,6 +321,7 @@ export default function AnalysisUpload() {
       const id = await uploadPromise
       console.log('Upload complete. Analysis ID:', id)
       setAnalysisId(id)
+      progressRef.current = 100 // Update ref
       setProgress(100)
       setStatus('processing')
       setCurrentStep('pose_estimation')
@@ -350,6 +355,7 @@ export default function AnalysisUpload() {
       }
       setError(err.message || 'Upload failed. Please try again.')
       setStatus('failed')
+      progressRef.current = 0 // Update ref
       setProgress(0)
     }
   }
