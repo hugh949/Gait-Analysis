@@ -132,16 +132,7 @@ if db_service is None:
     logger.critical("Database service not initialized - API will not function correctly")
 
 
-@router.post(
-    "/upload",
-    response_class=JSONResponse,  # Use JSONResponse instead of response_model to avoid serialization issues
-    responses={
-        400: {"description": "Validation error"},
-        413: {"description": "File too large"},
-        500: {"description": "Internal server error"},
-        503: {"description": "Service unavailable"}
-    }
-)
+@router.post("/upload")
 async def upload_video(
     file: UploadFile = File(...),
     patient_id: Optional[str] = Query(None, max_length=100, description="Patient identifier"),
@@ -150,7 +141,7 @@ async def upload_video(
     fps: float = Query(30.0, gt=0, le=120, description="Video frames per second"),
     request: Request = None,
     background_tasks: BackgroundTasks = None
-) -> JSONResponse:
+):
     """
     Upload video for gait analysis using Azure native services
     
