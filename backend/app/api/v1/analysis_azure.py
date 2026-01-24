@@ -733,25 +733,25 @@ async def upload_video(
                 # Schedule the actual processing task
                 # CRITICAL: Wrap the processing function to add diagnostic logging
                 async def wrapped_process_analysis():
-                """Wrapper to add diagnostic logging when background task executes"""
-                logger.error(f"[{request_id}] 🔧🔧🔧 BACKGROUND TASK WRAPPER CALLED 🔧🔧🔧")
-                logger.error(f"[{request_id}] 🔧 About to call process_analysis_azure for {analysis_id}")
-                logger.error(f"[{request_id}] 🔧 Current time: {datetime.utcnow().isoformat()}")
-                logger.error(f"[{request_id}] 🔧 Process ID: {os.getpid()}")
-                logger.error(f"[{request_id}] 🔧 Thread: {threading.current_thread().ident}, {threading.current_thread().name}")
-                try:
-                    await process_analysis_azure(
-                        analysis_id,
-                        video_url,
-                        patient_id,
-                        view_type_str,
-                        reference_length_mm,
-                        fps
-                    )
-                    logger.error(f"[{request_id}] 🔧✅ Background task completed successfully")
-                except Exception as wrapper_error:
-                    logger.error(f"[{request_id}] 🔧❌ Background task failed: {type(wrapper_error).__name__}: {wrapper_error}", exc_info=True)
-                    raise
+                    """Wrapper to add diagnostic logging when background task executes"""
+                    logger.error(f"[{request_id}] 🔧🔧🔧 BACKGROUND TASK WRAPPER CALLED 🔧🔧🔧")
+                    logger.error(f"[{request_id}] 🔧 About to call process_analysis_azure for {analysis_id}")
+                    logger.error(f"[{request_id}] 🔧 Current time: {datetime.utcnow().isoformat()}")
+                    logger.error(f"[{request_id}] 🔧 Process ID: {os.getpid()}")
+                    logger.error(f"[{request_id}] 🔧 Thread: {threading.current_thread().ident}, {threading.current_thread().name}")
+                    try:
+                        await process_analysis_azure(
+                            analysis_id,
+                            video_url,
+                            patient_id,
+                            view_type_str,
+                            reference_length_mm,
+                            fps
+                        )
+                        logger.error(f"[{request_id}] 🔧✅ Background task completed successfully")
+                    except Exception as wrapper_error:
+                        logger.error(f"[{request_id}] 🔧❌ Background task failed: {type(wrapper_error).__name__}: {wrapper_error}", exc_info=True)
+                        raise
                 
                 logger.error(f"[{request_id}] ========== SCHEDULING BACKGROUND TASK ==========")
                 logger.error(f"[{request_id}] 🔧 Analysis ID: {analysis_id}")
@@ -829,11 +829,11 @@ async def upload_video(
                         'status': 'failed',
                         'step_message': f'Failed to schedule analysis: {str(e)}'
                     })
-                except:
-                    pass
-                logger.error(f"[{request_id}] Failed to schedule video analysis: {e}", exc_info=True)
-                # Don't fail the upload - analysis is created, just log the error
-                # The analysis will remain in 'processing' status
+            except:
+                pass
+            logger.error(f"[{request_id}] Failed to schedule video analysis: {e}", exc_info=True)
+            # Don't fail the upload - analysis is created, just log the error
+            # The analysis will remain in 'processing' status
                 
             upload_total_duration = time.time() - upload_request_start
             logger.info(
