@@ -553,37 +553,37 @@ async def upload_video(
                     import os
                     import threading
                     analysis_in_memory = analysis_id in db_service._mock_storage
-                logger.error(f"[{request_id}] 🔍🔍🔍 IMMEDIATE VERIFICATION (MEMORY) 🔍🔍🔍")
-                logger.error(f"[{request_id}] 🔍 Analysis ID: {analysis_id}")
-                logger.error(f"[{request_id}] 🔍 In-memory storage size: {len(db_service._mock_storage)}")
-                logger.error(f"[{request_id}] 🔍 In-memory analysis IDs: {list(db_service._mock_storage.keys())}")
-                logger.error(f"[{request_id}] 🔍 Analysis in memory: {analysis_in_memory}")
-                
-                if not analysis_in_memory:
-                    logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis NOT in memory after creation! ❌❌❌")
-                    logger.error(f"[{request_id}] ❌ Attempting to reload from file...")
-                    db_service._load_mock_storage()
-                    analysis_in_memory = analysis_id in db_service._mock_storage
-                    logger.error(f"[{request_id}] 🔍 After reload - Analysis in memory: {analysis_in_memory}")
+                    logger.error(f"[{request_id}] 🔍🔍🔍 IMMEDIATE VERIFICATION (MEMORY) 🔍🔍🔍")
+                    logger.error(f"[{request_id}] 🔍 Analysis ID: {analysis_id}")
+                    logger.error(f"[{request_id}] 🔍 In-memory storage size: {len(db_service._mock_storage)}")
+                    logger.error(f"[{request_id}] 🔍 In-memory analysis IDs: {list(db_service._mock_storage.keys())}")
+                    logger.error(f"[{request_id}] 🔍 Analysis in memory: {analysis_in_memory}")
                     
                     if not analysis_in_memory:
-                        logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis still NOT in memory after reload! ❌❌❌")
-                        # Try to recreate it
-                        try:
-                            await db_service.create_analysis(analysis_data)
-                            logger.error(f"[{request_id}] ✅ Recreated analysis in memory")
-                        except Exception as recreate_error:
-                            logger.error(f"[{request_id}] ❌ Failed to recreate analysis: {recreate_error}", exc_info=True)
-                else:
-                    logger.error(f"[{request_id}] ✅✅✅ Analysis confirmed in memory ✅✅✅")
-            
-            # CRITICAL: Verify the analysis is immediately readable before returning
-            # This ensures the file is fully written and visible to other requests
-            verification_attempts = 0
-            max_verification_attempts = 10  # Increased from 5 to 10
-            verification_passed = False
-            
-            while verification_attempts < max_verification_attempts:
+                        logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis NOT in memory after creation! ❌❌❌")
+                        logger.error(f"[{request_id}] ❌ Attempting to reload from file...")
+                        db_service._load_mock_storage()
+                        analysis_in_memory = analysis_id in db_service._mock_storage
+                        logger.error(f"[{request_id}] 🔍 After reload - Analysis in memory: {analysis_in_memory}")
+                        
+                        if not analysis_in_memory:
+                            logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis still NOT in memory after reload! ❌❌❌")
+                            # Try to recreate it
+                            try:
+                                await db_service.create_analysis(analysis_data)
+                                logger.error(f"[{request_id}] ✅ Recreated analysis in memory")
+                            except Exception as recreate_error:
+                                logger.error(f"[{request_id}] ❌ Failed to recreate analysis: {recreate_error}", exc_info=True)
+                    else:
+                        logger.error(f"[{request_id}] ✅✅✅ Analysis confirmed in memory ✅✅✅")
+                
+                # CRITICAL: Verify the analysis is immediately readable before returning
+                # This ensures the file is fully written and visible to other requests
+                verification_attempts = 0
+                max_verification_attempts = 10  # Increased from 5 to 10
+                verification_passed = False
+                
+                while verification_attempts < max_verification_attempts:
                 try:
                     verification_analysis = await db_service.get_analysis(analysis_id)
                     if verification_analysis and verification_analysis.get('id') == analysis_id:
@@ -606,8 +606,8 @@ async def upload_video(
                         continue
                     else:
                         logger.error(f"[{request_id}] ❌ Could not verify analysis after creation: {e}", exc_info=True)
-            
-            if not verification_passed:
+                
+                if not verification_passed:
                 logger.error(f"[{request_id}] ❌❌❌ CRITICAL: Analysis verification failed after {max_verification_attempts} attempts ❌❌❌")
                 logger.error(f"[{request_id}] ❌ Analysis may not be visible to other requests")
                 logger.error(f"[{request_id}] 🔍🔍🔍 DIAGNOSTIC: Verification failure details 🔍🔍🔍")
