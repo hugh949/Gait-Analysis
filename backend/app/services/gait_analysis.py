@@ -1035,7 +1035,20 @@ class GaitAnalysisService:
             "steps_completed": steps_completed  # Track which steps completed
         }
         
+        # CRITICAL: Validate metrics are in result before returning
+        if 'metrics' not in result or not result['metrics']:
+            error_msg = "CRITICAL: Result prepared but metrics are missing!"
+            logger.error(f"❌ {error_msg}")
+            logger.error(f"❌ Result keys: {list(result.keys())}")
+            raise ValueError(error_msg)
+        
+        if result['metrics'].get('fallback_metrics', False):
+            error_msg = "CRITICAL: Result contains fallback metrics - Step 3 failed!"
+            logger.error(f"❌ {error_msg}")
+            raise ValueError(error_msg)
+        
         logger.info(f"✅ Result prepared: {frames_processed_count} frames processed, {len(metrics)} metrics calculated")
+        logger.info(f"✅ Metrics in result: {len(result['metrics'])} metrics, has_core={bool(result['metrics'].get('cadence') or result['metrics'].get('walking_speed') or result['metrics'].get('step_length'))}")
         
         if progress_callback:
             try:
