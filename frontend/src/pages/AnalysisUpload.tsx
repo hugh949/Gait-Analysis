@@ -128,9 +128,15 @@ export default function AnalysisUpload() {
           console.log(`Upload progress: ${percentComplete.toFixed(1)}% (${(e.loaded / 1024 / 1024).toFixed(2)} MB / ${(e.total / 1024 / 1024).toFixed(2)} MB) - ${(elapsed / 1000).toFixed(1)}s since last update`)
           setProgress(Math.max(percentComplete, 1)) // Ensure at least 1% is shown
           lastProgressUpdate = Date.now()
+          // Clear any stuck upload error if we're making progress
+          if (error && error.includes('stuck')) {
+            setError(null)
+          }
         } else {
           // If length not computable, show indeterminate progress
           console.log('Upload in progress (size unknown)')
+          // Update lastProgressUpdate to prevent false stuck detection
+          lastProgressUpdate = Date.now()
           // Don't set progress to 50% here - let it stay at 5% until we get real progress
         }
       })
@@ -141,20 +147,38 @@ export default function AnalysisUpload() {
         setProgress(5) // Show 5% immediately when upload starts
         lastProgressUpdate = Date.now()
         
-        // Monitor for stuck uploads - if no progress for 30 seconds, show warning
+        // Monitor for stuck uploads - only warn if truly stuck (no progress for 2 minutes AND progress is 0)
+        // This prevents false positives when backend is processing large files
         progressCheckInterval = setInterval(() => {
           const timeSinceLastProgress = Date.now() - lastProgressUpdate
-          if (timeSinceLastProgress > 30000 && progress < 10) {
-            console.warn('⚠️ Upload appears stuck - no progress for 30 seconds')
-            setError('Upload appears to be stuck. The backend may be processing a large file. Please wait or try again with a smaller file.')
+          const currentProgress = progress
+          // Only show warning if:
+          // 1. No progress updates for 2 minutes (120 seconds) - increased from 30 seconds
+          // 2. Progress is still at initial 5% or less (truly stuck, not just slow)
+          // 3. File is reasonably sized (not a huge file that legitimately takes time)
+          const isLargeFile = file.size > 50 * 1024 * 1024 // 50MB
+          const stuckThreshold = isLargeFile ? 180000 : 120000 // 3 min for large files, 2 min for smaller
+          
+          if (timeSinceLastProgress > stuckThreshold && currentProgress <= 5) {
+            console.warn(`⚠️ Upload appears stuck - no progress for ${(timeSinceLastProgress / 1000).toFixed(0)} seconds`)
+            // Don't set error immediately - just log a warning
+            // The upload might still be processing on the backend
+            if (timeSinceLastProgress > 300000) { // Only show error after 5 minutes of no progress
+              setError('Upload appears to be stuck. The backend may be processing a large file. Please wait or try again with a smaller file.')
+            }
           }
-        }, 5000) // Check every 5 seconds
+        }, 10000) // Check every 10 seconds (less frequent to avoid false positives)
       })
 
       const uploadPromise = new Promise<string>((resolve, reject) => {
         xhr.onload = () => {
           if (progressCheckInterval) {
             clearInterval(progressCheckInterval)
+            progressCheckInterval = null
+          }
+          // Clear any stuck upload error on successful response
+          if (error && error.includes('stuck')) {
+            setError(null)
           }
           console.log('Upload response received. Status:', xhr.status)
           if (xhr.status === 200) {
@@ -207,6 +231,7 @@ export default function AnalysisUpload() {
         xhr.onerror = () => {
           if (progressCheckInterval) {
             clearInterval(progressCheckInterval)
+            progressCheckInterval = null
           }
           
           const actualUrl = API_URL === '' ? window.location.origin : API_URL
@@ -258,6 +283,7 @@ export default function AnalysisUpload() {
         xhr.ontimeout = () => {
           if (progressCheckInterval) {
             clearInterval(progressCheckInterval)
+            progressCheckInterval = null
           }
           console.error('Upload timeout after 10 minutes')
           reject(new Error(`Upload timeout - Server took too long to respond (10 minutes).\n\nThis may happen with very large files. The backend is processing your file, but it's taking longer than expected.\n\nFile size: ${(file.size / 1024 / 1024).toFixed(2)} MB\n\nPlease try:\n1. Wait a few more minutes\n2. Try with a smaller file\n3. Check backend logs for processing status`))
@@ -266,6 +292,7 @@ export default function AnalysisUpload() {
         xhr.onabort = () => {
           if (progressCheckInterval) {
             clearInterval(progressCheckInterval)
+            progressCheckInterval = null
           }
           console.error('Upload aborted')
           reject(new Error('Upload was cancelled'))
@@ -316,6 +343,11 @@ export default function AnalysisUpload() {
       }
     } catch (err: any) {
       console.error('Upload error:', err)
+      // Clean up progress check interval if it exists
+      if (progressCheckInterval) {
+        clearInterval(progressCheckInterval)
+        progressCheckInterval = null
+      }
       setError(err.message || 'Upload failed. Please try again.')
       setStatus('failed')
       setProgress(0)
