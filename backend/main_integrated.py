@@ -382,27 +382,53 @@ def ensure_upload_endpoint_registered():
     if not upload_route_found:
         logger.warning("⚠️ Upload endpoint not found - attempting direct registration...")
         try:
-            from app.api.v1.analysis_azure import upload_video
-            # CRITICAL: Use add_api_route with explicit path and methods
-            # This ensures the route is registered exactly as expected
-            app.add_api_route(
-                path="/api/v1/analysis/upload",
-                endpoint=upload_video,
-                methods=["POST"],
-                tags=["analysis"],
-                name="upload_video_fallback"
-            )
-            logger.info("✅ Upload endpoint registered directly via add_api_route")
+            # Try multiple import strategies
+            upload_video_func = None
             
-            # Verify it was registered
-            for route in app.routes:
-                if hasattr(route, 'path') and route.path == "/api/v1/analysis/upload":
-                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
-                    logger.info(f"✓ Verified registered route: {methods} {route.path}")
-                    return True
+            # Strategy 1: Import from module
+            try:
+                from app.api.v1.analysis_azure import upload_video
+                upload_video_func = upload_video
+                logger.info("✓ Successfully imported upload_video from analysis_azure")
+            except ImportError as import_err:
+                logger.warning(f"Failed to import upload_video: {import_err}")
+                # Strategy 2: Try importing the module and accessing the function
+                try:
+                    import app.api.v1.analysis_azure as analysis_module
+                    if hasattr(analysis_module, 'upload_video'):
+                        upload_video_func = analysis_module.upload_video
+                        logger.info("✓ Successfully accessed upload_video from module")
+                    else:
+                        logger.error("❌ upload_video function not found in analysis_azure module")
+                except Exception as module_err:
+                    logger.error(f"❌ Failed to access module: {module_err}")
             
-            logger.error("❌ Route registration appeared to succeed but route not found in app.routes!")
-            return False
+            if upload_video_func:
+                # CRITICAL: Use add_api_route with explicit path and methods
+                # This ensures the route is registered exactly as expected
+                app.add_api_route(
+                    path="/api/v1/analysis/upload",
+                    endpoint=upload_video_func,
+                    methods=["POST"],
+                    tags=["analysis"],
+                    name="upload_video_fallback"
+                )
+                logger.info("✅ Upload endpoint registered directly via add_api_route")
+                
+                # Verify it was registered (no await needed - this is sync code)
+                import time
+                time.sleep(0.1)  # Small delay to ensure route is registered
+                for route in app.routes:
+                    if hasattr(route, 'path') and route.path == "/api/v1/analysis/upload":
+                        methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                        logger.info(f"✓ Verified registered route: {methods} {route.path}")
+                        return True
+                
+                logger.error("❌ Route registration appeared to succeed but route not found in app.routes!")
+                return False
+            else:
+                logger.error("❌ Could not import or access upload_video function")
+                return False
         except Exception as fallback_error:
             logger.error(f"❌ Failed to register upload endpoint directly: {fallback_error}", exc_info=True)
             import traceback
@@ -472,11 +498,17 @@ else:
     ensure_upload_endpoint_registered()
 
 # CRITICAL: Final verification that upload endpoint exists
-final_check = ensure_upload_endpoint_registered()
-if final_check:
-    logger.info("✅ Upload endpoint verification passed")
-else:
-    logger.error("❌ CRITICAL: Upload endpoint could not be registered - uploads will fail!")
+# Note: ensure_upload_endpoint_registered is a sync function, so we call it directly
+# (it doesn't use await, so it's safe to call at module level)
+try:
+    final_check = ensure_upload_endpoint_registered()
+    if final_check:
+        logger.info("✅ Upload endpoint verification passed")
+    else:
+        logger.error("❌ CRITICAL: Upload endpoint could not be registered - uploads will fail!")
+except Exception as verify_error:
+    logger.error(f"❌ Error during upload endpoint verification: {verify_error}", exc_info=True)
+    logger.error("⚠️ Continuing startup but upload endpoint may not be available")
 
 # CRITICAL: Log all API routes for debugging
 logger.info("=" * 80)
