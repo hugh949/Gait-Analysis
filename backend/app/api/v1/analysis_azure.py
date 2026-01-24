@@ -115,9 +115,6 @@ def initialize_services():
 # CRITICAL: Log router state before service initialization
 logger.info(f"🔍 Router before service init: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
 
-# CRITICAL: Log router state before service initialization
-logger.info(f"🔍 Router before service init: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
-
 # Initialize services at module load
 # CRITICAL: Don't raise on failure - allow app to start even if services fail
 # Services will be initialized lazily when needed
@@ -2687,15 +2684,42 @@ async def force_complete_analysis(
 
 # CRITICAL: Log final router state at end of module
 # This ensures all routes are registered before module is considered loaded
-logger.info(f"🔍 Router final state: {len(router.routes) if hasattr(router, 'routes') else 'no routes attr'} routes")
-if hasattr(router, 'routes') and len(router.routes) > 0:
-    logger.info("✅ Router has routes - endpoints should be available")
-    for route in router.routes:
-        if hasattr(route, 'path'):
-            methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
-            logger.info(f"  Final route: {methods} {route.path}")
-else:
-    logger.error("❌ CRITICAL: Router has no routes at end of module!")
-    logger.error("❌ This will cause 404 errors on all endpoints!")
+# CRITICAL: This must be at the very end to ensure all decorators have run
+try:
+    final_route_count = len(router.routes) if hasattr(router, 'routes') else 0
+    logger.info(f"🔍 Router final state: {final_route_count} routes")
+    
+    if final_route_count > 0:
+        logger.info("✅ Router has routes - endpoints should be available")
+        for route in router.routes:
+            if hasattr(route, 'path'):
+                methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                logger.info(f"  Final route: {methods} {route.path}")
+        
+        # Verify upload route exists
+        upload_route_exists = any(
+            hasattr(r, 'path') and r.path == '/upload' and 'POST' in (list(r.methods) if hasattr(r, 'methods') and hasattr(r.methods, '__iter__') else [])
+            for r in router.routes
+        )
+        if upload_route_exists:
+            logger.info("✅ Upload route (/upload) confirmed in router")
+        else:
+            logger.error("❌ CRITICAL: Upload route (/upload) NOT found in router routes!")
+            logger.error("❌ Available routes in router:")
+            for route in router.routes:
+                if hasattr(route, 'path'):
+                    methods = list(route.methods) if hasattr(route, 'methods') and hasattr(route.methods, '__iter__') else []
+                    logger.error(f"  {methods} {route.path}")
+    else:
+        logger.error("❌ CRITICAL: Router has no routes at end of module!")
+        logger.error("❌ This will cause 404 errors on all endpoints!")
+        logger.error("❌ Check for exceptions during module initialization that prevent decorators from running")
+except Exception as e:
+    logger.error(f"❌ CRITICAL: Error checking router final state: {e}", exc_info=True)
+    logger.error("❌ Router may not be properly initialized!")
+
+# CRITICAL: Ensure router is always exported, even if there were errors
+# This allows the app to start and attempt to register the router
+# The router will have routes if decorators ran successfully
 
 
