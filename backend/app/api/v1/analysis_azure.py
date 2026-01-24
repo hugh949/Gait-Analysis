@@ -971,6 +971,13 @@ async def process_analysis_azure(
     logger.error("=" * 80)
     
     try:
+        # Check if analysis was cancelled before starting
+        if db_service:
+            analysis_check = await db_service.get_analysis(analysis_id)
+            if analysis_check and analysis_check.get('status') == 'cancelled':
+                logger.info(f"[{request_id}] Analysis {analysis_id} was cancelled before processing started")
+                return
+        
         logger.info(
             f"[{request_id}] 🚀 PROCESSING TASK STARTED for analysis {analysis_id}",
             extra={
@@ -1772,6 +1779,14 @@ async def process_analysis_azure(
             heartbeat_monitor_task = asyncio.create_task(periodic_heartbeat_check())
             logger.error(f"[{request_id}] 🔍 Started periodic heartbeat monitor task")
             
+            # Check for cancellation before starting video analysis
+            if db_service:
+                analysis_check = await db_service.get_analysis(analysis_id)
+                if analysis_check and analysis_check.get('status') == 'cancelled':
+                    logger.info(f"[{request_id}] Analysis {analysis_id} was cancelled before video analysis")
+                    heartbeat_stop_event.set()
+                    return
+            
             logger.error(f"[{request_id}] 🎬🎬🎬 CALLING analyze_video 🎬🎬🎬")
             logger.error(f"[{request_id}] 🎬 Video path: {video_path}")
             logger.error(f"[{request_id}] 🎬 FPS: {fps}, View type: {view_type}")
@@ -2496,6 +2511,196 @@ async def process_analysis_azure(
                     extra={"video_path": video_path, "analysis_id": analysis_id},
                     exc_info=True
                 )
+
+
+@router.post(
+    "/{analysis_id}/cancel",
+    responses={
+        200: {"description": "Analysis cancelled successfully"},
+        404: {"model": ErrorResponse, "description": "Analysis not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+        503: {"model": ErrorResponse, "description": "Service unavailable"}
+    }
+)
+async def cancel_analysis(
+    analysis_id: str = PathParam(..., description="Analysis ID to cancel")
+) -> JSONResponse:
+    """
+    Cancel a processing analysis
+    
+    Args:
+        analysis_id: Unique analysis identifier
+        
+    Returns:
+        JSONResponse with cancellation status
+        
+    Raises:
+        HTTPException: If analysis not found or cancellation fails
+    """
+    request_id = str(uuid.uuid4())[:8]
+    logger.info(f"[{request_id}] Cancel analysis request", extra={"analysis_id": analysis_id})
+    
+    if db_service is None:
+        logger.error(f"[{request_id}] Database service not available")
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "SERVICE_UNAVAILABLE",
+                "message": "Database service is not available",
+                "details": {}
+            }
+        )
+    
+    try:
+        # Get analysis to check if it exists
+        analysis = await db_service.get_analysis(analysis_id)
+        if not analysis:
+            logger.warning(f"[{request_id}] Analysis not found: {analysis_id}")
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "ANALYSIS_NOT_FOUND",
+                    "message": f"Analysis {analysis_id} not found",
+                    "details": {"analysis_id": analysis_id}
+                }
+            )
+        
+        # Only cancel if status is 'processing'
+        current_status = analysis.get('status')
+        if current_status == 'cancelled':
+            logger.info(f"[{request_id}] Analysis already cancelled: {analysis_id}")
+            return JSONResponse({
+                "status": "cancelled",
+                "message": "Analysis was already cancelled",
+                "analysis_id": analysis_id
+            })
+        
+        if current_status not in ['processing', 'uploading']:
+            logger.info(f"[{request_id}] Analysis not in cancellable state: {current_status}")
+            return JSONResponse({
+                "status": current_status,
+                "message": f"Analysis is in '{current_status}' state and cannot be cancelled",
+                "analysis_id": analysis_id
+            })
+        
+        # Update analysis status to cancelled
+        success = await db_service.update_analysis(analysis_id, {
+            'status': 'cancelled',
+            'current_step': analysis.get('current_step', 'unknown'),
+            'step_progress': analysis.get('step_progress', 0),
+            'step_message': 'Analysis cancelled by user'
+        })
+        
+        if success:
+            logger.info(f"[{request_id}] ✅ Analysis cancelled: {analysis_id}")
+            return JSONResponse({
+                "status": "cancelled",
+                "message": "Analysis cancelled successfully",
+                "analysis_id": analysis_id
+            })
+        else:
+            logger.error(f"[{request_id}] Failed to update analysis status to cancelled")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "CANCELLATION_FAILED",
+                    "message": "Failed to cancel analysis",
+                    "details": {"analysis_id": analysis_id}
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"[{request_id}] Error cancelling analysis: {e}",
+            extra={"analysis_id": analysis_id},
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "INTERNAL_ERROR",
+                "message": f"Failed to cancel analysis: {str(e)}",
+                "details": {"analysis_id": analysis_id}
+            }
+        )
+
+
+@router.post(
+    "/cancel-all",
+    responses={
+        200: {"description": "All processing analyses cancelled"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+        503: {"model": ErrorResponse, "description": "Service unavailable"}
+    }
+)
+async def cancel_all_processing() -> JSONResponse:
+    """
+    Cancel all analyses that are currently processing
+    Useful for cleanup on app startup/restart
+    
+    Returns:
+        JSONResponse with count of cancelled analyses
+    """
+    request_id = str(uuid.uuid4())[:8]
+    logger.info(f"[{request_id}] Cancel all processing analyses request")
+    
+    if db_service is None:
+        logger.error(f"[{request_id}] Database service not available")
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "SERVICE_UNAVAILABLE",
+                "message": "Database service is not available",
+                "details": {}
+            }
+        )
+    
+    try:
+        # Get all analyses
+        all_analyses = await db_service.list_analyses(limit=1000)
+        
+        # Filter for processing analyses
+        processing_analyses = [a for a in all_analyses if a.get('status') == 'processing']
+        
+        cancelled_count = 0
+        for analysis in processing_analyses:
+            analysis_id = analysis.get('id')
+            try:
+                success = await db_service.update_analysis(analysis_id, {
+                    'status': 'cancelled',
+                    'current_step': analysis.get('current_step', 'unknown'),
+                    'step_progress': analysis.get('step_progress', 0),
+                    'step_message': 'Analysis cancelled on app restart'
+                })
+                if success:
+                    cancelled_count += 1
+                    logger.info(f"[{request_id}] Cancelled analysis: {analysis_id}")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Failed to cancel analysis {analysis_id}: {e}")
+        
+        logger.info(f"[{request_id}] ✅ Cancelled {cancelled_count} of {len(processing_analyses)} processing analyses")
+        return JSONResponse({
+            "status": "success",
+            "message": f"Cancelled {cancelled_count} processing analyses",
+            "cancelled_count": cancelled_count,
+            "total_processing": len(processing_analyses)
+        })
+        
+    except Exception as e:
+        logger.error(
+            f"[{request_id}] Error cancelling all processing analyses: {e}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "INTERNAL_ERROR",
+                "message": f"Failed to cancel processing analyses: {str(e)}",
+                "details": {}
+            }
+        )
 
 
 @router.get(

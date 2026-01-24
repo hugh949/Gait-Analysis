@@ -454,11 +454,33 @@ export default function AnalysisUpload() {
   }
 
   const handleCancel = async () => {
+    // Cancel upload if in progress
     if (xhrRef.current && (status === 'uploading' || status === 'processing')) {
       xhrRef.current.abort()
       xhrRef.current = null
     }
     clearPollTimeout()
+    
+    // Cancel backend processing if analysis is running
+    if (analysisId && (status === 'processing' || status === 'uploading')) {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/analysis/${analysisId}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+          },
+        })
+        
+        if (response.ok) {
+          console.log('✅ Analysis cancelled on backend')
+        } else {
+          console.warn('⚠️ Failed to cancel analysis on backend, but continuing with local cancellation')
+        }
+      } catch (error) {
+        console.warn('⚠️ Error calling cancel endpoint:', error)
+        // Continue with local cancellation even if backend call fails
+      }
+    }
     
     // Clear localStorage
     if (analysisId) {
