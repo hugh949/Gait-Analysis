@@ -59,11 +59,34 @@ except Exception as e:
     logger.warning("Using minimal settings - app may have limited functionality")
 
 # Import router
+analysis_router = None
+upload_video_func = None
+
 try:
     from app.api.v1.analysis_azure import router as analysis_router
     logger.info("✓ Analysis router imported")
+    
+    # Also try to import upload_video function directly as backup
+    try:
+        from app.api.v1.analysis_azure import upload_video as _upload_video
+        upload_video_func = _upload_video
+        logger.info("✓ Upload video function imported directly")
+    except Exception as func_import_err:
+        logger.warning(f"Could not import upload_video function directly: {func_import_err}")
+        
 except Exception as e:
     logger.error(f"Failed to import analysis router: {e}", exc_info=True)
+    import traceback
+    logger.error(f"Import traceback: {traceback.format_exc()}")
+    
+    # Try to import just the upload function as fallback
+    try:
+        from app.api.v1.analysis_azure import upload_video as _upload_video
+        upload_video_func = _upload_video
+        logger.info("✓ Upload video function imported as fallback (router import failed)")
+    except Exception as func_fallback_err:
+        logger.error(f"Failed to import upload_video function as fallback: {func_fallback_err}")
+    
     from fastapi import APIRouter
     analysis_router = APIRouter()
     logger.warning("Using empty router - API endpoints will not work")
@@ -382,33 +405,34 @@ def ensure_upload_endpoint_registered():
     if not upload_route_found:
         logger.warning("⚠️ Upload endpoint not found - attempting direct registration...")
         try:
-            # Try multiple import strategies
-            upload_video_func = None
+            # Use the function we imported at module level, or try to import it
+            func_to_use = upload_video_func
             
-            # Strategy 1: Import from module
-            try:
-                from app.api.v1.analysis_azure import upload_video
-                upload_video_func = upload_video
-                logger.info("✓ Successfully imported upload_video from analysis_azure")
-            except ImportError as import_err:
-                logger.warning(f"Failed to import upload_video: {import_err}")
-                # Strategy 2: Try importing the module and accessing the function
+            if not func_to_use:
+                # Strategy 1: Import from module
                 try:
-                    import app.api.v1.analysis_azure as analysis_module
-                    if hasattr(analysis_module, 'upload_video'):
-                        upload_video_func = analysis_module.upload_video
-                        logger.info("✓ Successfully accessed upload_video from module")
-                    else:
-                        logger.error("❌ upload_video function not found in analysis_azure module")
-                except Exception as module_err:
-                    logger.error(f"❌ Failed to access module: {module_err}")
+                    from app.api.v1.analysis_azure import upload_video
+                    func_to_use = upload_video
+                    logger.info("✓ Successfully imported upload_video from analysis_azure")
+                except ImportError as import_err:
+                    logger.warning(f"Failed to import upload_video: {import_err}")
+                    # Strategy 2: Try importing the module and accessing the function
+                    try:
+                        import app.api.v1.analysis_azure as analysis_module
+                        if hasattr(analysis_module, 'upload_video'):
+                            func_to_use = analysis_module.upload_video
+                            logger.info("✓ Successfully accessed upload_video from module")
+                        else:
+                            logger.error("❌ upload_video function not found in analysis_azure module")
+                    except Exception as module_err:
+                        logger.error(f"❌ Failed to access module: {module_err}")
             
-            if upload_video_func:
+            if func_to_use:
                 # CRITICAL: Use add_api_route with explicit path and methods
                 # This ensures the route is registered exactly as expected
                 app.add_api_route(
                     path="/api/v1/analysis/upload",
-                    endpoint=upload_video_func,
+                    endpoint=func_to_use,
                     methods=["POST"],
                     tags=["analysis"],
                     name="upload_video_fallback"
