@@ -66,7 +66,6 @@ interface AnalysisResult {
     }
   }
   created_at?: string
-  step_message?: string
 }
 
 // Parameter definitions for professional reports
@@ -356,7 +355,7 @@ export default function Report() {
                   <div className="summary-card-value">{walkingSpeed.toFixed(2)}</div>
                   <div className="summary-card-label">m/s</div>
                   <div className="summary-card-description">
-                    {walkingSpeed < 1.0 && <p className="warning">⚠️ Below normal range (<1.0 m/s)</p>}
+                    {walkingSpeed < 1.0 && <p className="warning">⚠️ Below normal range (&lt;1.0 m/s)</p>}
                     {walkingSpeed >= 1.0 && walkingSpeed < 1.2 && <p className="caution">⚠️ Slightly below normal (1.0-1.2 m/s)</p>}
                     {walkingSpeed >= 1.2 && <p className="good">✅ Within normal range (≥1.2 m/s)</p>}
                   </div>
