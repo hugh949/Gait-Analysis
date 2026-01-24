@@ -546,67 +546,16 @@ export default function AnalysisUpload() {
           setStepProgress(backendProgress)
           setStepMessage(backendMessage)
           
-          // SPECIAL CASE: If stepProgress=100 and we're in report_generation, check if we should auto-complete
-          if (mappedStep === 'report_generation' && backendProgress === 100) {
-            const hasValidMetrics = data.metrics && 
-              Object.keys(data.metrics).length > 0 &&
-              (data.metrics.cadence || data.metrics.walking_speed || data.metrics.step_length)
-            
-            const stepsCompleted = data.steps_completed || {}
-            const allStepsComplete = (
-              stepsCompleted.step_1_pose_estimation === true &&
-              stepsCompleted.step_2_3d_lifting === true &&
-              stepsCompleted.step_3_metrics_calculation === true &&
-              stepsCompleted.step_4_report_generation === true
-            )
-            
-            // If we have valid metrics and all steps complete, but status is still 'processing',
-            // the backend database update may have failed - try to auto-fix
-            if (hasValidMetrics && allStepsComplete) {
-              console.log('⚠️ Step 4 shows 100% with valid data but status is still processing - attempting auto-fix...')
-              try {
-                const fixResponse = await fetch(`${API_URL}/api/v1/analysis/${id}/force-complete`, { method: 'POST' })
-                if (fixResponse.ok) {
-                  const fixData = await fixResponse.json()
-                  if (fixData.status === 'success') {
-                    console.log('✅ Auto-fixed stuck analysis, re-checking status...')
-                    schedulePoll(500)
-                    return
-                  }
-                }
-              } catch (fixErr) {
-                console.warn('⚠️ Auto-fix attempt failed:', fixErr)
-              }
-              
-              // Even if auto-fix fails, if we have valid data, mark as completed locally
-              // This prevents the UI from being stuck forever
-              console.log('✅ Marking as completed locally (backend status update may be delayed)')
-              setStatus('completed')
-              setCurrentStep('report_generation') // CRITICAL: Ensure currentStep is set so step card shows as completed
-              setStepProgress(100)
-              setStepMessage('Analysis complete! Reports ready.')
-              clearPollTimeout()
-              return
-            }
-            
-            // If stepProgress=100 but we don't have valid metrics/steps, check if stuck
-            const timeSinceUpdate = Date.now() - new Date(data.updated_at || data.created_at || 0).getTime()
-            if (timeSinceUpdate > 30000) { // Stuck for >30 seconds
-              console.log('⚠️ Analysis stuck at 100% for >30s, attempting auto-fix...')
-              try {
-                const fixResponse = await fetch(`${API_URL}/api/v1/analysis/${id}/force-complete`, { method: 'POST' })
-                if (fixResponse.ok) {
-                  const fixData = await fixResponse.json()
-                  if (fixData.status === 'success') {
-                    console.log('✅ Auto-fixed stuck analysis, re-checking status...')
-                    schedulePoll(500)
-                    return
-                  }
-                }
-              } catch (fixErr) {
-                console.warn('⚠️ Auto-fix attempt failed:', fixErr)
-              }
-            }
+          // CRITICAL FIX: If stepProgress=100 and we're in report_generation, mark as completed immediately
+          // This ensures Step 4 turns green and shows the View Report button
+          if (mappedStep === 'report_generation' && backendProgress >= 100) {
+            console.log('✅ Step 4 reached 100% - marking as completed')
+            setStatus('completed')
+            setCurrentStep('report_generation')
+            setStepProgress(100)
+            setStepMessage('Analysis complete! Report ready.')
+            clearPollTimeout()
+            return
           }
           
           console.log(`Progress update: ${backendStep} - ${backendProgress}% - ${backendMessage}`)
@@ -1103,18 +1052,14 @@ export default function AnalysisUpload() {
                     {currentStep === 'report_generation' && 'Step 4 of 4'}
                   </span>
                   <span className="overall-progress-percent">
-                    {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98 && stepProgress < 100
-                      ? '99%' // Cap at 99% when finalizing to show it's not truly complete
-                      : `${stepProgress}%`}
+                    {stepProgress}%
                   </span>
                 </div>
                 <div className="overall-progress-bar-container">
                   <div 
                     className="overall-progress-bar" 
                     style={{ 
-                      width: `${status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98 && stepProgress < 100
-                        ? 99 // Cap visual progress at 99% when finalizing
-                        : stepProgress}%` 
+                      width: `${stepProgress}%` 
                     }}
                   ></div>
                 </div>
@@ -1128,11 +1073,6 @@ export default function AnalysisUpload() {
                   {status === 'processing' && stepProgress > 0 && stepProgress < 100 && (
                     <span className="time-remaining">
                       Est. remaining: {Math.floor(((Date.now() - startTime) / stepProgress) * (100 - stepProgress) / 1000)}s
-                    </span>
-                  )}
-                  {status === 'processing' && currentStep === 'report_generation' && stepProgress >= 98 && stepProgress < 100 && (
-                    <span className="finalizing-indicator">
-                      Finalizing...
                     </span>
                   )}
                 </div>
@@ -1301,40 +1241,13 @@ export default function AnalysisUpload() {
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                     <button 
-                      onClick={async () => {
-                        // Double-verify analysis is truly completed with metrics before navigating
-                        try {
-                          const response = await fetch(`${API_URL}/api/v1/analysis/${analysisId}`)
-                          if (response.ok) {
-                            const data = await response.json()
-                            const hasValidMetrics = data.metrics && 
-                              Object.keys(data.metrics).length > 0 &&
-                              (data.metrics.cadence || data.metrics.walking_speed || data.metrics.step_length)
-                            
-                            if (data.status === 'completed' && hasValidMetrics) {
-                              navigate(`/report/${analysisId}`)
-                            } else {
-                              // Not truly complete - resume processing automatically
-                              console.warn('Analysis not truly complete - resuming processing')
-                              setStatus('processing')
-                              setCurrentStep(data.current_step || 'report_generation')
-                              setStepProgress(data.step_progress || 98)
-                              setStepMessage(data.step_message || 'Saving analysis results...')
-                              // Resume polling immediately
-                              if (analysisId) {
-                                pollAnalysisStatus(analysisId)
-                              }
-                            }
-                          } else {
-                            setError('Failed to verify analysis status. Please try again.')
-                          }
-                        } catch (err) {
-                          console.error('Error verifying analysis:', err)
-                          setError('Failed to verify analysis status. Please try again.')
-                        }
+                      onClick={() => {
+                        // Simple navigation - if status is completed, go to report
+                        // The report page will handle loading and validation
+                        navigate(`/report/${analysisId}`)
                       }}
                       className="btn btn-primary btn-large"
-                      style={{ minWidth: '200px' }}
+                      style={{ minWidth: '200px', fontSize: '1.1rem', padding: '1rem 2rem' }}
                     >
                       View Report
                     </button>
