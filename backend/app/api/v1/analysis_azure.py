@@ -862,7 +862,7 @@ async def upload_video(
                 "patient_id": patient_id_val,
                 "created_at": datetime.utcnow().isoformat()
             })
-    
+        
     except HTTPException:
         # Let FastAPI handle HTTPException - don't intercept
         raise
