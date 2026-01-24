@@ -417,8 +417,23 @@ export default function AnalysisUpload() {
           }
         } else if (analysisStatus === 'failed') {
           setStatus('failed')
-          setError(data.error || 'Analysis failed')
-          setStepProgress(0)
+          
+          // Build detailed error message with step information
+          const failedStep = data.current_step || 'unknown'
+          const stepNames: Record<string, string> = {
+            'pose_estimation': 'Step 1: Pose Estimation',
+            '3d_lifting': 'Step 2: 3D Lifting',
+            'metrics_calculation': 'Step 3: Metrics Calculation',
+            'report_generation': 'Step 4: Report Generation'
+          }
+          const stepName = stepNames[failedStep] || `Step: ${failedStep}`
+          
+          const errorMsg = data.step_message || data.error || 'Analysis failed'
+          const detailedError = `❌ Analysis Failed at ${stepName}\n\n${errorMsg}\n\nPlease try:\n• Uploading the video again\n• Using a smaller file (<50 MB)\n• Ensuring good lighting and clear visibility of the person\n• Recording 5-10 seconds of continuous walking`
+          
+          setError(detailedError)
+          setCurrentStep(failedStep as ProcessingStep || 'pose_estimation')
+          setStepProgress(data.step_progress || 0)
           setStepMessage(data.step_message || 'Analysis failed')
         }
       } catch (err: any) {
@@ -638,9 +653,11 @@ export default function AnalysisUpload() {
           </div>
         )}
 
-        {error && status !== 'processing' && (
+        {error && (status === 'failed' || status === 'idle') && (
           <div className="error">
-            {error}
+            {error.split('\n').map((line, idx) => (
+              <div key={idx}>{line}</div>
+            ))}
           </div>
         )}
         
@@ -786,9 +803,11 @@ export default function AnalysisUpload() {
             )}
 
             <div className="processing-steps apple-steps">
-              <div className={`step-card ${currentStep === 'pose_estimation' ? 'active' : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${status === 'failed' && currentStep === 'pose_estimation' ? 'failed' : currentStep === 'pose_estimation' ? 'active' : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? (
+                  {status === 'failed' && currentStep === 'pose_estimation' ? (
+                    <div className="step-error">✗</div>
+                  ) : currentStep && ['3d_lifting', 'metrics_calculation', 'report_generation'].includes(currentStep) ? (
                     <div className="step-checkmark">✓</div>
                   ) : currentStep === 'pose_estimation' ? (
                     <div className="step-spinner">
@@ -816,9 +835,11 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === '3d_lifting' ? 'active' : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${status === 'failed' && currentStep === '3d_lifting' ? 'failed' : currentStep === '3d_lifting' ? 'active' : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? (
+                  {status === 'failed' && currentStep === '3d_lifting' ? (
+                    <div className="step-error">✗</div>
+                  ) : currentStep && ['metrics_calculation', 'report_generation'].includes(currentStep) ? (
                     <div className="step-checkmark">✓</div>
                   ) : currentStep === '3d_lifting' ? (
                     <div className="step-spinner">
@@ -846,9 +867,11 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === 'metrics_calculation' ? 'active' : currentStep === 'report_generation' ? 'completed' : 'pending'}`}>
+              <div className={`step-card ${status === 'failed' && currentStep === 'metrics_calculation' ? 'failed' : currentStep === 'metrics_calculation' ? 'active' : currentStep === 'report_generation' ? 'completed' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep === 'report_generation' ? (
+                  {status === 'failed' && currentStep === 'metrics_calculation' ? (
+                    <div className="step-error">✗</div>
+                  ) : currentStep === 'report_generation' ? (
                     <div className="step-checkmark">✓</div>
                   ) : currentStep === 'metrics_calculation' ? (
                     <div className="step-spinner">
@@ -876,9 +899,11 @@ export default function AnalysisUpload() {
                 </div>
               </div>
               
-              <div className={`step-card ${currentStep === 'report_generation' ? 'active' : 'pending'}`}>
+              <div className={`step-card ${status === 'failed' && currentStep === 'report_generation' ? 'failed' : currentStep === 'report_generation' ? 'active' : 'pending'}`}>
                 <div className="step-indicator">
-                  {currentStep === 'report_generation' ? (
+                  {status === 'failed' && currentStep === 'report_generation' ? (
+                    <div className="step-error">✗</div>
+                  ) : currentStep === 'report_generation' ? (
                     <div className="step-spinner">
                       <Loader2 className="spinner-icon" />
                     </div>

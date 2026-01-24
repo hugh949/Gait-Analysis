@@ -424,6 +424,53 @@
   background: var(--apple-green);
 }
 
+.step-card.failed {
+  border-color: #FF3B30;
+  background: #FFF5F5;
+}
+
+.step-card.failed::before {
+  background: #FF3B30;
+}
+
+.step-card.failed .step-indicator {
+  background: #FF3B30;
+}
+
+.step-error {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #FF3B30;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  animation: errorPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes errorPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.step-card.failed .step-title {
+  color: #FF3B30;
+}
+
+.step-card.failed .step-description {
+  color: #FF3B30;
+}
+
 .step-spinner {
   width: 40px;
   height: 40px;
