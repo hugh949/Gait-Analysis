@@ -412,6 +412,33 @@ export default function AnalysisUpload() {
             stepsCompleted.step_4_report_generation === true
           )
           
+          // Check if analysis is stuck (in report_generation with high progress but missing metrics/steps)
+          const isStuck = (
+            data.current_step === 'report_generation' &&
+            data.step_progress >= 95 &&
+            (!hasValidMetrics || !allStepsComplete) &&
+            (Date.now() - new Date(data.updated_at || data.created_at || 0).getTime()) > 60000 // Stuck for >1 minute
+          )
+          
+          if (isStuck) {
+            // Try to auto-fix stuck analysis
+            console.log('⚠️ Detected stuck analysis, attempting auto-fix...')
+            try {
+              const fixResponse = await fetch(`${API_URL}/api/v1/analysis/${id}/force-complete`, { method: 'POST' })
+              if (fixResponse.ok) {
+                const fixData = await fixResponse.json()
+                if (fixData.status === 'success') {
+                  console.log('✅ Auto-fixed stuck analysis, re-checking status...')
+                  // Re-poll immediately to get updated status
+                  schedulePoll(500)
+                  return
+                }
+              }
+            } catch (fixErr) {
+              console.warn('⚠️ Auto-fix attempt failed:', fixErr)
+            }
+          }
+          
           if (hasValidMetrics && allStepsComplete) {
             setStatus('completed')
             setCurrentStep('report_generation')

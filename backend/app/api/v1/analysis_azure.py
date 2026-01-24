@@ -2389,33 +2389,118 @@ async def process_analysis_azure(
                 logger.error(f"[{request_id}] ⚠️ Completion timeout reached - stopping retries. Analysis can be manually completed using /api/v1/analysis/{analysis_id}/force-complete")
         
         # CRITICAL: If all retries failed, automatically try force-complete as last resort
+        # Use in-memory metrics (from analysis_result) since database update may have failed
         if not completion_success:
             logger.warning(f"[{request_id}] All completion attempts failed - trying automatic force-complete as last resort")
             try:
-                # Import here to avoid circular dependency
-                from fastapi import APIRouter
-                from fastapi.responses import JSONResponse
+                # CRITICAL: Use metrics from analysis_result (in memory) since database may not have them
+                # This ensures we can recover even if the database update failed
+                recovery_metrics = metrics  # metrics variable from earlier in Step 4
                 
-                # Call force-complete logic directly (same as endpoint)
-                final_check = await db_service.get_analysis(analysis_id)
-                if final_check and final_check.get('metrics') and len(final_check.get('metrics', {})) > 0:
-                    # Has metrics - try one final update
-                    logger.info(f"[{request_id}] Auto force-complete: Analysis has metrics, attempting final update")
-                    final_update = await db_service.update_analysis(analysis_id, {
-                        'status': 'completed',
-                        'current_step': 'report_generation',
-                        'step_progress': 100,
-                        'step_message': 'Analysis complete! (auto-recovered)',
-                        'metrics': final_check.get('metrics')
-                    })
-                    if final_update:
-                        await asyncio.sleep(0.1)  # Reduced delay (was 0.3)
-                        verification = await db_service.get_analysis(analysis_id)
-                        if verification and verification.get('status') == 'completed':
-                            completion_success = True
-                            logger.info(f"[{request_id}] ✅ Auto force-complete successful!")
+                if recovery_metrics and len(recovery_metrics) > 0:
+                    logger.info(f"[{request_id}] Auto force-complete: Using in-memory metrics ({len(recovery_metrics)} metrics), attempting final update")
+                    
+                    # Try multiple strategies in sequence
+                    # Strategy 1: Direct async update with all fields
+                    try:
+                        logger.info(f"[{request_id}] Trying recovery strategy: async_full_update")
+                        update_result = await db_service.update_analysis(analysis_id, {
+                            'status': 'completed',
+                            'current_step': 'report_generation',
+                            'step_progress': 100,
+                            'step_message': 'Analysis complete! (auto-recovered)',
+                            'metrics': recovery_metrics,
+                            'steps_completed': {
+                                'step_1_pose_estimation': True,
+                                'step_2_3d_lifting': True,
+                                'step_3_metrics_calculation': True,
+                                'step_4_report_generation': True
+                            }
+                        })
+                        if update_result:
+                            await asyncio.sleep(0.2)
+                            verification = await db_service.get_analysis(analysis_id)
+                            if verification and verification.get('status') == 'completed' and verification.get('metrics'):
+                                completion_success = True
+                                logger.info(f"[{request_id}] ✅ Auto force-complete successful using async_full_update!")
+                    except Exception as strategy1_error:
+                        logger.warning(f"[{request_id}] Strategy async_full_update failed: {strategy1_error}")
+                    
+                    # Strategy 2: Sync update if available
+                    if not completion_success and hasattr(db_service, 'update_analysis_sync'):
+                        try:
+                            logger.info(f"[{request_id}] Trying recovery strategy: sync_full_update")
+                            sync_result = db_service.update_analysis_sync(analysis_id, {
+                                'status': 'completed',
+                                'current_step': 'report_generation',
+                                'step_progress': 100,
+                                'step_message': 'Analysis complete! (auto-recovered sync)',
+                                'metrics': recovery_metrics,
+                                'steps_completed': {
+                                    'step_1_pose_estimation': True,
+                                    'step_2_3d_lifting': True,
+                                    'step_3_metrics_calculation': True,
+                                    'step_4_report_generation': True
+                                }
+                            })
+                            if sync_result:
+                                await asyncio.sleep(0.2)
+                                verification = await db_service.get_analysis(analysis_id)
+                                if verification and verification.get('status') == 'completed' and verification.get('metrics'):
+                                    completion_success = True
+                                    logger.info(f"[{request_id}] ✅ Auto force-complete successful using sync_full_update!")
+                        except Exception as strategy2_error:
+                            logger.warning(f"[{request_id}] Strategy sync_full_update failed: {strategy2_error}")
+                    
+                    # Strategy 3: Update metrics first, then status separately
+                    if not completion_success:
+                        try:
+                            logger.info(f"[{request_id}] Trying recovery strategy: separate_updates")
+                            # Save metrics first
+                            metrics_saved = await db_service.update_analysis(analysis_id, {'metrics': recovery_metrics})
+                            if metrics_saved:
+                                await asyncio.sleep(0.1)
+                                # Then save status
+                                status_saved = await db_service.update_analysis(analysis_id, {
+                                    'status': 'completed',
+                                    'current_step': 'report_generation',
+                                    'step_progress': 100,
+                                    'step_message': 'Analysis complete! (auto-recovered)',
+                                    'steps_completed': {
+                                        'step_1_pose_estimation': True,
+                                        'step_2_3d_lifting': True,
+                                        'step_3_metrics_calculation': True,
+                                        'step_4_report_generation': True
+                                    }
+                                })
+                                if status_saved:
+                                    await asyncio.sleep(0.2)
+                                    verification = await db_service.get_analysis(analysis_id)
+                                    if verification and verification.get('status') == 'completed' and verification.get('metrics'):
+                                        completion_success = True
+                                        logger.info(f"[{request_id}] ✅ Auto force-complete successful using separate_updates!")
+                        except Exception as strategy3_error:
+                            logger.warning(f"[{request_id}] Strategy separate_updates failed: {strategy3_error}")
+                    
+                else:
+                    logger.error(f"[{request_id}] Cannot auto-recover: No metrics available in memory")
+                    
             except Exception as auto_fix_error:
                 logger.error(f"[{request_id}] Auto force-complete also failed: {auto_fix_error}", exc_info=True)
+        
+        # CRITICAL: If still not successful, log critical error
+        if not completion_success:
+            logger.critical(
+                f"[{request_id}] ⚠️⚠️⚠️ CRITICAL: Analysis processing completed but database update failed after all recovery attempts. "
+                f"Analysis ID: {analysis_id}. Metrics are available in memory but not persisted. "
+                f"Manual recovery required: POST /api/v1/analysis/{analysis_id}/force-complete",
+                extra={
+                    "analysis_id": analysis_id,
+                    "has_metrics": bool(metrics),
+                    "metrics_count": len(metrics) if metrics else 0,
+                    "recovery_required": True
+                }
+            )
     
     except asyncio.TimeoutError as e:
         error_msg = (
@@ -3095,13 +3180,19 @@ async def force_complete_analysis(
         
         for retry in range(max_retries):
             try:
-                # Try standard update
+                # Try standard update with all required fields
                 success = await db_service.update_analysis(analysis_id, {
                     'status': 'completed',
                     'current_step': 'report_generation',
                     'step_progress': 100,
                     'step_message': 'Analysis completed (force complete)',
-                    'metrics': metrics
+                    'metrics': metrics,
+                    'steps_completed': {
+                        'step_1_pose_estimation': True,
+                        'step_2_3d_lifting': True,
+                        'step_3_metrics_calculation': True,
+                        'step_4_report_generation': True
+                    }
                 })
                 
                 if success:
@@ -3136,7 +3227,13 @@ async def force_complete_analysis(
                         'current_step': 'report_generation',
                         'step_progress': 100,
                         'step_message': 'Analysis completed (force complete - sync)',
-                        'metrics': metrics
+                        'metrics': metrics,
+                        'steps_completed': {
+                            'step_1_pose_estimation': True,
+                            'step_2_3d_lifting': True,
+                            'step_3_metrics_calculation': True,
+                            'step_4_report_generation': True
+                        }
                     })
                     if sync_success:
                         await asyncio.sleep(0.5)
