@@ -1536,18 +1536,8 @@ class GaitAnalysisService:
         
         logger.info(f"🔍 Joint extraction complete: {frames_processed} frames processed, {frames_with_ankles} frames with ankle data")
         logger.info(f"🔍 Extracted: {len(left_ankle_positions)} left ankle positions, {len(right_ankle_positions)} right ankle positions")
-                left_ankle_positions.append([
-                    keypoints['left_ankle']['x'],
-                    keypoints['left_ankle']['y'],
-                    keypoints['left_ankle']['z']
-                ])
-                right_ankle_positions.append([
-                    keypoints['right_ankle']['x'],
-                    keypoints['right_ankle']['y'],
-                    keypoints['right_ankle']['z']
-                ])
-            
-            if 'left_heel' in keypoints:
+        
+        if len(left_ankle_positions) < 5 or len(right_ankle_positions) < 5:
                 left_heel_positions.append([
                     keypoints['left_heel']['x'],
                     keypoints['left_heel']['y'],
