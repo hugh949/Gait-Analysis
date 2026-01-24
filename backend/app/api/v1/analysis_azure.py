@@ -721,18 +721,18 @@ async def upload_video(
                     logger.error(f"[{request_id}] ❌ Keep-alive fatal error after {keepalive_count} heartbeats: {e}", exc_info=True)
                     # Log the error but don't try to continue - let the outer loop handle it
                     # The outer while True loop will continue if this exception is caught
-            
-            # Start immediate keep-alive task
-            # CRITICAL: Create task in the event loop - it will run independently
-            # The task will continue even after the request handler returns
-            keepalive_task = asyncio.create_task(immediate_keepalive())
-            logger.info(f"[{request_id}] ✅ Started immediate keep-alive task for analysis {analysis_id} (task ID: {id(keepalive_task)})")
-            logger.info(f"[{request_id}] ✅ Keep-alive task is running: {not keepalive_task.done()}")
-            logger.info(f"[{request_id}] ✅ Keep-alive task will continue running after request completes")
-            
-            # Schedule the actual processing task
-            # CRITICAL: Wrap the processing function to add diagnostic logging
-            async def wrapped_process_analysis():
+                
+                # Start immediate keep-alive task
+                # CRITICAL: Create task in the event loop - it will run independently
+                # The task will continue even after the request handler returns
+                keepalive_task = asyncio.create_task(immediate_keepalive())
+                logger.info(f"[{request_id}] ✅ Started immediate keep-alive task for analysis {analysis_id} (task ID: {id(keepalive_task)})")
+                logger.info(f"[{request_id}] ✅ Keep-alive task is running: {not keepalive_task.done()}")
+                logger.info(f"[{request_id}] ✅ Keep-alive task will continue running after request completes")
+                
+                # Schedule the actual processing task
+                # CRITICAL: Wrap the processing function to add diagnostic logging
+                async def wrapped_process_analysis():
                 """Wrapper to add diagnostic logging when background task executes"""
                 logger.error(f"[{request_id}] 🔧🔧🔧 BACKGROUND TASK WRAPPER CALLED 🔧🔧🔧")
                 logger.error(f"[{request_id}] 🔧 About to call process_analysis_azure for {analysis_id}")
@@ -752,15 +752,15 @@ async def upload_video(
                 except Exception as wrapper_error:
                     logger.error(f"[{request_id}] 🔧❌ Background task failed: {type(wrapper_error).__name__}: {wrapper_error}", exc_info=True)
                     raise
-            
-            logger.error(f"[{request_id}] ========== SCHEDULING BACKGROUND TASK ==========")
-            logger.error(f"[{request_id}] 🔧 Analysis ID: {analysis_id}")
-            logger.error(f"[{request_id}] 🔧 About to call background_tasks.add_task")
-            logger.error(f"[{request_id}] 🔧 background_tasks object: {background_tasks}")
-            logger.error(f"[{request_id}] 🔧 background_tasks type: {type(background_tasks)}")
-            
-            # CRITICAL: Verify analysis is still visible before scheduling background task
-            if db_service and db_service._use_mock:
+                
+                logger.error(f"[{request_id}] ========== SCHEDULING BACKGROUND TASK ==========")
+                logger.error(f"[{request_id}] 🔧 Analysis ID: {analysis_id}")
+                logger.error(f"[{request_id}] 🔧 About to call background_tasks.add_task")
+                logger.error(f"[{request_id}] 🔧 background_tasks object: {background_tasks}")
+                logger.error(f"[{request_id}] 🔧 background_tasks type: {type(background_tasks)}")
+                
+                # CRITICAL: Verify analysis is still visible before scheduling background task
+                if db_service and db_service._use_mock:
                 analysis_still_visible = analysis_id in db_service._mock_storage
                 logger.error(f"[{request_id}] 🔍 Analysis still visible in memory before background task: {analysis_still_visible}")
                 if not analysis_still_visible:
@@ -779,24 +779,24 @@ async def upload_video(
                         logger.error(f"[{request_id}] ✅ Recreated analysis in memory")
                     except Exception as recreate_error:
                         logger.error(f"[{request_id}] ❌ Failed to recreate analysis: {recreate_error}", exc_info=True)
-            
-            if background_tasks is None:
-                # Fallback: use asyncio.create_task if BackgroundTasks not available
-                import asyncio
-                asyncio.create_task(wrapped_process_analysis())
-                logger.info(f"[{request_id}] ✅ Background task scheduled via asyncio.create_task")
-            else:
-                background_tasks.add_task(wrapped_process_analysis)
-                logger.info(f"[{request_id}] ✅ Background task scheduled via background_tasks.add_task")
-            
-            logger.error(f"[{request_id}] ✅✅✅ BACKGROUND TASK SCHEDULED ✅✅✅")
-            logger.info(f"[{request_id}] ✅ Background processing task scheduled for analysis {analysis_id}", extra={"analysis_id": analysis_id})
-            logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
-            logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
-            
-            
-            # CRITICAL: Final verification - ensure analysis is visible before returning
-            if db_service and db_service._use_mock:
+                
+                if background_tasks is None:
+                    # Fallback: use asyncio.create_task if BackgroundTasks not available
+                    import asyncio
+                    asyncio.create_task(wrapped_process_analysis())
+                    logger.info(f"[{request_id}] ✅ Background task scheduled via asyncio.create_task")
+                else:
+                    background_tasks.add_task(wrapped_process_analysis)
+                    logger.info(f"[{request_id}] ✅ Background task scheduled via background_tasks.add_task")
+                
+                logger.error(f"[{request_id}] ✅✅✅ BACKGROUND TASK SCHEDULED ✅✅✅")
+                logger.info(f"[{request_id}] ✅ Background processing task scheduled for analysis {analysis_id}", extra={"analysis_id": analysis_id})
+                logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
+                logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
+                
+                
+                # CRITICAL: Final verification - ensure analysis is visible before returning
+                if db_service and db_service._use_mock:
                 final_check = analysis_id in db_service._mock_storage
                 logger.error(f"[{request_id}] 🔍🔍🔍 FINAL VERIFICATION BEFORE RETURN 🔍🔍🔍")
                 logger.error(f"[{request_id}] 🔍 Analysis in memory: {final_check}")
@@ -821,20 +821,20 @@ async def upload_video(
                         logger.error(f"[{request_id}] ✅ Last resort: Recreated analysis")
                     except Exception as last_resort_error:
                         logger.error(f"[{request_id}] ❌ Last resort recreation failed: {last_resort_error}", exc_info=True)
-        except Exception as e:
-            logger.error(f"[{request_id}] Error scheduling background task: {e}", exc_info=True)
-            # Update analysis status to failed
-            try:
-                await db_service.update_analysis(analysis_id, {
-                    'status': 'failed',
-                    'step_message': f'Failed to schedule analysis: {str(e)}'
-                })
-            except:
-                pass
+            except Exception as e:
+                logger.error(f"[{request_id}] Error scheduling background task: {e}", exc_info=True)
+                # Update analysis status to failed
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'status': 'failed',
+                        'step_message': f'Failed to schedule analysis: {str(e)}'
+                    })
+                except:
+                    pass
                 logger.error(f"[{request_id}] Failed to schedule video analysis: {e}", exc_info=True)
                 # Don't fail the upload - analysis is created, just log the error
                 # The analysis will remain in 'processing' status
-            
+                
             upload_total_duration = time.time() - upload_request_start
             logger.info(
                 f"[{request_id}] ========== UPLOAD REQUEST COMPLETE ==========",
@@ -859,7 +859,7 @@ async def upload_video(
                 "analysis_id": analysis_id,
                 "status": "processing",
                 "message": "Video uploaded successfully. Analysis in progress.",
-                "patient_id": patient_id,
+                "patient_id": patient_id_val,
                 "created_at": datetime.utcnow().isoformat()
             })
     
