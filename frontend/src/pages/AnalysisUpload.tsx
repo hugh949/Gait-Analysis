@@ -692,7 +692,8 @@ export default function AnalysisUpload() {
       localStorage.removeItem('lastAnalysisId')
     }
     
-    // Reset state
+    // CRITICAL: Fully reset state to ready for new upload
+    // Don't navigate away - just reset to idle state so user can select new file
     setStatus('idle')
     setProgress(0)
     setCurrentStep(null)
@@ -701,6 +702,15 @@ export default function AnalysisUpload() {
     setAnalysisId(null)
     setFile(null)
     setError(null)
+    progressRef.current = 0
+    
+    // Clear file input if it exists
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
+    
+    console.log('✅ Cancellation complete - ready for new file upload')
   }
 
   // Check for existing processing analysis on mount

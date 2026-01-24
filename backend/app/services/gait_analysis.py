@@ -892,6 +892,35 @@ class GaitAnalysisService:
             
             import time
             start_time = time.time()
+            
+            # CRITICAL: Log detailed input validation before calculation
+            logger.info("=" * 80)
+            logger.info(f"🔍 [STEP 3] PRE-CALCULATION VALIDATION")
+            logger.info(f"🔍   - 3D keypoint frames: {len(frames_3d_keypoints)}")
+            logger.info(f"🔍   - Timestamps: {len(frame_timestamps)}")
+            logger.info(f"🔍   - FPS: {video_fps}")
+            logger.info(f"🔍   - Reference length: {reference_length_mm}mm")
+            
+            # Validate 3D keypoints have actual 3D data (not just 2D with z=0)
+            if frames_3d_keypoints and len(frames_3d_keypoints) > 0:
+                sample_frame = frames_3d_keypoints[0]
+                if isinstance(sample_frame, dict) and 'left_ankle' in sample_frame:
+                    left_ankle_z = sample_frame['left_ankle'].get('z', 0.0)
+                    right_ankle_z = sample_frame['right_ankle'].get('z', 0.0) if 'right_ankle' in sample_frame else 0.0
+                    avg_z = (abs(left_ankle_z) + abs(right_ankle_z)) / 2.0
+                    logger.info(f"🔍   - Sample Z-depth (left_ankle): {left_ankle_z:.2f}mm")
+                    logger.info(f"🔍   - Sample Z-depth (right_ankle): {right_ankle_z:.2f}mm")
+                    logger.info(f"🔍   - Average Z-depth: {avg_z:.2f}mm")
+                    if avg_z < 1.0:
+                        logger.warning(f"⚠️ [STEP 3] WARNING: Very low Z-depth values detected! 3D lifting may not be working properly.")
+                        logger.warning(f"⚠️   - This suggests Step 2 (3D lifting) may have produced 2D data instead of 3D")
+                    else:
+                        logger.info(f"✅ [STEP 3] Z-depth values look reasonable - 3D lifting appears to be working")
+            
+            logger.info("=" * 80)
+            logger.info(f"🔍 [STEP 3] STARTING _calculate_gait_metrics() at {time.strftime('%H:%M:%S')}")
+            logger.info("=" * 80)
+            
             metrics = self._calculate_gait_metrics(
                 frames_3d_keypoints,
                 frame_timestamps,
@@ -904,14 +933,21 @@ class GaitAnalysisService:
             logger.info("=" * 80)
             logger.info(f"✅ [STEP 3] _calculate_gait_metrics() RETURNED")
             logger.info(f"✅   - Calculation time: {calculation_time:.2f}s")
+            logger.info(f"✅   - Processing rate: {len(frames_3d_keypoints) / calculation_time:.1f} frames/sec" if calculation_time > 0 else "✅   - Processing rate: N/A")
             logger.info(f"✅   - Metrics count: {len(metrics) if metrics else 0}")
             logger.info(f"✅   - Metrics type: {type(metrics)}")
             if metrics:
                 logger.info(f"✅   - Metrics keys ({len(metrics)}): {list(metrics.keys())[:15]}")
-                logger.info(f"✅   - Has cadence: {metrics.get('cadence') is not None}")
-                logger.info(f"✅   - Has walking_speed: {metrics.get('walking_speed') is not None}")
-                logger.info(f"✅   - Has step_length: {metrics.get('step_length') is not None}")
+                logger.info(f"✅   - Has cadence: {metrics.get('cadence') is not None}, value: {metrics.get('cadence', 0):.2f}")
+                logger.info(f"✅   - Has walking_speed: {metrics.get('walking_speed') is not None}, value: {metrics.get('walking_speed', 0):.0f}mm/s")
+                logger.info(f"✅   - Has step_length: {metrics.get('step_length') is not None}, value: {metrics.get('step_length', 0):.0f}mm")
                 logger.info(f"✅   - Is fallback: {metrics.get('fallback_metrics', False)}")
+                
+                # Validate metrics are meaningful (not zeros or defaults)
+                if metrics.get('cadence', 0) == 0 or metrics.get('walking_speed', 0) == 0:
+                    logger.warning(f"⚠️ [STEP 3] WARNING: Metrics contain zero values - calculation may have issues")
+                else:
+                    logger.info(f"✅ [STEP 3] Metrics appear valid (non-zero values)")
             else:
                 logger.error(f"❌ [STEP 3] _calculate_gait_metrics() returned EMPTY metrics!")
             logger.info("=" * 80)

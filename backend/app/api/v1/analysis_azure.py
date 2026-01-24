@@ -2585,7 +2585,7 @@ async def process_analysis_azure(
                             'status': 'completed',
                             'current_step': 'report_generation',
                             'step_progress': 100,
-                            'step_message': 'Analysis complete! (async final retry)',
+                            'step_message': 'Analysis complete!',
                             'metrics': metrics
                         })
                         logger.info(f"[{request_id}] Analysis completion update attempted on final async retry")
@@ -2637,7 +2637,7 @@ async def process_analysis_azure(
                             'status': 'completed',
                             'current_step': 'report_generation',
                             'step_progress': 100,
-                            'step_message': 'Analysis complete! (auto-recovered)',
+                            'step_message': 'Analysis complete!',
                             'metrics': recovery_metrics,
                             'steps_completed': {
                                 'step_1_pose_estimation': True,
@@ -2663,7 +2663,7 @@ async def process_analysis_azure(
                                 'status': 'completed',
                                 'current_step': 'report_generation',
                                 'step_progress': 100,
-                                'step_message': 'Analysis complete! (auto-recovered sync)',
+                                'step_message': 'Analysis complete!',
                                 'metrics': recovery_metrics,
                                 'steps_completed': {
                                     'step_1_pose_estimation': True,
@@ -2694,7 +2694,7 @@ async def process_analysis_azure(
                                     'status': 'completed',
                                     'current_step': 'report_generation',
                                     'step_progress': 100,
-                                    'step_message': 'Analysis complete! (auto-recovered)',
+                                    'step_message': 'Analysis complete!',
                                     'steps_completed': {
                                         'step_1_pose_estimation': True,
                                         'step_2_3d_lifting': True,
