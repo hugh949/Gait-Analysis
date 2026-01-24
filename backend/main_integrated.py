@@ -383,6 +383,25 @@ async def api_health_check():
         "version": "3.0.0"
     }
 
+# CRITICAL: Add diagnostic endpoint to check router status
+@app.get("/api/v1/debug/routes")
+async def debug_routes():
+    """Debug endpoint to check registered routes"""
+    routes_info = []
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            route_info = {"path": route.path}
+            if hasattr(route, 'methods'):
+                route_info["methods"] = list(route.methods) if hasattr(route.methods, '__iter__') else [str(route.methods)]
+            routes_info.append(route_info)
+    
+    return {
+        "total_routes": len(routes_info),
+        "routes": routes_info,
+        "analysis_router_registered": any("/api/v1/analysis" in r.get("path", "") for r in routes_info),
+        "upload_endpoint_exists": any("/upload" in r.get("path", "") and "/api/v1/analysis" in r.get("path", "") for r in routes_info)
+    }
+
 
 # Health check endpoints
 @app.get("/")
