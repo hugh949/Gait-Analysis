@@ -380,11 +380,11 @@ async def upload_video(
                             pose_landmarker=gait_service.pose_landmarker if gait_service else None
                         )
                         
-                    quality_result = validator.validate_video_for_gait_analysis(
-                        video_path=tmp_path,
-                        view_type=str(view_type),
-                        sample_frames=20
-                    )
+                        quality_result = validator.validate_video_for_gait_analysis(
+                            video_path=tmp_path,
+                            view_type=str(view_type),
+                            sample_frames=20
+                        )
                         
                         logger.info(f"[{request_id}] 🔍 Video quality validation results:")
                         logger.info(f"[{request_id}] 🔍   - Quality score: {quality_result.get('quality_score', 0):.1f}%")
