@@ -523,15 +523,15 @@ async def upload_video(
                 logger.error(f"[{request_id}] create_analysis returned: {creation_success}")
                 
                 if not creation_success:
-                logger.error(f"[{request_id}] ❌❌❌ FAILED TO CREATE ANALYSIS RECORD ❌❌❌", extra={"analysis_id": analysis_id})
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "error": "DATABASE_ERROR",
-                        "message": "Failed to create analysis record",
-                        "details": {"analysis_id": analysis_id}
-                    }
-                )
+                    logger.error(f"[{request_id}] ❌❌❌ FAILED TO CREATE ANALYSIS RECORD ❌❌❌", extra={"analysis_id": analysis_id})
+                    return JSONResponse(
+                        status_code=500,
+                        content={
+                            "error": "DATABASE_ERROR",
+                            "message": "Failed to create analysis record",
+                            "details": {"analysis_id": analysis_id}
+                        }
+                    )
                 
                 logger.error(f"[{request_id}] ✅✅✅ ANALYSIS RECORD CREATED SUCCESSFULLY ✅✅✅")
                 logger.info(
