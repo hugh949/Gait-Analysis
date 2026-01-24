@@ -359,7 +359,7 @@ async def upload_video(
                         "message": "Failed to read uploaded file",
                         "details": {"error": str(e)}
                     }
-            )
+                )
             
             # Validate file is not empty
             if file_size == 0:
