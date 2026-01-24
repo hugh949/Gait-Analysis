@@ -205,7 +205,7 @@ jobs:
           exit 1
         fi
         
-        # OPTIMIZATION: Use ACR build with cache and reduced logging
+        # OPTIMIZATION: Use ACR build with cache
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
         GIT_COMMIT="${{ github.sha }}"
         BUILD_VERSION="${{ github.run_number }}"
@@ -215,6 +215,7 @@ jobs:
         
         # ACR automatically caches layers - this speeds up builds significantly
         # Only changed layers are rebuilt (system deps, pip packages cached if unchanged)
+        # Note: Removed --no-logs to see build output for debugging
         if ! az acr build \
           --registry ${{ env.ACR_NAME }} \
           --image ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
@@ -223,7 +224,6 @@ jobs:
           --build-arg BUILD_DATE="$BUILD_DATE" \
           --build-arg GIT_COMMIT="$GIT_COMMIT" \
           --build-arg BUILD_VERSION="$BUILD_VERSION" \
-          --no-logs \
           .; then
           echo ""
           echo "❌ Docker build failed!"
