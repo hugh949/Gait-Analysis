@@ -175,24 +175,38 @@ async def upload_video(
     Raises:
         HTTPException: On validation errors or service failures
     """
-    # Structured logging with request context
-    request_id = str(uuid.uuid4())[:8]
+    # CRITICAL: Wrap entire function in try/except to catch ANY error, even before logging
+    request_id = None
+    try:
+        request_id = str(uuid.uuid4())[:8]
+    except Exception as e:
+        # Even UUID generation can fail - use fallback
+        import random
+        request_id = f"req{random.randint(1000, 9999)}"
+        logger.error(f"Failed to generate UUID for request_id: {e}")
+    
     upload_request_start = time.time()
     
     # CRITICAL: Log upload start immediately to track if request reaches server
-    logger.info(
-        f"[{request_id}] ========== UPLOAD REQUEST RECEIVED ==========",
-        extra={
-            "request_id": request_id,
-            "filename": file.filename if file else None,
-            "content_type": request.headers.get("content-type"),
-            "content_length": request.headers.get("content-length"),
-            "patient_id": patient_id,
-            "view_type": view_type,
-            "fps": fps,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    )
+    # Use try/except to ensure logging never breaks the upload
+    try:
+        logger.info(
+            f"[{request_id}] ========== UPLOAD REQUEST RECEIVED ==========",
+            extra={
+                "request_id": request_id,
+                "filename": file.filename if file else None,
+                "content_type": request.headers.get("content-type") if request else None,
+                "content_length": request.headers.get("content-length") if request else None,
+                "patient_id": patient_id,
+                "view_type": str(view_type) if view_type else None,
+                "fps": fps,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+    except Exception as log_err:
+        # Logging failed - use print as fallback and continue
+        print(f"ERROR: Failed to log upload start: {log_err}")
+        logger.error(f"[{request_id}] Failed to log upload start: {log_err}", exc_info=True)
     
     # Log estimated file size from Content-Length header if available
     content_length = request.headers.get("content-length")
@@ -833,18 +847,46 @@ async def upload_video(
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
-        # Catch-all for unexpected errors
-        logger.error(
-            f"[{request_id}] Unexpected error uploading video: {e}",
-            extra={"error_type": type(e).__name__},
-            exc_info=True
-        )
+        # Catch-all for unexpected errors - log EVERYTHING
+        error_type = type(e).__name__
+        error_msg = str(e)
+        error_traceback = None
+        try:
+            import traceback
+            error_traceback = traceback.format_exc()
+        except:
+            pass
+        
+        # Log with maximum detail
+        try:
+            logger.error(
+                f"[{request_id}] ❌❌❌ UNEXPECTED ERROR UPLOADING VIDEO ❌❌❌",
+                extra={
+                    "error_type": error_type,
+                    "error_message": error_msg,
+                    "error_traceback": error_traceback,
+                    "filename": file.filename if file else None,
+                    "patient_id": patient_id
+                },
+                exc_info=True
+            )
+        except:
+            # Even logging failed - use print
+            print(f"CRITICAL ERROR [{request_id}]: {error_type}: {error_msg}")
+            if error_traceback:
+                print(error_traceback)
+        
+        # Return detailed error to help diagnose
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "INTERNAL_SERVER_ERROR",
-                "message": "An unexpected error occurred while processing the upload",
-                "details": {"error_type": type(e).__name__}
+                "message": f"An unexpected error occurred: {error_type}: {error_msg}",
+                "details": {
+                    "error_type": error_type,
+                    "error_message": error_msg,
+                    "request_id": request_id
+                }
             }
         )
     
