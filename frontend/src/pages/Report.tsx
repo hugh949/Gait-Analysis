@@ -229,10 +229,19 @@ export default function Report() {
   // Check if this was force-completed
   const isForceCompleted = analysis.step_message?.includes('force complete') || false
 
-  // If analysis is still processing, redirect to upload page
+  // If analysis is still processing, check if metrics exist (may be complete but status not updated)
   const status = analysis.status || 'unknown'
+  const metrics = analysis.metrics || {}
+  const hasMetrics = metrics && Object.keys(metrics).length > 0
+  const hasCoreMetrics = hasMetrics && (
+    metrics.cadence !== undefined || 
+    metrics.walking_speed !== undefined || 
+    metrics.step_length !== undefined
+  )
   
-  if (status === 'processing') {
+  // Allow viewing report if metrics exist, even if status is 'processing'
+  // This handles cases where processing completed but status update failed
+  if (status === 'processing' && !hasCoreMetrics) {
     return (
       <div className="report-page">
         <div className="processing-redirect">
@@ -250,8 +259,9 @@ export default function Report() {
       </div>
     )
   }
-
-  const metrics = analysis.metrics || {}
+  
+  // If processing but has metrics, show a notice but allow viewing
+  const showProcessingNotice = status === 'processing' && hasCoreMetrics
 
   // Use professional assessments from backend if available
   const fallRiskAssessment = metrics.fall_risk_assessment || {}
@@ -313,7 +323,28 @@ export default function Report() {
         </div>
       )}
 
-      {status === 'completed' && metrics && Object.keys(metrics).length > 0 && (
+      {showProcessingNotice && (
+        <div className="status-warning" style={{ 
+          backgroundColor: '#fff3cd', 
+          border: '1px solid #ffc107', 
+          borderRadius: '8px', 
+          padding: '1rem', 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <AlertCircle size={20} style={{ color: '#856404' }} />
+          <div>
+            <strong style={{ color: '#856404' }}>Note:</strong>
+            <p style={{ margin: '0.25rem 0 0 0', color: '#856404' }}>
+              Analysis processing is complete and metrics are available. The status update may be delayed, but your report is ready to view.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {(status === 'completed' || (status === 'processing' && hasCoreMetrics)) && metrics && Object.keys(metrics).length > 0 && (
         <div className="report-sections-professional">
           {/* Executive Summary Section */}
           <section className="report-section executive-summary">

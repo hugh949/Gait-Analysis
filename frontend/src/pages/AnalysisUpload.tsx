@@ -1047,18 +1047,33 @@ export default function AnalysisUpload() {
             borderRadius: '8px' 
           }}>
             <p style={{ margin: 0, fontWeight: '500' }}>
-              {stepProgress < 95 && '🔄 Step 4: Starting report generation...'}
-              {stepProgress >= 95 && stepProgress < 98 && '📊 Step 4: Validating metrics and preparing report...'}
-              {stepProgress >= 98 && stepProgress < 100 && (
-                stepMessage.includes('Retrying') 
+              {stepProgress < 94 && '🔄 Step 4: Report Generation - Starting final phase...'}
+              {stepProgress >= 94 && stepProgress < 95 && '🔍 Step 4: Validating metrics from previous steps...'}
+              {stepProgress >= 95 && stepProgress < 96 && '✅ Step 4: Verifying analysis record in database...'}
+              {stepProgress >= 96 && stepProgress < 96.5 && '🔄 Step 4: Stopping background processes...'}
+              {stepProgress >= 96.5 && stepProgress < 97 && '🔍 Step 4: Checking analysis record exists...'}
+              {stepProgress >= 97 && stepProgress < 97.5 && '📋 Step 4: Preparing to save results to database...'}
+              {stepProgress >= 97.5 && stepProgress < 98 && '💾 Step 4: Saving analysis results to database...'}
+              {stepProgress >= 98 && stepProgress < 99 && '💾 Step 4: Saving final results to database...'}
+              {stepProgress >= 99 && stepProgress < 99.5 && (
+                stepMessage?.includes('Retrying') || stepMessage?.includes('attempt')
                   ? `🔄 ${stepMessage}` 
-                  : '💾 Step 4: Saving analysis results to database... This will take just a moment.'
+                  : stepMessage?.includes('Fallback')
+                    ? `🔄 ${stepMessage}`
+                    : '💾 Step 4: Saving final results to database...'
               )}
-              {stepProgress === 100 && '✅ Step 4: Report generation complete!'}
+              {stepProgress >= 99.5 && stepProgress < 100 && (
+                stepMessage?.includes('Verifying')
+                  ? `✅ ${stepMessage}`
+                  : stepMessage?.includes('Fallback')
+                    ? `🔄 ${stepMessage}`
+                    : '✅ Step 4: Verifying database save was successful...'
+              )}
+              {stepProgress === 100 && '✅ Step 4: Report generation complete! Analysis ready to view.'}
             </p>
-            {stepProgress >= 98 && stepProgress < 100 && (
+            {stepProgress >= 93 && stepProgress < 100 && (
               <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9em', color: '#666' }}>
-                {stepMessage || 'Finalizing analysis and saving results to database...'}
+                {stepMessage || 'Processing... This may take a moment as we save your results.'}
               </p>
             )}
           </div>
@@ -1272,12 +1287,33 @@ export default function AnalysisUpload() {
                       : 'Generating analysis reports'}
                   </div>
                   {currentStep === 'report_generation' && status === 'processing' && stepProgress > 0 && stepProgress < 100 && (
-                    <div className="step-progress-indicator">
-                      <div className="step-progress-track">
-                        <div className="step-progress-fill" style={{ width: `${stepProgress}%` }}></div>
+                    <>
+                      <div className="step-progress-indicator">
+                        <div className="step-progress-track">
+                          <div className="step-progress-fill" style={{ width: `${stepProgress}%` }}></div>
+                        </div>
+                        <span className="step-progress-text">{stepProgress}%</span>
                       </div>
-                      <span className="step-progress-text">{stepProgress}%</span>
-                    </div>
+                      <div className="step-detail-message" style={{ 
+                        fontSize: '0.85rem', 
+                        color: '#666', 
+                        marginTop: '0.5rem',
+                        fontStyle: 'italic',
+                        minHeight: '1.2rem'
+                      }}>
+                        {stepProgress < 94 && 'Starting final phase...'}
+                        {stepProgress >= 94 && stepProgress < 95 && 'Validating metrics...'}
+                        {stepProgress >= 95 && stepProgress < 96 && 'Verifying database record...'}
+                        {stepProgress >= 96 && stepProgress < 97 && 'Preparing save operation...'}
+                        {stepProgress >= 97 && stepProgress < 98 && 'Saving to database...'}
+                        {stepProgress >= 98 && stepProgress < 99 && 'Finalizing save...'}
+                        {stepProgress >= 99 && stepProgress < 100 && (
+                          stepMessage?.includes('Retrying') || stepMessage?.includes('Fallback') || stepMessage?.includes('Verifying')
+                            ? stepMessage
+                            : 'Verifying save...'
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

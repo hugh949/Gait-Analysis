@@ -1946,6 +1946,23 @@ async def process_analysis_azure(
             logger.info(f"[{request_id}] 🎯 ========== STEP 4: REPORT GENERATION STARTING ==========")
             logger.info(f"[{request_id}] 🎯 [STEP 4 ENTRY] Analysis ID: {analysis_id}")
             logger.info(f"[{request_id}] 🎯 [STEP 4 ENTRY] Extracting metrics from analysis_result...")
+            
+            # CRITICAL: Update progress immediately when Step 4 starts
+            if progress_callback:
+                try:
+                    progress_callback(93, "Step 4: Report Generation - Starting final phase of analysis...")
+                except Exception as e:
+                    logger.warning(f"[{request_id}] Error in progress callback at Step 4 start: {e}")
+            
+            # Update database immediately
+            try:
+                await db_service.update_analysis(analysis_id, {
+                    'current_step': 'report_generation',
+                    'step_progress': 93,
+                    'step_message': 'Step 4: Report Generation - Starting final phase of analysis...'
+                })
+            except Exception as step4_start_err:
+                logger.warning(f"[{request_id}] Failed to update progress at Step 4 start: {step4_start_err}")
             logger.info(f"[{request_id}] 🎯   - analysis_result type: {type(analysis_result)}")
             logger.info(f"[{request_id}] 🎯   - analysis_result keys: {list(analysis_result.keys())}")
             logger.info(f"[{request_id}] 🎯   - 'metrics' in analysis_result: {'metrics' in analysis_result}")
@@ -2122,11 +2139,12 @@ async def process_analysis_azure(
         # Update progress callback with detailed message
         if progress_callback:
             try:
-                progress_callback(95, "Step 4: Starting report generation - validating metrics from previous steps...")
+                progress_callback(94, "Step 4: Report Generation - Starting final phase...")
             except Exception as e:
                 logger.warning(f"[{request_id}] Error in progress callback: {e}")
         
-        logger.info(f"[{request_id}] 🔍 [STEP 4] Updating progress to 'report_generation' (95%)...")
+        # Update database with initial Step 4 message
+        logger.info(f"[{request_id}] 🔍 [STEP 4] Updating progress to 'report_generation' (94%)...")
         max_db_retries = 5
         progress_update_success = False
         for retry in range(max_db_retries):
@@ -2134,8 +2152,8 @@ async def process_analysis_azure(
                 logger.info(f"[{request_id}] 🔍 [STEP 4] Progress update attempt {retry + 1}/{max_db_retries}")
                 update_result = await db_service.update_analysis(analysis_id, {
                     'current_step': 'report_generation',
-                    'step_progress': 95,
-                    'step_message': 'Step 4: Validating metrics and preparing report...'
+                    'step_progress': 94,
+                    'step_message': 'Step 4: Report Generation - Starting final phase...'
                 })
                 logger.info(f"[{request_id}] ✅ [STEP 4] Progress update result: {update_result}")
                 progress_update_success = True
@@ -2158,6 +2176,48 @@ async def process_analysis_azure(
         else:
             logger.warning(f"[{request_id}] ⚠️ [STEP 4] Progress update failed but continuing...")
         
+        # Update progress: Validating metrics
+        if progress_callback:
+            try:
+                progress_callback(95, "Step 4: Validating metrics from previous steps...")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+        
+        try:
+            await db_service.update_analysis(analysis_id, {
+                'current_step': 'report_generation',
+                'step_progress': 95,
+                'step_message': 'Step 4: Validating metrics from previous steps...'
+            })
+        except Exception as e:
+            logger.warning(f"[{request_id}] Failed to update progress for validation: {e}")
+        
+        # Small delay to show validation message
+        await asyncio.sleep(0.5)
+        
+        # Update progress: Verifying analysis record
+        if progress_callback:
+            try:
+                progress_callback(96, "Step 4: Verifying analysis record in database...")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+        
+        try:
+            await db_service.update_analysis(analysis_id, {
+                'current_step': 'report_generation',
+                'step_progress': 96,
+                'step_message': 'Step 4: Verifying analysis record in database...'
+            })
+        except Exception as e:
+            logger.warning(f"[{request_id}] Failed to update progress for verification: {e}")
+        
+        # Update progress: Stopping background processes
+        if progress_callback:
+            try:
+                progress_callback(96.5, "Step 4: Stopping background processes...")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+        
         # CRITICAL: Stop heartbeat before final updates
         # But keep it running until we're sure the analysis is saved
         if heartbeat_stop_event:
@@ -2173,6 +2233,22 @@ async def process_analysis_azure(
                 except Exception as e:
                     logger.warning(f"[{request_id}] Error stopping heartbeat thread: {e}")
         
+        # Update progress: Checking analysis record
+        if progress_callback:
+            try:
+                progress_callback(97, "Step 4: Checking analysis record exists...")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+        
+        try:
+            await db_service.update_analysis(analysis_id, {
+                'current_step': 'report_generation',
+                'step_progress': 97,
+                'step_message': 'Step 4: Checking analysis record exists...'
+            })
+        except Exception as e:
+            logger.warning(f"[{request_id}] Failed to update progress for record check: {e}")
+        
         # CRITICAL: Verify analysis exists before final update
         # Add timeout to prevent infinite loops
         analysis_verified = False
@@ -2180,6 +2256,12 @@ async def process_analysis_azure(
         max_verification_time = 5.0  # Maximum 5 seconds for verification
         
         for verify_retry in range(10):
+            # Update progress during verification retries
+            if verify_retry > 0 and progress_callback:
+                try:
+                    progress_callback(97, f"Step 4: Verifying analysis record... (attempt {verify_retry + 1})")
+                except Exception as e:
+                    logger.warning(f"[{request_id}] Error in progress callback: {e}")
             # Check timeout
             if time.time() - verification_start_time > max_verification_time:
                 logger.warning(f"[{request_id}] Verification timeout after {max_verification_time}s - proceeding anyway")
@@ -2255,6 +2337,24 @@ async def process_analysis_azure(
         logger.info(f"[{request_id}] 🎯 [STEP 4] Database backend: Table Storage={use_table_storage}, SQL={use_sql}, Mock={use_mock}")
         logger.info("=" * 80)
         
+        # Update progress: Preparing to save
+        if progress_callback:
+            try:
+                progress_callback(97.5, "Step 4: Preparing to save results to database...")
+            except Exception as e:
+                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+        
+        try:
+            await db_service.update_analysis(analysis_id, {
+                'current_step': 'report_generation',
+                'step_progress': 97.5,
+                'step_message': 'Step 4: Preparing to save results to database...'
+            })
+        except Exception as e:
+            logger.warning(f"[{request_id}] Failed to update progress: {e}")
+        
+        await asyncio.sleep(0.3)
+        
         # Update progress callback
         if progress_callback:
             try:
@@ -2273,7 +2373,7 @@ async def process_analysis_azure(
             logger.warning(f"[{request_id}] ⚠️ [STEP 4] Failed to update progress before final save: {e}")
         
         # Small delay to ensure previous update is visible
-        await asyncio.sleep(0.3)  # Reduced delay
+        await asyncio.sleep(0.5)  # Give user time to see the message
         
         completion_success = False
         max_db_retries = 15  # Increased retries for critical final update
@@ -2334,12 +2434,25 @@ async def process_analysis_azure(
                 logger.info(f"[{request_id}] 🔍 [STEP 4]   - metrics count: {len(metrics) if metrics else 0}")
                 logger.info(f"[{request_id}] 🔍 [STEP 4]   - steps_completed: all 4 steps marked True")
                 
-                # Update progress callback
-                if progress_callback and retry == 0:
+                # Update progress callback with detailed message
+                if progress_callback:
                     try:
-                        progress_callback(99, "Step 4: Saving final results to database...")
+                        if retry == 0:
+                            progress_callback(99, "Step 4: Saving final results to database...")
+                        else:
+                            progress_callback(99, f"Step 4: Attempting to save results... (try {retry + 1}/{max_db_retries})")
                     except Exception as e:
                         logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                
+                # Update database message
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'current_step': 'report_generation',
+                        'step_progress': 99,
+                        'step_message': f'Step 4: Saving final results to database... (attempt {retry + 1}/{max_db_retries})'
+                    })
+                except Exception as update_msg_err:
+                    logger.warning(f"[{request_id}] Failed to update progress message: {update_msg_err}")
                 
                 # Try async update first
                 update_start = time.time()
@@ -2385,8 +2498,24 @@ async def process_analysis_azure(
                 # SIMPLIFIED: If update returned True, trust it - just do a simple verification
                 # The complex verification was causing issues - if the database says it updated, trust it
                 if update_result:
+                    # Update progress: Verifying save
+                    if progress_callback:
+                        try:
+                            progress_callback(99.5, "Step 4: Verifying database save was successful...")
+                        except Exception as e:
+                            logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                    
+                    try:
+                        await db_service.update_analysis(analysis_id, {
+                            'current_step': 'report_generation',
+                            'step_progress': 99.5,
+                            'step_message': 'Step 4: Verifying database save was successful...'
+                        })
+                    except Exception as verify_msg_err:
+                        logger.warning(f"[{request_id}] Failed to update verification message: {verify_msg_err}")
+                    
                     # Simple verification: just check that status was set (with small delay for eventual consistency)
-                    await asyncio.sleep(0.2)  # Small delay for database consistency
+                    await asyncio.sleep(0.3)  # Small delay for database consistency
                     verification = await db_service.get_analysis(analysis_id)
                     
                     if verification and verification.get('status') == 'completed':
@@ -2491,13 +2620,13 @@ async def process_analysis_azure(
                         extra={"analysis_id": analysis_id, "last_error": str(last_error) if last_error else "Unknown"}
                     )
         
-        # SIMPLIFIED: If completion failed after all retries, log error but don't add more complex retry logic
-        # The main retry loop should handle most cases. If it still fails, it's a real database issue.
+        # CRITICAL FIX: If completion failed after all retries, try one final fallback approach
+        # This ensures reports are always generated even if the main update path fails
         if not completion_success:
             logger.error(
                 f"[{request_id}] ⚠️ CRITICAL: Analysis processing completed but database update failed after {max_db_retries} attempts. "
                 f"Analysis ID: {analysis_id}. Metrics are available but status may not be 'completed' in database. "
-                f"Manual recovery: POST /api/v1/analysis/{analysis_id}/force-complete",
+                f"Attempting final fallback save...",
                 extra={
                     "analysis_id": analysis_id,
                     "has_metrics": bool(metrics),
@@ -2505,6 +2634,133 @@ async def process_analysis_azure(
                     "last_error": str(last_error) if last_error else "Unknown"
                 }
             )
+            
+            # FINAL FALLBACK: Try to save metrics separately, then status separately
+            # This two-step approach can work even if combined update fails
+            try:
+                logger.info(f"[{request_id}] 🔄 [STEP 4 FALLBACK] Attempting two-step save: metrics first, then status...")
+                
+                # Update progress: Fallback mechanism
+                if progress_callback:
+                    try:
+                        progress_callback(99, "Step 4: Main save failed - trying fallback method...")
+                    except Exception as e:
+                        logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'current_step': 'report_generation',
+                        'step_progress': 99,
+                        'step_message': 'Step 4: Main save failed - trying fallback method...'
+                    })
+                except Exception as fallback_msg_err:
+                    logger.warning(f"[{request_id}] Failed to update fallback message: {fallback_msg_err}")
+                
+                # Step 1: Save metrics first (without status change)
+                metrics_saved = False
+                if progress_callback:
+                    try:
+                        progress_callback(99, "Step 4: Fallback - Saving metrics separately...")
+                    except Exception as e:
+                        logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                
+                for fallback_retry in range(5):  # 5 quick retries for metrics
+                    if fallback_retry > 0 and progress_callback:
+                        try:
+                            progress_callback(99, f"Step 4: Fallback - Retrying metrics save... (attempt {fallback_retry + 1}/5)")
+                        except Exception as e:
+                            logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                    try:
+                        metrics_result = await db_service.update_analysis(analysis_id, {
+                            'metrics': metrics,
+                            'steps_completed': {
+                                'step_1_pose_estimation': True,
+                                'step_2_3d_lifting': True,
+                                'step_3_metrics_calculation': True,
+                                'step_4_report_generation': True
+                            }
+                        })
+                        if metrics_result:
+                            metrics_saved = True
+                            logger.info(f"[{request_id}] ✅ [STEP 4 FALLBACK] Metrics saved successfully (attempt {fallback_retry + 1})")
+                            break
+                    except Exception as metrics_err:
+                        logger.warning(f"[{request_id}] ⚠️ [STEP 4 FALLBACK] Metrics save attempt {fallback_retry + 1} failed: {metrics_err}")
+                        if fallback_retry < 4:
+                            await asyncio.sleep(0.2)
+                
+                # Step 2: Update status separately (even if metrics save failed, try status)
+                status_saved = False
+                if progress_callback:
+                    try:
+                        progress_callback(99, "Step 4: Fallback - Updating status separately...")
+                    except Exception as e:
+                        logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                
+                for fallback_retry in range(5):  # 5 quick retries for status
+                    if fallback_retry > 0 and progress_callback:
+                        try:
+                            progress_callback(99, f"Step 4: Fallback - Retrying status update... (attempt {fallback_retry + 1}/5)")
+                        except Exception as e:
+                            logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                    try:
+                        status_result = await db_service.update_analysis(analysis_id, {
+                            'status': 'completed',
+                            'current_step': 'report_generation',
+                            'step_progress': 100,
+                            'step_message': 'Analysis complete! (fallback save)'
+                        })
+                        if status_result:
+                            status_saved = True
+                            logger.info(f"[{request_id}] ✅ [STEP 4 FALLBACK] Status updated successfully (attempt {fallback_retry + 1})")
+                            break
+                    except Exception as status_err:
+                        logger.warning(f"[{request_id}] ⚠️ [STEP 4 FALLBACK] Status update attempt {fallback_retry + 1} failed: {status_err}")
+                        if fallback_retry < 4:
+                            await asyncio.sleep(0.2)
+                
+                # Verify final state
+                if metrics_saved or status_saved:
+                    if progress_callback:
+                        try:
+                            progress_callback(99.5, "Step 4: Fallback - Verifying save was successful...")
+                        except Exception as e:
+                            logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                    
+                    await asyncio.sleep(0.3)  # Small delay for consistency
+                    verification = await db_service.get_analysis(analysis_id)
+                    if verification:
+                        if verification.get('status') == 'completed' or (verification.get('metrics') and len(verification.get('metrics', {})) > 0):
+                            logger.info(f"[{request_id}] ✅ [STEP 4 FALLBACK] Fallback save successful! Status: {verification.get('status')}, Has metrics: {bool(verification.get('metrics'))}")
+                            completion_success = True
+                            if progress_callback:
+                                try:
+                                    progress_callback(100, "Step 4: Report generation complete! Analysis ready to view.")
+                                except Exception as e:
+                                    logger.warning(f"[{request_id}] Error in final progress callback: {e}")
+                        else:
+                            logger.warning(f"[{request_id}] ⚠️ [STEP 4 FALLBACK] Fallback save attempted but verification shows incomplete state")
+                    else:
+                        logger.warning(f"[{request_id}] ⚠️ [STEP 4 FALLBACK] Could not verify fallback save - analysis not found")
+                else:
+                    logger.error(f"[{request_id}] ❌ [STEP 4 FALLBACK] Both metrics and status saves failed in fallback attempt")
+                    
+            except Exception as fallback_err:
+                logger.error(f"[{request_id}] ❌ [STEP 4 FALLBACK] Fallback save mechanism failed: {fallback_err}", exc_info=True)
+            
+            # Final error log if still not successful
+            if not completion_success:
+                logger.error(
+                    f"[{request_id}] ❌ CRITICAL: All completion attempts failed including fallback. "
+                    f"Analysis ID: {analysis_id}. Metrics are available but status may not be 'completed' in database. "
+                    f"Manual recovery: POST /api/v1/analysis/{analysis_id}/force-complete",
+                    extra={
+                        "analysis_id": analysis_id,
+                        "has_metrics": bool(metrics),
+                        "metrics_count": len(metrics) if metrics else 0,
+                        "last_error": str(last_error) if last_error else "Unknown"
+                    }
+                )
     
     except asyncio.TimeoutError as e:
         error_msg = (

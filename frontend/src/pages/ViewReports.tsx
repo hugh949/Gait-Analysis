@@ -54,9 +54,18 @@ export default function ViewReports() {
         }
 
         const data = await response.json()
-        // Filter to only completed analyses and sort by latest first
+        // Filter to completed analyses OR analyses with metrics (even if status is processing)
+        // This handles cases where processing completed but status update failed
         const completed = (data.analyses || [])
-          .filter((a: Analysis) => a.status === 'completed')
+          .filter((a: Analysis) => {
+            const hasMetrics = a.metrics && Object.keys(a.metrics).length > 0
+            const hasCoreMetrics = hasMetrics && (
+              a.metrics?.cadence !== undefined || 
+              a.metrics?.walking_speed !== undefined || 
+              a.metrics?.step_length !== undefined
+            )
+            return a.status === 'completed' || (a.status === 'processing' && hasCoreMetrics)
+          })
           .sort((a: Analysis, b: Analysis) => {
             const dateA = a.updated_at || a.created_at || ''
             const dateB = b.updated_at || b.created_at || ''
@@ -163,7 +172,15 @@ export default function ViewReports() {
       })
       .then(data => {
         const completed = (data.analyses || [])
-          .filter((a: Analysis) => a.status === 'completed')
+          .filter((a: Analysis) => {
+            const hasMetrics = a.metrics && Object.keys(a.metrics).length > 0
+            const hasCoreMetrics = hasMetrics && (
+              a.metrics?.cadence !== undefined || 
+              a.metrics?.walking_speed !== undefined || 
+              a.metrics?.step_length !== undefined
+            )
+            return a.status === 'completed' || (a.status === 'processing' && hasCoreMetrics)
+          })
           .sort((a: Analysis, b: Analysis) => {
             const dateA = a.updated_at || a.created_at || ''
             const dateB = b.updated_at || b.created_at || ''
