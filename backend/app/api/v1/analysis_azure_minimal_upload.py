@@ -58,13 +58,19 @@ async def upload_video_minimal(
         # CRITICAL: Create analysis record with retries to ensure it's saved
         # This is essential - frontend needs to find the record immediately
         analysis_created = False
+        db_service = None
         try:
-            # Try to use the global db_service first (if available)
+            # CRITICAL: Always try to use the global db_service first (if available)
+            # This ensures we're using the same instance that get_analysis uses
             try:
                 from app.api.v1.analysis_azure import db_service as global_db_service
-                db_service = global_db_service
-                logger.info(f"[{request_id}] Using global database service")
-            except:
+                if global_db_service is not None:
+                    db_service = global_db_service
+                    logger.info(f"[{request_id}] ✅ Using global database service (shared instance)")
+                else:
+                    raise AttributeError("Global db_service is None")
+            except (ImportError, AttributeError) as import_err:
+                logger.warning(f"[{request_id}] ⚠️ Global db_service not available: {import_err}")
                 # Fallback: create new instance
                 from app.core.database_azure_sql import AzureSQLService
                 db_service = AzureSQLService()
@@ -82,34 +88,60 @@ async def upload_video_minimal(
                     'step_message': 'Upload complete. Starting analysis...'
                 }
                 
-                # Try to create with retries
-                for attempt in range(3):
+                # CRITICAL: Create analysis record with verification
+                # Use multiple attempts with increasing delays to handle eventual consistency
+                for attempt in range(5):  # More attempts for reliability
                     try:
                         creation_result = await db_service.create_analysis(analysis_data)
                         if creation_result:
                             logger.info(f"[{request_id}] ✅ Analysis record created: {analysis_id} (attempt {attempt + 1})")
                             
-                            # CRITICAL: Verify the record exists immediately
-                            await asyncio.sleep(0.1)  # Small delay for eventual consistency
-                            verification = await db_service.get_analysis(analysis_id)
-                            if verification and verification.get('id') == analysis_id:
-                                analysis_created = True
-                                logger.info(f"[{request_id}] ✅ Analysis record verified: {analysis_id}")
+                            # CRITICAL: Verify the record exists with multiple checks
+                            # Wait progressively longer for eventual consistency (Table Storage, SQL replication, etc.)
+                            verification_delay = 0.2 * (attempt + 1)  # 0.2s, 0.4s, 0.6s, 0.8s, 1.0s
+                            await asyncio.sleep(verification_delay)
+                            
+                            # CRITICAL: For mock storage, force save and reload to ensure visibility
+                            if hasattr(db_service, '_use_mock') and db_service._use_mock:
+                                # Force save to file
+                                if hasattr(db_service, '_save_mock_storage'):
+                                    db_service._save_mock_storage(force_sync=True)
+                                    logger.info(f"[{request_id}] ✅ Forced save to file for mock storage")
+                                    # Small delay for file system sync
+                                    await asyncio.sleep(0.2)
+                                    # Force reload to ensure it's in memory
+                                    if hasattr(db_service, '_load_mock_storage'):
+                                        db_service._load_mock_storage()
+                                        logger.info(f"[{request_id}] ✅ Forced reload from file for mock storage")
+                            
+                            # Try to read the record multiple times
+                            for verify_attempt in range(5):  # More verification attempts
+                                verification = await db_service.get_analysis(analysis_id)
+                                if verification and verification.get('id') == analysis_id:
+                                    analysis_created = True
+                                    logger.info(f"[{request_id}] ✅ Analysis record verified: {analysis_id} (create attempt {attempt + 1}, verify attempt {verify_attempt + 1})")
+                                    break
+                                else:
+                                    if verify_attempt < 4:
+                                        await asyncio.sleep(0.15 * (verify_attempt + 1))  # Progressive delay
+                                        continue
+                            
+                            if analysis_created:
                                 break
                             else:
-                                logger.warning(f"[{request_id}] ⚠️ Analysis record created but not immediately readable (attempt {attempt + 1})")
-                                if attempt < 2:
-                                    await asyncio.sleep(0.2 * (attempt + 1))
+                                logger.warning(f"[{request_id}] ⚠️ Analysis record created but not readable after verification (attempt {attempt + 1})")
+                                if attempt < 4:
+                                    await asyncio.sleep(0.3 * (attempt + 1))
                                     continue
                         else:
                             logger.warning(f"[{request_id}] ⚠️ Analysis record creation returned False (attempt {attempt + 1})")
-                            if attempt < 2:
-                                await asyncio.sleep(0.2 * (attempt + 1))
+                            if attempt < 4:
+                                await asyncio.sleep(0.3 * (attempt + 1))
                                 continue
                     except Exception as create_err:
                         logger.warning(f"[{request_id}] ⚠️ Analysis creation attempt {attempt + 1} failed: {create_err}")
-                        if attempt < 2:
-                            await asyncio.sleep(0.2 * (attempt + 1))
+                        if attempt < 4:
+                            await asyncio.sleep(0.3 * (attempt + 1))
                             continue
                 
                 if not analysis_created:
