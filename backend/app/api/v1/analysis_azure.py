@@ -417,9 +417,41 @@ async def upload_video(
             analysis_id = str(uuid.uuid4())
             logger.info(f"[{request_id}] Generated analysis ID: {analysis_id}")
             
+            # CRITICAL: Create analysis record EARLY so we can update progress during upload
+            # This allows users to see what's happening during video quality validation and blob upload
+            try:
+                initial_analysis_data = {
+                    'id': analysis_id,
+                    'patient_id': patient_id,
+                    'filename': file.filename,
+                    'video_url': 'pending',  # Will be updated after blob upload
+                    'status': 'uploading',  # Special status for upload phase
+                    'current_step': 'upload',
+                    'step_progress': 0,
+                    'step_message': '📤 File received. Starting upload processing...'
+                }
+                await db_service.create_analysis(initial_analysis_data)
+                logger.info(f"[{request_id}] ✅ Created initial analysis record for progress tracking")
+            except Exception as early_create_error:
+                logger.warning(f"[{request_id}] ⚠️ Failed to create early analysis record: {early_create_error} - will create later")
+            
+            # Helper function to update upload progress
+            async def update_upload_progress(progress: int, message: str):
+                """Update analysis record with upload progress"""
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'status': 'uploading',
+                        'current_step': 'upload',
+                        'step_progress': progress,
+                        'step_message': message
+                    })
+                except Exception as update_err:
+                    logger.warning(f"[{request_id}] Failed to update upload progress: {update_err}")
+            
             # CRITICAL: Validate video quality BEFORE uploading to blob storage
             # This allows us to provide immediate feedback to user
             # NOTE: Validation is optional - if it fails, we continue without it
+            await update_upload_progress(10, '🔍 Validating video quality for gait analysis...')
             logger.info(f"[{request_id}] 🔍 Validating video quality for gait analysis...")
             quality_result = None
             if tmp_path and os.path.exists(tmp_path):
@@ -447,6 +479,7 @@ async def upload_video(
                             validation_timeout = 10.0  # 10 seconds max
                             validation_start = time.time()
                             
+                            await update_upload_progress(15, '🔍 Analyzing video frames for quality assessment...')
                             try:
                                 quality_result = await asyncio.wait_for(
                                     asyncio.to_thread(
@@ -459,12 +492,21 @@ async def upload_video(
                                 )
                                 validation_duration = time.time() - validation_start
                                 logger.info(f"[{request_id}] ✅ Video quality validation completed in {validation_duration:.1f}s")
+                                
+                                # Update progress with validation results
+                                quality_score = quality_result.get('quality_score', 0) if quality_result else 0
+                                if quality_result:
+                                    await update_upload_progress(25, f'✅ Video quality validated: {quality_score:.0f}% - {"Good" if quality_score >= 60 else "May affect accuracy"}')
+                                else:
+                                    await update_upload_progress(25, '✅ Video quality validation skipped (timeout)')
                             except asyncio.TimeoutError:
                                 validation_duration = time.time() - validation_start
                                 logger.warning(f"[{request_id}] ⚠️ Video quality validation timed out after {validation_duration:.1f}s - skipping to prevent upload timeout")
+                                await update_upload_progress(25, '⚠️ Video quality validation timed out - continuing with upload...')
                                 quality_result = None
                             except Exception as validation_thread_error:
                                 logger.warning(f"[{request_id}] ⚠️ Video quality validation error: {validation_thread_error} - skipping")
+                                await update_upload_progress(25, '⚠️ Video quality validation error - continuing with upload...')
                                 quality_result = None
                             
                             if quality_result:
@@ -500,13 +542,16 @@ async def upload_video(
             
             # Upload to Azure Blob Storage (or keep temp file in mock mode)
             # OPTIMIZED: Add timeout handling to prevent 502 errors
+            await update_upload_progress(30, '☁️ Preparing to upload video to cloud storage...')
             try:
                 if storage_service is None:
                     logger.warning(f"[{request_id}] Storage service not available, using mock mode")
+                    await update_upload_progress(50, '📁 Using local file storage (mock mode)...')
                     video_url = tmp_path  # Use temp file directly in mock mode
                 else:
                     blob_name = f"{analysis_id}{file_ext}"
                     logger.debug(f"[{request_id}] Uploading to blob storage: {blob_name}")
+                    await update_upload_progress(35, f'☁️ Uploading video to Azure Blob Storage: {blob_name}...')
                     
                     # OPTIMIZED: Add timeout for blob upload (max 60 seconds)
                     # This prevents the entire request from timing out
@@ -520,14 +565,17 @@ async def upload_video(
                         )
                         blob_upload_duration = time.time() - blob_upload_start
                         logger.info(f"[{request_id}] ✅ Blob upload completed in {blob_upload_duration:.1f}s")
+                        await update_upload_progress(50, f'✅ Video uploaded to cloud storage successfully ({blob_upload_duration:.1f}s)')
                     except asyncio.TimeoutError:
                         blob_upload_duration = time.time() - blob_upload_start
                         logger.error(f"[{request_id}] ❌ Blob upload timed out after {blob_upload_duration:.1f}s")
+                        await update_upload_progress(50, f'⚠️ Blob upload timed out ({blob_upload_duration:.1f}s) - using temporary storage')
                         # Fallback: use temp file path and upload in background
                         video_url = tmp_path
                         logger.warning(f"[{request_id}] ⚠️ Using temp file path - blob upload will be retried in background")
                     except Exception as blob_upload_error:
                         logger.error(f"[{request_id}] ❌ Blob upload failed: {blob_upload_error}")
+                        await update_upload_progress(50, f'⚠️ Blob upload failed - using temporary storage: {str(blob_upload_error)[:50]}...')
                         # Fallback: use temp file path
                         video_url = tmp_path
                         logger.warning(f"[{request_id}] ⚠️ Using temp file path - blob upload will be retried in background")
@@ -561,6 +609,7 @@ async def upload_video(
                 )
             
             # Store metadata in Azure SQL Database
+            await update_upload_progress(60, '💾 Creating analysis record in database...')
             logger.error(f"[{request_id}] ========== CREATING ANALYSIS RECORD ==========")
             logger.error(f"[{request_id}] Analysis ID: {analysis_id}")
             logger.error(f"[{request_id}] Patient ID: {patient_id}")
@@ -569,6 +618,7 @@ async def upload_video(
             
             try:
                 # Include quality validation results in analysis data
+                # Note: If we created the record early, this will update it
                 analysis_data = {
                     'id': analysis_id,
                     'patient_id': patient_id,
@@ -599,14 +649,16 @@ async def upload_video(
                     else:
                         analysis_data['step_message'] = f'Upload complete. Video quality: {quality_score:.0f}% - Excellent. Starting analysis...'
                 
+                await update_upload_progress(70, '💾 Saving analysis metadata to database...')
                 logger.error(f"[{request_id}] About to call db_service.create_analysis")
                 logger.error(f"[{request_id}] db_service available: {db_service is not None}")
                 logger.error(f"[{request_id}] db_service._use_mock: {db_service._use_mock if db_service else None}")
                 
-                # Create analysis record - this will save to file and verify it's readable
+                # Create or update analysis record - this will save to file and verify it's readable
                 creation_success = await db_service.create_analysis(analysis_data)
                 
                 logger.error(f"[{request_id}] create_analysis returned: {creation_success}")
+                await update_upload_progress(80, '✅ Analysis record created successfully')
                 
                 if not creation_success:
                     logger.error(f"[{request_id}] ❌❌❌ FAILED TO CREATE ANALYSIS RECORD ❌❌❌", extra={"analysis_id": analysis_id})
@@ -667,6 +719,7 @@ async def upload_video(
                 # OPTIMIZED: Skip verification to return response immediately
                 # Verification can happen in background - frontend will retry polling anyway
                 # This prevents 502 timeout errors when database is slow
+                await update_upload_progress(90, '✅ Upload complete! Preparing to start analysis...')
                 logger.info(f"[{request_id}] ✅ Analysis record created - skipping verification to return response quickly")
                 logger.info(f"[{request_id}] Frontend will poll and verify analysis availability")
                 
@@ -1080,27 +1133,28 @@ async def process_analysis_azure(
                 # Still continue - we'll try to update it during processing
         
         # Update progress: Starting - with retry logic
-        for retry in range(5):
-            try:
-                await db_service.update_analysis(analysis_id, {
-                    'status': 'processing',
-                    'current_step': 'pose_estimation',
-                    'step_progress': 5,
-                    'step_message': 'Downloading video for analysis...'
-                })
-                break  # Success
-            except Exception as e:
-                if retry < 4:
-                    logger.warning(f"[{request_id}] Failed to update analysis status (attempt {retry + 1}/5): {e}. Retrying...")
-                    await asyncio.sleep(0.2 * (retry + 1))
-                    continue
-                else:
-                    logger.error(
-                        f"[{request_id}] Failed to update analysis status after 5 attempts: {e}",
-                        extra={"analysis_id": analysis_id},
-                        exc_info=True
-                    )
-                    # Continue anyway - not critical, but log the error
+        async def update_step_progress(step: str, progress: int, message: str):
+            """Helper to update step progress with retry"""
+            for retry in range(5):
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'status': 'processing',
+                        'current_step': step,
+                        'step_progress': progress,
+                        'step_message': message
+                    })
+                    logger.info(f"[{request_id}] 📊 Progress updated: {step} - {progress}% - {message}")
+                    break  # Success
+                except Exception as e:
+                    if retry < 4:
+                        logger.warning(f"[{request_id}] Failed to update progress (attempt {retry + 1}/5): {e}. Retrying...")
+                        await asyncio.sleep(0.2 * (retry + 1))
+                        continue
+                    else:
+                        logger.warning(f"[{request_id}] Failed to update progress after 5 attempts: {e}")
+                        # Continue anyway - not critical
+        
+        await update_step_progress('pose_estimation', 5, '📥 Step 1: Downloading video from storage...')
         
         # Get gait analysis service with error handling
         try:
@@ -1159,10 +1213,12 @@ async def process_analysis_azure(
                     blob_name = video_url
                 
                 logger.info(f"[{request_id}] Downloading blob from storage: {blob_name}")
+                await update_step_progress('pose_estimation', 8, f'📥 Downloading video blob: {blob_name}...')
                 
                 import tempfile
                 video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
                 blob_data = await storage_service.download_blob(blob_name)
+                await update_step_progress('pose_estimation', 10, f'✅ Video downloaded ({len(blob_data) / (1024*1024):.1f} MB)')
                 
                 if not blob_data:
                     raise StorageError(
@@ -1210,6 +1266,7 @@ async def process_analysis_azure(
             )
         
         # Verify video file exists and is readable with detailed error messages
+        await update_step_progress('pose_estimation', 12, '🔍 Verifying video file...')
         if not os.path.exists(video_path):
             logger.error(
                 f"[{request_id}] Video file not found",
@@ -1232,6 +1289,7 @@ async def process_analysis_azure(
         
         try:
             file_size = os.path.getsize(video_path)
+            await update_step_progress('pose_estimation', 15, f'✅ Video file verified ({file_size / (1024*1024):.1f} MB)')
         except OSError as e:
             logger.error(
                 f"[{request_id}] Error getting file size: {e}",
@@ -1767,16 +1825,17 @@ async def process_analysis_azure(
             )
             
             # Update progress: Starting pose estimation
+            await update_step_progress('pose_estimation', 18, '🎬 Step 1: Initializing pose estimation engine...')
             try:
                 await db_service.update_analysis(analysis_id, {
                     'current_step': 'pose_estimation',
-                    'step_progress': 10,
-                    'step_message': 'Starting pose estimation...'
+                    'step_progress': 20,
+                    'step_message': '🎬 Step 1: Starting 2D pose estimation - analyzing video frames...'
                 })
                 # Update last known progress for heartbeat
                 last_known_progress['step'] = 'pose_estimation'
-                last_known_progress['progress'] = 10
-                last_known_progress['message'] = 'Starting pose estimation...'
+                last_known_progress['progress'] = 20
+                last_known_progress['message'] = '🎬 Step 1: Starting 2D pose estimation - analyzing video frames...'
             except Exception as e:
                 logger.warning(f"[{request_id}] Failed to update progress at start: {e}")
             
@@ -1864,6 +1923,9 @@ async def process_analysis_azure(
                 pass
             logger.error(f"[{request_id}] 🔍 Stopped periodic heartbeat monitor")
             logger.info(f"[{request_id}] ✅ VIDEO ANALYSIS COMPLETE: Got result with keys: {list(analysis_result.keys()) if analysis_result else 'None'}")
+            
+            # Update progress: Analysis complete, preparing for Step 4
+            await update_step_progress('metrics_calculation', 90, '✅ Steps 1-3 complete! Preparing final report...')
             
             # CRITICAL: Validate that processing actually happened
             if not analysis_result:

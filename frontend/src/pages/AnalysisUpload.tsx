@@ -1125,6 +1125,18 @@ export default function AnalysisUpload() {
             <p className="progress-text">
               {progress > 0 ? `Uploading... ${Math.round(progress)}%` : 'Preparing upload...'}
             </p>
+            {stepMessage && (
+              <div className="info-message" style={{ 
+                marginTop: '1rem', 
+                padding: '0.75rem', 
+                backgroundColor: '#f0f8ff', 
+                border: '1px solid #4a90e2', 
+                borderRadius: '8px',
+                fontSize: '0.9em'
+              }}>
+                <p style={{ margin: 0 }}>{stepMessage}</p>
+              </div>
+            )}
           </div>
         )}
 
