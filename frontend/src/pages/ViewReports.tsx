@@ -28,6 +28,7 @@ interface Analysis {
   metrics?: {
     walking_speed?: number
     cadence?: number
+    step_length?: number
     fall_risk_assessment?: {
       risk_level?: string
     }
