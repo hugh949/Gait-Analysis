@@ -419,34 +419,40 @@ async def upload_video(
             
             # CRITICAL: Create analysis record EARLY so we can update progress during upload
             # This allows users to see what's happening during video quality validation and blob upload
+            # NOTE: This is optional - if it fails, we'll create the record later (non-critical)
             analysis_record_created = False
-            try:
-                initial_analysis_data = {
-                    'id': analysis_id,
-                    'patient_id': patient_id,
-                    'filename': file.filename,
-                    'video_url': 'pending',  # Will be updated after blob upload
-                    'status': 'uploading',  # Special status for upload phase
-                    'current_step': 'upload',
-                    'step_progress': 0,
-                    'step_message': '📤 File received. Starting upload processing...'
-                }
-                creation_result = await db_service.create_analysis(initial_analysis_data)
-                if creation_result:
-                    analysis_record_created = True
-                    logger.info(f"[{request_id}] ✅ Created initial analysis record for progress tracking")
-                else:
-                    logger.warning(f"[{request_id}] ⚠️ create_analysis returned False - record may not exist")
-            except Exception as early_create_error:
-                logger.warning(f"[{request_id}] ⚠️ Failed to create early analysis record: {early_create_error} - will create later", exc_info=True)
-                analysis_record_created = False
+            if db_service is not None:
+                try:
+                    initial_analysis_data = {
+                        'id': analysis_id,
+                        'patient_id': patient_id,
+                        'filename': file.filename,
+                        'video_url': 'pending',  # Will be updated after blob upload
+                        'status': 'uploading',  # Special status for upload phase
+                        'current_step': 'upload',
+                        'step_progress': 0,
+                        'step_message': '📤 File received. Starting upload processing...'
+                    }
+                    creation_result = await db_service.create_analysis(initial_analysis_data)
+                    if creation_result:
+                        analysis_record_created = True
+                        logger.info(f"[{request_id}] ✅ Created initial analysis record for progress tracking")
+                    else:
+                        logger.warning(f"[{request_id}] ⚠️ create_analysis returned False - record may not exist")
+                except Exception as early_create_error:
+                    # Non-critical - we'll create the record later in the normal flow
+                    logger.warning(f"[{request_id}] ⚠️ Failed to create early analysis record (non-critical): {early_create_error} - will create later")
+                    logger.debug(f"[{request_id}] Early creation error details:", exc_info=True)
+                    analysis_record_created = False
+            else:
+                logger.warning(f"[{request_id}] ⚠️ db_service is None - skipping early analysis record creation")
             
             # Helper function to update upload progress
             # Only updates if analysis record exists - silently fails if not (non-critical)
             async def update_upload_progress(progress: int, message: str):
                 """Update analysis record with upload progress - non-blocking"""
-                if not analysis_record_created:
-                    # Analysis record doesn't exist yet - skip update (non-critical)
+                # Skip if record wasn't created or db_service is unavailable
+                if not analysis_record_created or db_service is None:
                     return
                 try:
                     update_result = await db_service.update_analysis(analysis_id, {
@@ -459,7 +465,7 @@ async def upload_video(
                         # Update failed - analysis might not exist, but that's OK
                         logger.debug(f"[{request_id}] Upload progress update returned False (non-critical)")
                 except Exception as update_err:
-                    # Silently fail - progress updates are non-critical
+                    # Silently fail - progress updates are non-critical and shouldn't break upload
                     logger.debug(f"[{request_id}] Failed to update upload progress: {update_err} (non-critical)")
             
             # CRITICAL: Validate video quality BEFORE uploading to blob storage
@@ -669,21 +675,27 @@ async def upload_video(
                 logger.error(f"[{request_id}] db_service._use_mock: {db_service._use_mock if db_service else None}")
                 
                 # Create or update analysis record - this will save to file and verify it's readable
-                creation_success = await db_service.create_analysis(analysis_data)
+                # CRITICAL: Add try-except around create_analysis to catch any exceptions
+                creation_success = False
+                try:
+                    if db_service is None:
+                        logger.error(f"[{request_id}] ❌ db_service is None - cannot create analysis record")
+                        raise DatabaseError("Database service is not available")
+                    
+                    creation_success = await db_service.create_analysis(analysis_data)
+                    logger.error(f"[{request_id}] create_analysis returned: {creation_success}")
+                except Exception as create_error:
+                    logger.error(
+                        f"[{request_id}] ❌ Exception creating analysis record: {type(create_error).__name__}: {create_error}",
+                        exc_info=True
+                    )
+                    raise DatabaseError(f"Failed to create analysis record: {str(create_error)}")
                 
-                logger.error(f"[{request_id}] create_analysis returned: {creation_success}")
                 await update_upload_progress(80, '✅ Analysis record created successfully')
                 
                 if not creation_success:
                     logger.error(f"[{request_id}] ❌❌❌ FAILED TO CREATE ANALYSIS RECORD ❌❌❌", extra={"analysis_id": analysis_id})
-                    return JSONResponse(
-                        status_code=500,
-                        content={
-                            "error": "DATABASE_ERROR",
-                            "message": "Failed to create analysis record",
-                            "details": {"analysis_id": analysis_id}
-                        }
-                    )
+                    raise DatabaseError("Failed to create analysis record - create_analysis returned False")
                 
                 logger.error(f"[{request_id}] ✅✅✅ ANALYSIS RECORD CREATED SUCCESSFULLY ✅✅✅")
                 logger.info(
