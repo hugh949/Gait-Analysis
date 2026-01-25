@@ -434,7 +434,7 @@ async def upload_video(
                         logger.warning(f"[{request_id}] ⚠️ Error importing VideoQualityValidator: {import_err} - skipping validation")
                         quality_result = None
                     else:
-                        # Import succeeded - try to use it
+                        # Import succeeded - try to use it with timeout
                         try:
                             # Get gait analysis service (defined in this module)
                             gait_service = get_gait_analysis_service()
@@ -442,13 +442,33 @@ async def upload_video(
                                 pose_landmarker=gait_service.pose_landmarker if gait_service else None
                             )
                             
-                            quality_result = validator.validate_video_for_gait_analysis(
-                                video_path=tmp_path,
-                                view_type=str(view_type),
-                                sample_frames=20
-                            )
+                            # OPTIMIZED: Add timeout to prevent blocking (max 10 seconds)
+                            # If validation takes too long, skip it to prevent 502 timeout
+                            validation_timeout = 10.0  # 10 seconds max
+                            validation_start = time.time()
                             
-                            logger.info(f"[{request_id}] 🔍 Video quality validation results:")
+                            try:
+                                quality_result = await asyncio.wait_for(
+                                    asyncio.to_thread(
+                                        validator.validate_video_for_gait_analysis,
+                                        video_path=tmp_path,
+                                        view_type=str(view_type),
+                                        sample_frames=20
+                                    ),
+                                    timeout=validation_timeout
+                                )
+                                validation_duration = time.time() - validation_start
+                                logger.info(f"[{request_id}] ✅ Video quality validation completed in {validation_duration:.1f}s")
+                            except asyncio.TimeoutError:
+                                validation_duration = time.time() - validation_start
+                                logger.warning(f"[{request_id}] ⚠️ Video quality validation timed out after {validation_duration:.1f}s - skipping to prevent upload timeout")
+                                quality_result = None
+                            except Exception as validation_thread_error:
+                                logger.warning(f"[{request_id}] ⚠️ Video quality validation error: {validation_thread_error} - skipping")
+                                quality_result = None
+                            
+                            if quality_result:
+                                logger.info(f"[{request_id}] 🔍 Video quality validation results:")
                             logger.info(f"[{request_id}] 🔍   - Quality score: {quality_result.get('quality_score', 0):.1f}%")
                             logger.info(f"[{request_id}] 🔍   - Is valid: {quality_result.get('is_valid', False)}")
                             logger.info(f"[{request_id}] 🔍   - Pose detection rate: {quality_result.get('pose_detection_rate', 0)*100:.1f}%")
@@ -479,6 +499,7 @@ async def upload_video(
                 logger.warning(f"[{request_id}] ⚠️ Cannot validate video quality - temp file not accessible")
             
             # Upload to Azure Blob Storage (or keep temp file in mock mode)
+            # OPTIMIZED: Add timeout handling to prevent 502 errors
             try:
                 if storage_service is None:
                     logger.warning(f"[{request_id}] Storage service not available, using mock mode")
@@ -486,7 +507,30 @@ async def upload_video(
                 else:
                     blob_name = f"{analysis_id}{file_ext}"
                     logger.debug(f"[{request_id}] Uploading to blob storage: {blob_name}")
-                    video_url = await storage_service.upload_video(tmp_path, blob_name)
+                    
+                    # OPTIMIZED: Add timeout for blob upload (max 60 seconds)
+                    # This prevents the entire request from timing out
+                    blob_upload_timeout = 60.0  # 60 seconds max for blob upload
+                    blob_upload_start = time.time()
+                    
+                    try:
+                        video_url = await asyncio.wait_for(
+                            storage_service.upload_video(tmp_path, blob_name),
+                            timeout=blob_upload_timeout
+                        )
+                        blob_upload_duration = time.time() - blob_upload_start
+                        logger.info(f"[{request_id}] ✅ Blob upload completed in {blob_upload_duration:.1f}s")
+                    except asyncio.TimeoutError:
+                        blob_upload_duration = time.time() - blob_upload_start
+                        logger.error(f"[{request_id}] ❌ Blob upload timed out after {blob_upload_duration:.1f}s")
+                        # Fallback: use temp file path and upload in background
+                        video_url = tmp_path
+                        logger.warning(f"[{request_id}] ⚠️ Using temp file path - blob upload will be retried in background")
+                    except Exception as blob_upload_error:
+                        logger.error(f"[{request_id}] ❌ Blob upload failed: {blob_upload_error}")
+                        # Fallback: use temp file path
+                        video_url = tmp_path
+                        logger.warning(f"[{request_id}] ⚠️ Using temp file path - blob upload will be retried in background")
                     
                     # In mock mode, video_url will be "mock://..." - use temp file directly
                     if video_url and video_url.startswith('mock://'):
@@ -620,45 +664,31 @@ async def upload_video(
                     else:
                         logger.error(f"[{request_id}] ✅✅✅ Analysis confirmed in memory ✅✅✅")
                 
-                # OPTIMIZED: Quick verification - only check once for most backends
-                # SQL and Mock (in-memory) should be immediately available
-                # Table Storage may need a retry, but don't block the response
-                verification_passed = False
+                # OPTIMIZED: Skip verification to return response immediately
+                # Verification can happen in background - frontend will retry polling anyway
+                # This prevents 502 timeout errors when database is slow
+                logger.info(f"[{request_id}] ✅ Analysis record created - skipping verification to return response quickly")
+                logger.info(f"[{request_id}] Frontend will poll and verify analysis availability")
                 
-                # Quick check - most backends are immediate
+                # OPTIONAL: Quick non-blocking verification attempt (don't wait)
+                # This is just for logging - we return response regardless
                 try:
-                    verification_analysis = await db_service.get_analysis(analysis_id)
-                    if verification_analysis and verification_analysis.get('id') == analysis_id:
-                        logger.info(f"[{request_id}] ✅ Analysis verified immediately after creation")
-                        verification_passed = True
-                except Exception as e:
-                    logger.warning(f"[{request_id}] ⚠️ Initial verification check failed: {e}")
-                
-                # For Table Storage (eventual consistency), do one retry with short delay
-                if not verification_passed and use_table_storage:
-                    logger.info(f"[{request_id}] Table Storage detected - doing one quick retry...")
-                    await asyncio.sleep(0.2)  # Short delay for eventual consistency
-                    try:
-                        verification_analysis = await db_service.get_analysis(analysis_id)
-                        if verification_analysis and verification_analysis.get('id') == analysis_id:
-                            logger.info(f"[{request_id}] ✅ Analysis verified after Table Storage retry")
-                            verification_passed = True
-                    except Exception as e:
-                        logger.warning(f"[{request_id}] ⚠️ Table Storage retry also failed: {e}")
-                
-                # For Mock storage, check in-memory directly (fastest)
-                if not verification_passed and use_mock:
-                    if analysis_id in db_service._mock_storage:
-                        logger.info(f"[{request_id}] ✅ Analysis verified in memory (mock storage)")
-                        verification_passed = True
-                
-                # Log warning if verification failed, but don't block response
-                # Frontend will retry polling, and analysis should be available soon
-                if not verification_passed:
-                    logger.warning(f"[{request_id}] ⚠️ Analysis verification failed, but continuing (frontend will retry)")
-                    logger.warning(f"[{request_id}] Analysis ID: {analysis_id} - Frontend should retry polling if not found")
-                else:
-                    logger.info(f"[{request_id}] ✅ Analysis creation and verification complete - ready for polling")
+                    # Use asyncio.create_task to run verification in background
+                    async def quick_verification():
+                        try:
+                            await asyncio.sleep(0.1)  # Tiny delay
+                            verification_analysis = await db_service.get_analysis(analysis_id)
+                            if verification_analysis and verification_analysis.get('id') == analysis_id:
+                                logger.info(f"[{request_id}] ✅ Background verification: Analysis confirmed available")
+                            else:
+                                logger.warning(f"[{request_id}] ⚠️ Background verification: Analysis not yet available (frontend will retry)")
+                        except Exception as verify_err:
+                            logger.warning(f"[{request_id}] ⚠️ Background verification failed: {verify_err} (non-critical)")
+                    
+                    # Start verification in background - don't await
+                    asyncio.create_task(quick_verification())
+                except Exception as verify_task_err:
+                    logger.warning(f"[{request_id}] ⚠️ Failed to start background verification: {verify_task_err} (non-critical)")
                 
                 logger.error(f"[{request_id}] ========== ANALYSIS RECORD CREATION COMPLETE ==========")
             except Exception as e:
@@ -809,33 +839,10 @@ async def upload_video(
                 logger.info(f"[{request_id}] ✅ Upload complete - analysis {analysis_id} should be visible immediately")
                 logger.info(f"[{request_id}] ✅ Both keep-alive and processing tasks are now running")
                 
-                
-                # CRITICAL: Final verification - ensure analysis is visible before returning
-                if db_service and db_service._use_mock:
-                    final_check = analysis_id in db_service._mock_storage
-                    logger.error(f"[{request_id}] 🔍🔍🔍 FINAL VERIFICATION BEFORE RETURN 🔍🔍🔍")
-                    logger.error(f"[{request_id}] 🔍 Analysis in memory: {final_check}")
-                    logger.error(f"[{request_id}] 🔍 In-memory storage size: {len(db_service._mock_storage)}")
-                    logger.error(f"[{request_id}] 🔍 In-memory analysis IDs: {list(db_service._mock_storage.keys())}")
-                    if final_check:
-                        logger.error(f"[{request_id}] ✅✅✅ FINAL CHECK PASSED - Analysis is visible ✅✅✅")
-                    else:
-                        logger.error(f"[{request_id}] ❌❌❌ FINAL CHECK FAILED - Analysis NOT visible ❌❌❌")
-                        # Last resort - recreate it
-                        try:
-                            await db_service.create_analysis({
-                                'id': analysis_id,
-                                'patient_id': patient_id,
-                                'filename': file.filename,
-                                'video_url': video_url,
-                                'status': 'processing',
-                                'current_step': 'pose_estimation',
-                                'step_progress': 0,
-                                'step_message': 'Upload complete. Starting analysis...'
-                            })
-                            logger.error(f"[{request_id}] ✅ Last resort: Recreated analysis")
-                        except Exception as last_resort_error:
-                            logger.error(f"[{request_id}] ❌ Last resort recreation failed: {last_resort_error}", exc_info=True)
+                # OPTIMIZED: Skip blocking final verification - return response immediately
+                # Analysis is already created, and keep-alive will ensure it stays visible
+                # Frontend will poll and verify availability
+                logger.info(f"[{request_id}] ✅ Skipping final verification - returning response immediately to prevent timeout")
             except Exception as e:
                 logger.error(f"[{request_id}] Error scheduling background task: {e}", exc_info=True)
                 # Update analysis status to failed
