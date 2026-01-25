@@ -1506,6 +1506,14 @@ async def process_analysis_azure(
                                     logger.error(f"[{heartbeat_request_id}] ❌ THREAD HEARTBEAT #{heartbeat_count}: Failed to save recreated analysis: {recreate_error}")
                             
                             # Analysis exists in memory - update it
+                            # CRITICAL: Check if analysis is already completed/failed in memory BEFORE updating
+                            # This prevents race conditions where heartbeat overwrites final status
+                            current_status = heartbeat_db_service._mock_storage[heartbeat_analysis_id].get('status')
+                            if current_status in ['completed', 'failed', 'cancelled']:
+                                logger.warning(f"[{heartbeat_request_id}] 🛑 THREAD HEARTBEAT #{heartbeat_count}: Analysis is already {current_status} - STOPPING HEARTBEAT")
+                                # Stop the heartbeat loop immediately
+                                break
+                            
                             step = heartbeat_last_progress['step']
                             progress = heartbeat_last_progress['progress']
                             message = heartbeat_last_progress['message']
