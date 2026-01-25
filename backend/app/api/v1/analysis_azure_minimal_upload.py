@@ -9,6 +9,7 @@ from loguru import logger
 import tempfile
 import os
 import uuid
+import asyncio
 from datetime import datetime
 
 router = APIRouter()
@@ -54,10 +55,20 @@ async def upload_video_minimal(
         
         logger.info(f"[{request_id}] File saved: {file_size} bytes")
         
-        # Try to create analysis record (non-blocking)
+        # CRITICAL: Create analysis record with retries to ensure it's saved
+        # This is essential - frontend needs to find the record immediately
+        analysis_created = False
         try:
-            from app.core.database_azure_sql import AzureSQLService
-            db_service = AzureSQLService()
+            # Try to use the global db_service first (if available)
+            try:
+                from app.api.v1.analysis_azure import db_service as global_db_service
+                db_service = global_db_service
+                logger.info(f"[{request_id}] Using global database service")
+            except:
+                # Fallback: create new instance
+                from app.core.database_azure_sql import AzureSQLService
+                db_service = AzureSQLService()
+                logger.info(f"[{request_id}] Created new database service instance")
             
             if db_service:
                 analysis_data = {
@@ -71,16 +82,44 @@ async def upload_video_minimal(
                     'step_message': 'Upload complete. Starting analysis...'
                 }
                 
-                creation_result = await db_service.create_analysis(analysis_data)
-                if creation_result:
-                    logger.info(f"[{request_id}] ✅ Analysis record created: {analysis_id}")
-                else:
-                    logger.warning(f"[{request_id}] ⚠️ Analysis record creation returned False")
+                # Try to create with retries
+                for attempt in range(3):
+                    try:
+                        creation_result = await db_service.create_analysis(analysis_data)
+                        if creation_result:
+                            logger.info(f"[{request_id}] ✅ Analysis record created: {analysis_id} (attempt {attempt + 1})")
+                            
+                            # CRITICAL: Verify the record exists immediately
+                            await asyncio.sleep(0.1)  # Small delay for eventual consistency
+                            verification = await db_service.get_analysis(analysis_id)
+                            if verification and verification.get('id') == analysis_id:
+                                analysis_created = True
+                                logger.info(f"[{request_id}] ✅ Analysis record verified: {analysis_id}")
+                                break
+                            else:
+                                logger.warning(f"[{request_id}] ⚠️ Analysis record created but not immediately readable (attempt {attempt + 1})")
+                                if attempt < 2:
+                                    await asyncio.sleep(0.2 * (attempt + 1))
+                                    continue
+                        else:
+                            logger.warning(f"[{request_id}] ⚠️ Analysis record creation returned False (attempt {attempt + 1})")
+                            if attempt < 2:
+                                await asyncio.sleep(0.2 * (attempt + 1))
+                                continue
+                    except Exception as create_err:
+                        logger.warning(f"[{request_id}] ⚠️ Analysis creation attempt {attempt + 1} failed: {create_err}")
+                        if attempt < 2:
+                            await asyncio.sleep(0.2 * (attempt + 1))
+                            continue
+                
+                if not analysis_created:
+                    logger.error(f"[{request_id}] ❌ CRITICAL: Failed to create/verify analysis record after 3 attempts")
+                    logger.error(f"[{request_id}] Analysis ID: {analysis_id} - Frontend will get 404 errors")
             else:
-                logger.warning(f"[{request_id}] ⚠️ Database service not available")
+                logger.error(f"[{request_id}] ❌ Database service not available - analysis record cannot be created")
         except Exception as db_err:
-            logger.warning(f"[{request_id}] ⚠️ Failed to create analysis record (non-critical): {db_err}")
-            # Continue anyway - return analysis_id so frontend can poll
+            logger.error(f"[{request_id}] ❌ Failed to create analysis record: {db_err}", exc_info=True)
+            # This is critical - log as error, not warning
         
         # Return success with analysis_id (frontend expects this)
         return JSONResponse({
