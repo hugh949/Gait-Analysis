@@ -2400,6 +2400,8 @@ async def process_analysis_azure(
         last_error = None
         completion_start_time = time.time()
         max_completion_time = 30.0  # Maximum 30 seconds for completion attempts
+        last_progress_update_time = completion_start_time
+        progress_update_interval = 10.0  # Update every 10 seconds
         
         logger.info("=" * 80)
         logger.info(f"[{request_id}] 🎯 [STEP 4] ========== FINAL COMPLETION UPDATE PHASE ==========")
@@ -2414,6 +2416,30 @@ async def process_analysis_azure(
             if elapsed_time > max_completion_time:
                 logger.error(f"[{request_id}] Completion timeout after {max_completion_time}s - stopping retries")
                 break
+            
+            # Send periodic progress update every 10 seconds during retry loop
+            if time.time() - last_progress_update_time >= progress_update_interval:
+                elapsed_minutes = int(elapsed_time // 60)
+                elapsed_seconds = int(elapsed_time % 60)
+                progress_msg = f"Step 4: Saving results to database... ({elapsed_minutes}m {elapsed_seconds}s elapsed, attempt {retry + 1}/{max_db_retries})"
+                
+                if progress_callback:
+                    try:
+                        progress_callback(99, progress_msg)
+                    except Exception as e:
+                        logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                
+                try:
+                    await db_service.update_analysis(analysis_id, {
+                        'current_step': 'report_generation',
+                        'step_progress': 99,
+                        'step_message': progress_msg
+                    })
+                except Exception as periodic_update_err:
+                    logger.warning(f"[{request_id}] Failed to update periodic progress: {periodic_update_err}")
+                
+                last_progress_update_time = time.time()
+                logger.info(f"[{request_id}] 🔄 [STEP 4] Periodic progress update: {progress_msg}")
                 
             # Log progress during retries and update UI
             if retry > 0:
@@ -2534,9 +2560,66 @@ async def process_analysis_azure(
                     except Exception as verify_msg_err:
                         logger.warning(f"[{request_id}] Failed to update verification message: {verify_msg_err}")
                     
-                    # Simple verification: just check that status was set (with small delay for eventual consistency)
-                    await asyncio.sleep(0.3)  # Small delay for database consistency
-                    verification = await db_service.get_analysis(analysis_id)
+                    # Enhanced verification with periodic progress updates
+                    verification_start = time.time()
+                    verification_timeout = 30.0  # Maximum 30 seconds for verification
+                    verification_update_interval = 10.0  # Update every 10 seconds
+                    last_progress_update = verification_start
+                    
+                    # Small delay for database consistency
+                    await asyncio.sleep(0.3)
+                    
+                    # Attempt verification with periodic updates
+                    verification = None
+                    verification_attempts = 0
+                    max_verification_attempts = 10
+                    
+                    while verification_attempts < max_verification_attempts:
+                        elapsed = time.time() - verification_start
+                        
+                        # Check timeout
+                        if elapsed > verification_timeout:
+                            logger.warning(f"[{request_id}] Verification timeout after {verification_timeout}s - proceeding")
+                            break
+                        
+                        # Send periodic progress update every 10 seconds
+                        if time.time() - last_progress_update >= verification_update_interval:
+                            elapsed_minutes = int(elapsed // 60)
+                            elapsed_seconds = int(elapsed % 60)
+                            progress_msg = f"Step 4: Verifying database save... ({elapsed_minutes}m {elapsed_seconds}s elapsed)"
+                            
+                            if progress_callback:
+                                try:
+                                    progress_callback(99.5, progress_msg)
+                                except Exception as e:
+                                    logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                            
+                            try:
+                                await db_service.update_analysis(analysis_id, {
+                                    'current_step': 'report_generation',
+                                    'step_progress': 99.5,
+                                    'step_message': progress_msg
+                                })
+                            except Exception as update_err:
+                                logger.warning(f"[{request_id}] Failed to update verification progress: {update_err}")
+                            
+                            last_progress_update = time.time()
+                            logger.info(f"[{request_id}] 🔄 [STEP 4] Verification in progress... ({elapsed_minutes}m {elapsed_seconds}s elapsed)")
+                        
+                        # Attempt to get verification
+                        try:
+                            verification = await db_service.get_analysis(analysis_id)
+                            if verification:
+                                break  # Got verification, exit loop
+                        except Exception as verify_err:
+                            logger.warning(f"[{request_id}] Verification attempt {verification_attempts + 1} failed: {verify_err}")
+                        
+                        verification_attempts += 1
+                        
+                        # Wait before next attempt (with periodic updates)
+                        if verification_attempts < max_verification_attempts:
+                            wait_time = min(2.0, verification_update_interval / 2)  # Wait up to 2 seconds or half the update interval
+                            await asyncio.sleep(wait_time)
                     
                     if verification and verification.get('status') == 'completed':
                         completion_success = True
@@ -2659,6 +2742,9 @@ async def process_analysis_azure(
             # This two-step approach can work even if combined update fails
             try:
                 logger.info(f"[{request_id}] 🔄 [STEP 4 FALLBACK] Attempting two-step save: metrics first, then status...")
+                fallback_start_time = time.time()
+                fallback_last_progress_update = fallback_start_time
+                fallback_progress_interval = 10.0  # Update every 10 seconds
                 
                 # Update progress: Fallback mechanism
                 if progress_callback:
@@ -2685,6 +2771,31 @@ async def process_analysis_azure(
                         logger.warning(f"[{request_id}] Error in progress callback: {e}")
                 
                 for fallback_retry in range(5):  # 5 quick retries for metrics
+                    # Send periodic progress update every 10 seconds
+                    fallback_elapsed = time.time() - fallback_start_time
+                    if time.time() - fallback_last_progress_update >= fallback_progress_interval:
+                        elapsed_minutes = int(fallback_elapsed // 60)
+                        elapsed_seconds = int(fallback_elapsed % 60)
+                        progress_msg = f"Step 4: Fallback - Saving metrics... ({elapsed_minutes}m {elapsed_seconds}s elapsed, attempt {fallback_retry + 1}/5)"
+                        
+                        if progress_callback:
+                            try:
+                                progress_callback(99, progress_msg)
+                            except Exception as e:
+                                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                        
+                        try:
+                            await db_service.update_analysis(analysis_id, {
+                                'current_step': 'report_generation',
+                                'step_progress': 99,
+                                'step_message': progress_msg
+                            })
+                        except Exception as periodic_err:
+                            logger.warning(f"[{request_id}] Failed to update fallback progress: {periodic_err}")
+                        
+                        fallback_last_progress_update = time.time()
+                        logger.info(f"[{request_id}] 🔄 [STEP 4 FALLBACK] Periodic progress: {progress_msg}")
+                    
                     if fallback_retry > 0 and progress_callback:
                         try:
                             progress_callback(99, f"Step 4: Fallback - Retrying metrics save... (attempt {fallback_retry + 1}/5)")
@@ -2718,6 +2829,31 @@ async def process_analysis_azure(
                         logger.warning(f"[{request_id}] Error in progress callback: {e}")
                 
                 for fallback_retry in range(5):  # 5 quick retries for status
+                    # Send periodic progress update every 10 seconds
+                    fallback_elapsed = time.time() - fallback_start_time
+                    if time.time() - fallback_last_progress_update >= fallback_progress_interval:
+                        elapsed_minutes = int(fallback_elapsed // 60)
+                        elapsed_seconds = int(fallback_elapsed % 60)
+                        progress_msg = f"Step 4: Fallback - Updating status... ({elapsed_minutes}m {elapsed_seconds}s elapsed, attempt {fallback_retry + 1}/5)"
+                        
+                        if progress_callback:
+                            try:
+                                progress_callback(99, progress_msg)
+                            except Exception as e:
+                                logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                        
+                        try:
+                            await db_service.update_analysis(analysis_id, {
+                                'current_step': 'report_generation',
+                                'step_progress': 99,
+                                'step_message': progress_msg
+                            })
+                        except Exception as periodic_err:
+                            logger.warning(f"[{request_id}] Failed to update fallback progress: {periodic_err}")
+                        
+                        fallback_last_progress_update = time.time()
+                        logger.info(f"[{request_id}] 🔄 [STEP 4 FALLBACK] Periodic progress: {progress_msg}")
+                    
                     if fallback_retry > 0 and progress_callback:
                         try:
                             progress_callback(99, f"Step 4: Fallback - Retrying status update... (attempt {fallback_retry + 1}/5)")
@@ -2739,8 +2875,11 @@ async def process_analysis_azure(
                         if fallback_retry < 4:
                             await asyncio.sleep(0.2)
                 
-                # Verify final state
+                # Verify final state with periodic updates
                 if metrics_saved or status_saved:
+                    verification_start = time.time()
+                    verification_last_update = verification_start
+                    
                     if progress_callback:
                         try:
                             progress_callback(99.5, "Step 4: Fallback - Verifying save was successful...")
@@ -2748,7 +2887,47 @@ async def process_analysis_azure(
                             logger.warning(f"[{request_id}] Error in progress callback: {e}")
                     
                     await asyncio.sleep(0.3)  # Small delay for consistency
-                    verification = await db_service.get_analysis(analysis_id)
+                    
+                    # Attempt verification with periodic updates
+                    verification = None
+                    for verify_attempt in range(5):
+                        verify_elapsed = time.time() - verification_start
+                        
+                        # Send periodic progress update every 10 seconds
+                        if time.time() - verification_last_update >= fallback_progress_interval:
+                            elapsed_minutes = int(verify_elapsed // 60)
+                            elapsed_seconds = int(verify_elapsed % 60)
+                            progress_msg = f"Step 4: Fallback - Verifying save... ({elapsed_minutes}m {elapsed_seconds}s elapsed)"
+                            
+                            if progress_callback:
+                                try:
+                                    progress_callback(99.5, progress_msg)
+                                except Exception as e:
+                                    logger.warning(f"[{request_id}] Error in progress callback: {e}")
+                            
+                            try:
+                                await db_service.update_analysis(analysis_id, {
+                                    'current_step': 'report_generation',
+                                    'step_progress': 99.5,
+                                    'step_message': progress_msg
+                                })
+                            except Exception as verify_update_err:
+                                logger.warning(f"[{request_id}] Failed to update verification progress: {verify_update_err}")
+                            
+                            verification_last_update = time.time()
+                            logger.info(f"[{request_id}] 🔄 [STEP 4 FALLBACK] Verification progress: {progress_msg}")
+                        
+                        try:
+                            verification = await db_service.get_analysis(analysis_id)
+                            if verification:
+                                break
+                        except Exception as verify_err:
+                            logger.warning(f"[{request_id}] Fallback verification attempt {verify_attempt + 1} failed: {verify_err}")
+                            if verify_attempt < 4:
+                                await asyncio.sleep(0.5)
+                    
+                    if verification:
+                        verification = await db_service.get_analysis(analysis_id)
                     if verification:
                         if verification.get('status') == 'completed' or (verification.get('metrics') and len(verification.get('metrics', {})) > 0):
                             logger.info(f"[{request_id}] ✅ [STEP 4 FALLBACK] Fallback save successful! Status: {verification.get('status')}, Has metrics: {bool(verification.get('metrics'))}")
