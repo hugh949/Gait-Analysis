@@ -556,24 +556,24 @@ async def upload_video(
                                         quality_result = None
                                     
                                     if quality_result:
-                                logger.info(f"[{request_id}] 🔍 Video quality validation results:")
-                                logger.info(f"[{request_id}] 🔍   - Quality score: {quality_result.get('quality_score', 0):.1f}%")
-                                logger.info(f"[{request_id}] 🔍   - Is valid: {quality_result.get('is_valid', False)}")
-                                logger.info(f"[{request_id}] 🔍   - Pose detection rate: {quality_result.get('pose_detection_rate', 0)*100:.1f}%")
-                                logger.info(f"[{request_id}] 🔍   - Critical joints detected: {quality_result.get('critical_joints_detected', False)}")
-                                logger.info(f"[{request_id}] 🔍   - Issues found: {len(quality_result.get('issues', []))}")
-                                
-                                if quality_result.get('issues'):
-                                    logger.warning(f"[{request_id}] ⚠️ Video quality issues detected:")
-                                    for issue in quality_result.get('issues', []):
-                                        logger.warning(f"[{request_id}] ⚠️   - {issue}")
-                                
-                                if not quality_result.get('is_valid', False):
-                                    logger.error(f"[{request_id}] ❌❌❌ VIDEO QUALITY INSUFFICIENT FOR ACCURATE GAIT ANALYSIS ❌❌❌")
-                                    logger.error(f"[{request_id}] Quality score: {quality_result.get('quality_score', 0):.1f}% (minimum: 60%)")
-                                    logger.error(f"[{request_id}] Top recommendations:")
-                                    for rec in quality_result.get('recommendations', [])[:3]:
-                                        logger.error(f"[{request_id}]   - {rec}")
+                                        logger.info(f"[{request_id}] 🔍 Video quality validation results:")
+                                        logger.info(f"[{request_id}] 🔍   - Quality score: {quality_result.get('quality_score', 0):.1f}%")
+                                        logger.info(f"[{request_id}] 🔍   - Is valid: {quality_result.get('is_valid', False)}")
+                                        logger.info(f"[{request_id}] 🔍   - Pose detection rate: {quality_result.get('pose_detection_rate', 0)*100:.1f}%")
+                                        logger.info(f"[{request_id}] 🔍   - Critical joints detected: {quality_result.get('critical_joints_detected', False)}")
+                                        logger.info(f"[{request_id}] 🔍   - Issues found: {len(quality_result.get('issues', []))}")
+                                        
+                                        if quality_result.get('issues'):
+                                            logger.warning(f"[{request_id}] ⚠️ Video quality issues detected:")
+                                            for issue in quality_result.get('issues', []):
+                                                logger.warning(f"[{request_id}] ⚠️   - {issue}")
+                                        
+                                        if not quality_result.get('is_valid', False):
+                                            logger.error(f"[{request_id}] ❌❌❌ VIDEO QUALITY INSUFFICIENT FOR ACCURATE GAIT ANALYSIS ❌❌❌")
+                                            logger.error(f"[{request_id}] Quality score: {quality_result.get('quality_score', 0):.1f}% (minimum: 60%)")
+                                            logger.error(f"[{request_id}] Top recommendations:")
+                                            for rec in quality_result.get('recommendations', [])[:3]:
+                                                logger.error(f"[{request_id}]   - {rec}")
                         except Exception as validation_error:
                             logger.warning(f"[{request_id}] Video quality validation failed (non-critical): {validation_error}", exc_info=True)
                             logger.warning(f"[{request_id}] Processing will continue, but video quality is unknown")
