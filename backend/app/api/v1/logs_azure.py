@@ -14,7 +14,33 @@ from pathlib import Path
 router = APIRouter(prefix="/logs", tags=["Logs"])
 
 # Log file path in Azure App Service
-LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "/home/site/logs/docker.log")
+# Try multiple common locations
+POSSIBLE_LOG_PATHS = [
+    os.getenv("LOG_FILE_PATH", "/home/site/logs/docker.log"),
+    "/home/LogFiles/docker/docker.log",
+    "/home/LogFiles/docker/default_docker.log"
+]
+
+def get_log_file_path():
+    """Find the first existing log file path"""
+    for path in POSSIBLE_LOG_PATHS:
+        if os.path.exists(path):
+            return path
+    
+    # Also check for date-stamped files in /home/LogFiles/
+    try:
+        if os.path.exists("/home/LogFiles/"):
+            log_files = [f for f in os.listdir("/home/LogFiles/") if f.endswith(".log")]
+            if log_files:
+                # Return most recent
+                log_files.sort(key=lambda x: os.path.getmtime(os.path.join("/home/LogFiles/", x)), reverse=True)
+                return os.path.join("/home/LogFiles/", log_files[0])
+    except Exception:
+        pass
+        
+    return POSSIBLE_LOG_PATHS[0]  # Default
+
+LOG_FILE_PATH = get_log_file_path()
 
 @router.get("/recent")
 async def get_recent_logs(
