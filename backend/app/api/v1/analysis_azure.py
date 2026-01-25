@@ -2081,6 +2081,16 @@ async def process_analysis_azure(
                 extra={"analysis_id": analysis_id, "error_code": e.error_code, "details": e.details},
                 exc_info=True
             )
+            # CRITICAL: Update analysis status to failed before raising exception
+            try:
+                await db_service.update_analysis(analysis_id, {
+                    'status': 'failed',
+                    'current_step': 'metrics_calculation',
+                    'step_progress': 0,
+                    'step_message': f'Step 3 failed: {e.message}'
+                })
+            except Exception as update_err:
+                logger.error(f"[{request_id}] Failed to update analysis status after Step 3 error: {update_err}")
             # CRITICAL: Don't create fallback - fail the analysis so user knows processing didn't work
             raise VideoProcessingError(
                 f"Gait metrics calculation failed: {e.message}",
@@ -2092,6 +2102,16 @@ async def process_analysis_azure(
                 extra={"analysis_id": analysis_id, "error_type": type(e).__name__},
                 exc_info=True
             )
+            # CRITICAL: Update analysis status to failed before raising exception
+            try:
+                await db_service.update_analysis(analysis_id, {
+                    'status': 'failed',
+                    'current_step': analysis.get('current_step', 'unknown'),
+                    'step_progress': analysis.get('step_progress', 0),
+                    'step_message': f'Analysis failed: {type(e).__name__}: {str(e)[:200]}'
+                })
+            except Exception as update_err:
+                logger.error(f"[{request_id}] Failed to update analysis status after unexpected error: {update_err}")
             # CRITICAL: Don't create fallback - fail the analysis so user knows processing didn't work
             raise VideoProcessingError(
                 f"Unexpected error during video analysis: {str(e)}",
@@ -3271,11 +3291,115 @@ async def get_analysis(
         
         logger.info(f"[{request_id}] Analysis retrieved successfully", extra={"analysis_id": analysis_id, "status": analysis.get("status")})
         
-        # Ensure steps_completed exists (default to empty dict if missing)
-        if 'steps_completed' not in analysis or analysis.get('steps_completed') is None:
-            analysis['steps_completed'] = {}
-        
-        return AnalysisDetailResponse(**analysis)
+        # CRITICAL: Normalize analysis data before creating response
+        # Handle common data inconsistencies that cause 500 errors
+        try:
+            # Ensure 'id' field exists (might be stored as 'analysis_id' or 'id')
+            if 'id' not in analysis and 'analysis_id' in analysis:
+                analysis['id'] = analysis['analysis_id']
+            elif 'id' not in analysis:
+                analysis['id'] = analysis_id  # Fallback to path parameter
+            
+            # Ensure 'filename' exists (required field)
+            if 'filename' not in analysis or analysis.get('filename') is None:
+                analysis['filename'] = analysis.get('video_url', 'unknown').split('/')[-1] if analysis.get('video_url') else 'unknown'
+            
+            # Normalize status to match AnalysisStatus enum
+            status = analysis.get('status', 'processing')
+            # Map any non-standard status values to valid enum values
+            status_map = {
+                'pending': 'pending',
+                'processing': 'processing',
+                'completed': 'completed',
+                'failed': 'failed',
+                'cancelled': 'failed',  # Map cancelled to failed for enum compatibility
+                'testing': 'processing'  # Map testing to processing
+            }
+            analysis['status'] = status_map.get(status.lower(), 'processing')
+            
+            # Ensure step_progress is valid (0-100)
+            step_progress = analysis.get('step_progress', 0)
+            if not isinstance(step_progress, (int, float)):
+                try:
+                    step_progress = int(float(step_progress))
+                except (ValueError, TypeError):
+                    step_progress = 0
+            analysis['step_progress'] = max(0, min(100, int(step_progress)))
+            
+            # Ensure steps_completed exists (default to empty dict if missing)
+            if 'steps_completed' not in analysis or analysis.get('steps_completed') is None:
+                analysis['steps_completed'] = {}
+            
+            # Ensure metrics is a dict if it exists
+            if 'metrics' in analysis and analysis['metrics'] is not None:
+                if isinstance(analysis['metrics'], str):
+                    # Try to parse JSON string
+                    try:
+                        import json
+                        analysis['metrics'] = json.loads(analysis['metrics'])
+                    except (json.JSONDecodeError, TypeError):
+                        analysis['metrics'] = {}
+                elif not isinstance(analysis['metrics'], dict):
+                    analysis['metrics'] = {}
+            
+            logger.debug(f"[{request_id}] Normalized analysis data: id={analysis.get('id')}, filename={analysis.get('filename')}, status={analysis.get('status')}")
+            
+            return AnalysisDetailResponse(**analysis)
+            
+        except Exception as validation_error:
+            # If Pydantic validation fails, log detailed error and return safe response
+            logger.error(
+                f"[{request_id}] ❌ CRITICAL: Failed to create AnalysisDetailResponse: {validation_error}",
+                extra={
+                    "analysis_id": analysis_id,
+                    "error_type": type(validation_error).__name__,
+                    "analysis_keys": list(analysis.keys()) if analysis else [],
+                    "analysis_id_field": analysis.get('id') if analysis else None,
+                    "analysis_filename": analysis.get('filename') if analysis else None,
+                    "analysis_status": analysis.get('status') if analysis else None,
+                },
+                exc_info=True
+            )
+            # Return a safe response with available data instead of crashing
+            safe_analysis = {
+                'id': analysis.get('id') or analysis.get('analysis_id') or analysis_id,
+                'patient_id': analysis.get('patient_id'),
+                'filename': analysis.get('filename') or 'unknown',
+                'video_url': analysis.get('video_url'),
+                'status': 'processing',  # Safe default
+                'current_step': analysis.get('current_step'),
+                'step_progress': max(0, min(100, int(analysis.get('step_progress', 0)))),
+                'step_message': analysis.get('step_message'),
+                'metrics': analysis.get('metrics') if isinstance(analysis.get('metrics'), dict) else {},
+                'steps_completed': analysis.get('steps_completed') or {},
+                'created_at': analysis.get('created_at'),
+                'updated_at': analysis.get('updated_at'),
+                'video_quality_score': analysis.get('video_quality_score'),
+                'video_quality_valid': analysis.get('video_quality_valid'),
+                'video_quality_issues': analysis.get('video_quality_issues'),
+                'video_quality_recommendations': analysis.get('video_quality_recommendations'),
+                'pose_detection_rate': analysis.get('pose_detection_rate')
+            }
+            try:
+                return AnalysisDetailResponse(**safe_analysis)
+            except Exception as safe_error:
+                logger.critical(
+                    f"[{request_id}] ❌ CRITICAL: Even safe response failed: {safe_error}",
+                    exc_info=True
+                )
+                # Last resort: raise HTTPException with details
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "error": "RESPONSE_VALIDATION_ERROR",
+                        "message": f"Failed to format analysis response: {str(validation_error)}",
+                        "details": {
+                            "analysis_id": analysis_id,
+                            "validation_error": str(validation_error),
+                            "safe_error": str(safe_error) if 'safe_error' in locals() else None
+                        }
+                    }
+                )
     
     except HTTPException:
         raise  # Re-raise HTTP exceptions
