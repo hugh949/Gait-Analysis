@@ -831,6 +831,7 @@ export default function AnalysisUpload() {
         
         console.log('✅ Cleanup complete - ready for new file upload')
       }
+    }
 
     cleanupPreviousProcessing()
   }, [])
