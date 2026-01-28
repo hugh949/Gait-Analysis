@@ -315,13 +315,9 @@ async def upload_video(
                 logger.debug(f"[{request_id}] Created temp file: {tmp_path}")
             except OSError as e:
                 logger.error(f"[{request_id}] Failed to create temp file: {e}", exc_info=True)
-                return JSONResponse(
+                raise HTTPException(
                     status_code=500,
-                    content={
-                        "error": "STORAGE_ERROR",
-                        "message": "Failed to create temporary file for upload",
-                        "details": {"error": str(e)}
-                    }
+                    detail=f"Failed to create temporary file for upload: {str(e)}"
                 )
             
             # Read file in chunks with size validation
@@ -380,26 +376,14 @@ async def upload_video(
                             f"[{request_id}] File too large: {file_size} bytes (max: {MAX_FILE_SIZE})",
                             extra={"file_size": file_size, "max_size": MAX_FILE_SIZE}
                         )
-                        return JSONResponse(
+                        raise HTTPException(
                             status_code=413,
-                            content={
-                                "error": "VALIDATION_ERROR",
-                                "message": f"File too large: {file_size / (1024*1024):.2f}MB. Maximum size: {MAX_FILE_SIZE / (1024*1024)}MB",
-                                "field": "file",
-                                "details": {"file_size": file_size, "max_size": MAX_FILE_SIZE}
-                            }
+                            detail=f"File too large: {file_size / (1024*1024):.2f}MB. Maximum size: {MAX_FILE_SIZE / (1024*1024)}MB"
                         )
                 
                 tmp_file.close()
-            except Exception as read_error:
-                # CRITICAL: Ensure file is closed even if error occurs
-                try:
-                    if tmp_file and not tmp_file.closed:
-                        tmp_file.close()
-                except:
-                    pass
-                # Re-raise to be handled by outer exception handler
-                raise
+                
+                # Log successful upload completion
                 upload_duration = time.time() - upload_start_time
                 upload_rate = (file_size / upload_duration) / (1024 * 1024) if upload_duration > 0 else 0  # MB/s
                 
@@ -435,6 +419,15 @@ async def upload_video(
                         f"Azure App Service has a 230-second request timeout. "
                         f"Consider using smaller files (<50MB) to avoid timeout issues."
                     )
+            except Exception as read_error:
+                # CRITICAL: Ensure file is closed even if error occurs
+                try:
+                    if tmp_file and not tmp_file.closed:
+                        tmp_file.close()
+                except:
+                    pass
+                # Re-raise to be handled by outer exception handler
+                raise
             except Exception as e:
                 tmp_file.close()
                 if tmp_path and os.path.exists(tmp_path):
@@ -443,13 +436,9 @@ async def upload_video(
                     except:
                         pass
                 logger.error(f"[{request_id}] Error reading uploaded file: {e}", exc_info=True)
-                return JSONResponse(
+                raise HTTPException(
                     status_code=500,
-                    content={
-                        "error": "VIDEO_PROCESSING_ERROR",
-                        "message": "Failed to read uploaded file",
-                        "details": {"error": str(e)}
-                    }
+                    detail=f"Failed to read uploaded file: {str(e)}"
                 )
             
             # Validate file is not empty
@@ -457,13 +446,9 @@ async def upload_video(
                 if tmp_path and os.path.exists(tmp_path):
                     os.unlink(tmp_path)
                 logger.error(f"[{request_id}] Empty file uploaded")
-                return JSONResponse(
+                raise HTTPException(
                     status_code=400,
-                    content={
-                        "error": "VALIDATION_ERROR",
-                        "message": "Uploaded file is empty",
-                        "field": "file"
-                    }
+                    detail="Uploaded file is empty"
                 )
             
             # Generate analysis ID (already defined above, but assign here)
@@ -689,13 +674,9 @@ async def upload_video(
                         os.unlink(tmp_path)
                     except:
                         pass
-                return JSONResponse(
+                raise HTTPException(
                     status_code=500,
-                    content={
-                        "error": "STORAGE_ERROR",
-                        "message": "Failed to upload file to storage",
-                        "details": {"error": str(e)}
-                    }
+                    detail=f"Failed to upload file to storage: {str(e)}"
                 )
             
             # Store metadata in Azure SQL Database
