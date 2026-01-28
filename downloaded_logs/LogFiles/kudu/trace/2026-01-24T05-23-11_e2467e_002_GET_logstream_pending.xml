@@ -1,0 +1,5 @@
+<step title="Incoming Request" date="2026-01-24T05:23:11.904" instance="e2467e" url="/logstream" method="GET" type="request" pid="768,1,5" Host="gaitanalysisapp.scm.azurewebsites.net" User-Agent="AZURECLI/2.81.0 (HOMEBREW)" Accept-Encoding="identity" Authorization="Bea..." x-ms-client-request-id="88078ab6-f8e4-11f0-924e-3a7dbd43422f" X-ARR-LOG-ID="88078ab6-f8e4-11f0-924e-3a7dbd43422f" CLIENT-IP="138.84.45.92:63732" X-SITE-DEPLOYMENT-ID="gaitanalysisapp" WAS-DEFAULT-HOSTNAME="gaitanalysisapp.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/logstream" X-Client-IP="138.84.45.92" X-Client-Port="63732" >
+  <step title="Cleanup Xml Logs" date="2026-01-24T05:23:11.908" >
+    <step title="Cleanup Infos" date="2026-01-24T05:23:11.919" totalFiles="314" totalCleanup="154" /><!-- duration: 6ms -->
+  </step><!-- duration: 21ms -->
+  <step title="LogStreamHandlerMiddleware.Invoke" date="2026-01-24T05:23:11.936" /><!-- duration: 5167ms -->

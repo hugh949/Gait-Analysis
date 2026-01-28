@@ -1,0 +1,5 @@
+<step title="Startup Request" date="2026-01-24T01:28:39.801" instance="9d4c7e" url="/api/logstreamV2/?max=50&amp;nextToken=eyJmaWQiOjYzOTA0ODE0ODY0NzQyNTMzMywicG9zIjoxMTcxNDAsImZpcnN0bG9ndXRjIjo2MzkwNDgxMzIxMjkxNDE1MTJ9&amp;api-version=2016-09-01" method="GET" type="request" pid="770,1,7" SCM_DO_BUILD_DURING_DEPLOYMENT="false" SCM_COMMAND_IDLE_TIMEOUT="600" ScmType="GitHubAction" >
+  <step title="Cleanup Xml Logs" date="2026-01-24T01:28:39.849" >
+    <step title="Cleanup Infos" date="2026-01-24T01:28:39.941" totalFiles="282" totalCleanup="122" /><!-- duration: 12ms -->
+  </step><!-- duration: 113ms -->
+</step><!-- duration: 174ms -->

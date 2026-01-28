@@ -1,0 +1,1 @@
+2026-01-08T18:23:32  Startup Request, url: /api/deployments/?api-version=2022-03-01&warmup=true, method: GET, type: request, pid: 772,1,16, ScmType: GitHubAction, SCM_DO_BUILD_DURING_DEPLOYMENT: false, SCM_COMMAND_IDLE_TIMEOUT: 600

@@ -1,0 +1,1441 @@
+2026-01-24T00:12:23.6042249Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T00:12:23.6690008Z Stop and delete container. Retry count = 0
+2026-01-24T00:12:23.6700631Z Stopping container: 791d070b6292_gaitanalysisapp.
+2026-01-24T00:12:28.8160267Z Deleting container: 791d070b6292_gaitanalysisapp. Retry count = 0
+2026-01-24T00:12:29.0070111Z Container spec TerminationMessagePolicy  path 
+2026-01-24T00:12:29.0082985Z Container is terminated. Total time elapsed: 5402 ms.
+2026-01-24T00:12:29.0191837Z Site: gaitanalysisapp stopped.
+2026-01-24T00:12:56.4128151Z Container start method called.
+2026-01-24T00:12:56.4223010Z Establishing network.
+2026-01-24T00:12:56.4539789Z Pulling image: gaitacr737.azurecr.io/gait-integrated:0717656755ba95dbf46889b0f1e94f2cda5d8dbb.
+2026-01-24T00:20:34.6431375Z Image gaitacr737.azurecr.io/gait-integrated:0717656755ba95dbf46889b0f1e94f2cda5d8dbb is pulled from registry gaitacr737.azurecr.io
+2026-01-24T00:20:34.6465916Z Container is starting.
+2026-01-24T00:20:34.6510932Z Establishing user namespace if not established already.
+2026-01-24T00:20:34.6515402Z Establishing network if not established already.
+2026-01-24T00:20:34.6536033Z Mounting volumes.
+2026-01-24T00:20:34.6580278Z Nested mountpoint volatile/logs
+2026-01-24T00:20:34.6691995Z Nested mountpoint 
+2026-01-24T00:20:34.7793388Z Creating container.
+2026-01-24T00:20:34.7802358Z Creating pipes for streaming container io.
+2026-01-24T00:20:34.7806338Z Creating stdout named pipe at /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stdout_bfd0dd118252435b9886acdb22e2becf.
+2026-01-24T00:20:34.7878574Z Successfully created stdout named pipe at: /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stdout_bfd0dd118252435b9886acdb22e2becf.
+2026-01-24T00:20:34.7883176Z Opening named pipe /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stdout_bfd0dd118252435b9886acdb22e2becf for reading in non-blocking mode.
+2026-01-24T00:20:34.7885050Z Successfully opened named pipe: /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stdout_bfd0dd118252435b9886acdb22e2becf.
+2026-01-24T00:20:34.7888445Z Successfully removed non-blocking flag from /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stdout_bfd0dd118252435b9886acdb22e2becf.
+2026-01-24T00:20:34.7889023Z Creating stderr named pipe at /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stderr_57657865fc9e446ca7b23961b9f17da2.
+2026-01-24T00:20:34.7889877Z Successfully created stderr named pipe at: /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stderr_57657865fc9e446ca7b23961b9f17da2.
+2026-01-24T00:20:34.7890323Z Opening named pipe /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stderr_57657865fc9e446ca7b23961b9f17da2 for reading in non-blocking mode.
+2026-01-24T00:20:34.7890870Z Successfully opened named pipe: /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stderr_57657865fc9e446ca7b23961b9f17da2.
+2026-01-24T00:20:34.7891358Z Successfully removed non-blocking flag from /podr/container/pipe/0b0b5aeb0099_gaitanalysisapp/stderr_57657865fc9e446ca7b23961b9f17da2.
+2026-01-24T00:20:34.7894069Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:0717656755ba95dbf46889b0f1e94f2cda5d8dbb from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:0717656755ba95dbf46889b0f1e94f2cda5d8dbb
+2026-01-24T00:20:44.4858703Z Starting container: 0b0b5aeb0099_gaitanalysisapp.
+2026-01-24T00:20:44.5868061Z Starting watchers and probes.
+2026-01-24T00:20:44.6058187Z Starting metrics collection.
+2026-01-24T00:20:44.6471459Z Container is running.
+2026-01-24T00:20:44.8252960Z Container start method finished after 468404 ms.
+2026-01-24T00:20:57.9599038Z Site startup probe succeeded after 13.0653198 seconds.
+2026-01-24T00:20:58.3108602Z Site started.
+2026-01-24T00:31:33.3289688Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T00:31:33.4176105Z Stop and delete container. Retry count = 0
+2026-01-24T00:31:33.4235186Z Stopping container: 0b0b5aeb0099_gaitanalysisapp.
+2026-01-24T00:31:38.4997733Z Deleting container: 0b0b5aeb0099_gaitanalysisapp. Retry count = 0
+2026-01-24T00:31:38.9190459Z Container spec TerminationMessagePolicy  path 
+2026-01-24T00:31:38.9207599Z Container is terminated. Total time elapsed: 5591 ms.
+2026-01-24T00:31:38.9306905Z Site: gaitanalysisapp stopped.
+2026-01-24T00:32:26.4095361Z Container start method called.
+2026-01-24T00:32:26.4288280Z Establishing network.
+2026-01-24T00:32:26.4377086Z Pulling image: gaitacr737.azurecr.io/gait-integrated:9f68a81dbbba8784c345fb43e9d4fcfce72e4b34.
+2026-01-24T03:16:26.7589989Z Container start method called.
+2026-01-24T03:16:26.7596307Z Establishing network.
+2026-01-24T03:16:26.7597394Z Pulling image: gaitacr737.azurecr.io/gait-integrated:3db50ac17142fe05f32c4f3ef8453d140271e327.
+2026-01-24T03:18:32.1534344Z Image gaitacr737.azurecr.io/gait-integrated:3db50ac17142fe05f32c4f3ef8453d140271e327 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T03:18:32.1594928Z Container is starting.
+2026-01-24T03:18:32.1638710Z Establishing user namespace if not established already.
+2026-01-24T03:18:32.1652149Z Establishing network if not established already.
+2026-01-24T03:18:32.1729936Z Mounting volumes.
+2026-01-24T03:18:32.1839608Z Nested mountpoint volatile/logs
+2026-01-24T03:18:32.2145364Z Nested mountpoint 
+2026-01-24T03:18:32.2847667Z Creating container.
+2026-01-24T03:18:32.2850992Z Creating pipes for streaming container io.
+2026-01-24T03:18:32.2858730Z Creating stdout named pipe at /podr/container/pipe/7b23c64de796_gaitanalysisapp/stdout_bfeefa26deaf4f91b8d6e367305a13f2.
+2026-01-24T03:18:32.2954459Z Successfully created stdout named pipe at: /podr/container/pipe/7b23c64de796_gaitanalysisapp/stdout_bfeefa26deaf4f91b8d6e367305a13f2.
+2026-01-24T03:18:32.2956312Z Opening named pipe /podr/container/pipe/7b23c64de796_gaitanalysisapp/stdout_bfeefa26deaf4f91b8d6e367305a13f2 for reading in non-blocking mode.
+2026-01-24T03:18:32.2957296Z Successfully opened named pipe: /podr/container/pipe/7b23c64de796_gaitanalysisapp/stdout_bfeefa26deaf4f91b8d6e367305a13f2.
+2026-01-24T03:18:32.3333298Z Successfully removed non-blocking flag from /podr/container/pipe/7b23c64de796_gaitanalysisapp/stdout_bfeefa26deaf4f91b8d6e367305a13f2.
+2026-01-24T03:18:32.3335507Z Creating stderr named pipe at /podr/container/pipe/7b23c64de796_gaitanalysisapp/stderr_02e4b840ff724a95abb10dd4583ce104.
+2026-01-24T03:18:32.3920005Z Successfully created stderr named pipe at: /podr/container/pipe/7b23c64de796_gaitanalysisapp/stderr_02e4b840ff724a95abb10dd4583ce104.
+2026-01-24T03:18:32.3925446Z Opening named pipe /podr/container/pipe/7b23c64de796_gaitanalysisapp/stderr_02e4b840ff724a95abb10dd4583ce104 for reading in non-blocking mode.
+2026-01-24T03:18:32.3929122Z Successfully opened named pipe: /podr/container/pipe/7b23c64de796_gaitanalysisapp/stderr_02e4b840ff724a95abb10dd4583ce104.
+2026-01-24T03:18:32.3932378Z Successfully removed non-blocking flag from /podr/container/pipe/7b23c64de796_gaitanalysisapp/stderr_02e4b840ff724a95abb10dd4583ce104.
+2026-01-24T03:18:32.4002565Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:3db50ac17142fe05f32c4f3ef8453d140271e327 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:3db50ac17142fe05f32c4f3ef8453d140271e327
+2026-01-24T03:18:32.9900248Z Starting container: 7b23c64de796_gaitanalysisapp.
+2026-01-24T03:18:33.7325136Z Starting watchers and probes.
+2026-01-24T03:18:33.7532819Z Starting metrics collection.
+2026-01-24T03:18:33.7538303Z Container is running.
+2026-01-24T03:18:35.2713707Z Container start method finished after 128512 ms.
+2026-01-24T03:18:47.3639879Z Site startup probe succeeded after 12.0609529 seconds.
+2026-01-24T03:18:47.5042029Z Site started.
+2026-01-24T03:21:18.5755971Z Container start method called.
+2026-01-24T03:21:18.5761226Z Establishing network.
+2026-01-24T03:21:18.5763297Z Pulling image: gaitacr737.azurecr.io/gait-integrated:dea70d81765a5f8a2be630b752166caa1df32684.
+2026-01-24T03:21:28.3455089Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:21:28.3463123Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:21:28.3775164Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:21:28.4155662Z Container is terminated. Total time elapsed: 60 ms.
+2026-01-24T03:21:28.4157491Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:21:28.7465291Z Site: gaitanalysisapp stopped.
+2026-01-24T03:21:31.6811288Z Container start method called.
+2026-01-24T03:21:31.6998626Z Establishing network.
+2026-01-24T03:21:31.7009299Z Pulling image: gaitacr737.azurecr.io/gait-integrated:dea70d81765a5f8a2be630b752166caa1df32684.
+2026-01-24T03:23:39.5101951Z Image gaitacr737.azurecr.io/gait-integrated:dea70d81765a5f8a2be630b752166caa1df32684 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T03:23:39.5177717Z Container is starting.
+2026-01-24T03:23:39.5481090Z Establishing user namespace if not established already.
+2026-01-24T03:23:39.5486300Z Establishing network if not established already.
+2026-01-24T03:23:39.5488882Z Mounting volumes.
+2026-01-24T03:23:39.5534505Z Nested mountpoint volatile/logs
+2026-01-24T03:23:39.5610042Z Nested mountpoint 
+2026-01-24T03:23:39.7213787Z Creating container.
+2026-01-24T03:23:39.7216556Z Creating pipes for streaming container io.
+2026-01-24T03:23:39.7219964Z Creating stdout named pipe at /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stdout_26edaf78802040b8baabaef81ba75c4b.
+2026-01-24T03:23:39.7226633Z Successfully created stdout named pipe at: /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stdout_26edaf78802040b8baabaef81ba75c4b.
+2026-01-24T03:23:39.7229780Z Opening named pipe /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stdout_26edaf78802040b8baabaef81ba75c4b for reading in non-blocking mode.
+2026-01-24T03:23:39.7232287Z Successfully opened named pipe: /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stdout_26edaf78802040b8baabaef81ba75c4b.
+2026-01-24T03:23:39.7308044Z Successfully removed non-blocking flag from /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stdout_26edaf78802040b8baabaef81ba75c4b.
+2026-01-24T03:23:39.7315298Z Creating stderr named pipe at /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stderr_5f24b24af0614e0fb7006f3b38e8ccd2.
+2026-01-24T03:23:39.7319892Z Successfully created stderr named pipe at: /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stderr_5f24b24af0614e0fb7006f3b38e8ccd2.
+2026-01-24T03:23:39.7413783Z Opening named pipe /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stderr_5f24b24af0614e0fb7006f3b38e8ccd2 for reading in non-blocking mode.
+2026-01-24T03:23:39.7417982Z Successfully opened named pipe: /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stderr_5f24b24af0614e0fb7006f3b38e8ccd2.
+2026-01-24T03:23:39.7420372Z Successfully removed non-blocking flag from /podr/container/pipe/a8c3044debc6_gaitanalysisapp/stderr_5f24b24af0614e0fb7006f3b38e8ccd2.
+2026-01-24T03:23:39.7632629Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:dea70d81765a5f8a2be630b752166caa1df32684 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:dea70d81765a5f8a2be630b752166caa1df32684
+2026-01-24T03:23:40.9414864Z Starting container: a8c3044debc6_gaitanalysisapp.
+2026-01-24T03:23:41.0073420Z Starting watchers and probes.
+2026-01-24T03:23:41.0172517Z Starting metrics collection.
+2026-01-24T03:23:41.0369717Z Container is running.
+2026-01-24T03:23:42.4599994Z Container start method finished after 130760 ms.
+2026-01-24T03:23:54.6924804Z Site startup probe succeeded after 12.169085 seconds.
+2026-01-24T03:23:54.9517174Z Site started.
+2026-01-24T03:24:15.0152077Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:24:15.0407610Z Stop and delete container. Retry count = 0
+2026-01-24T03:24:15.0415675Z Stopping container: 7b23c64de796_gaitanalysisapp.
+2026-01-24T03:24:20.2097153Z Deleting container: 7b23c64de796_gaitanalysisapp. Retry count = 0
+2026-01-24T03:24:20.3883128Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:24:20.3966539Z Container is terminated. Total time elapsed: 5376 ms.
+2026-01-24T03:24:20.3987351Z Site: gaitanalysisapp stopped.
+2026-01-24T03:24:21.8596139Z Container start method called.
+2026-01-24T03:24:21.8687310Z Establishing network.
+2026-01-24T03:24:21.8688738Z Pulling image: gaitacr737.azurecr.io/gait-integrated:1c9f6206a4eb507f9cd1faf4077c65d99c3b5415.
+2026-01-24T03:26:18.9147128Z Image gaitacr737.azurecr.io/gait-integrated:1c9f6206a4eb507f9cd1faf4077c65d99c3b5415 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T03:26:18.9477727Z Container is starting.
+2026-01-24T03:26:18.9548774Z Establishing user namespace if not established already.
+2026-01-24T03:26:18.9558627Z Establishing network if not established already.
+2026-01-24T03:26:18.9636702Z Mounting volumes.
+2026-01-24T03:26:18.9726842Z Nested mountpoint volatile/logs
+2026-01-24T03:26:18.9917036Z Nested mountpoint 
+2026-01-24T03:26:19.0641821Z Creating container.
+2026-01-24T03:26:19.1114010Z Creating pipes for streaming container io.
+2026-01-24T03:26:19.1115768Z Creating stdout named pipe at /podr/container/pipe/da43d81a9969_gaitanalysisapp/stdout_58cdc8c956364949b7b090c206bba798.
+2026-01-24T03:26:19.1133853Z Successfully created stdout named pipe at: /podr/container/pipe/da43d81a9969_gaitanalysisapp/stdout_58cdc8c956364949b7b090c206bba798.
+2026-01-24T03:26:19.1134504Z Opening named pipe /podr/container/pipe/da43d81a9969_gaitanalysisapp/stdout_58cdc8c956364949b7b090c206bba798 for reading in non-blocking mode.
+2026-01-24T03:26:19.1135159Z Successfully opened named pipe: /podr/container/pipe/da43d81a9969_gaitanalysisapp/stdout_58cdc8c956364949b7b090c206bba798.
+2026-01-24T03:26:19.1135674Z Successfully removed non-blocking flag from /podr/container/pipe/da43d81a9969_gaitanalysisapp/stdout_58cdc8c956364949b7b090c206bba798.
+2026-01-24T03:26:19.1136235Z Creating stderr named pipe at /podr/container/pipe/da43d81a9969_gaitanalysisapp/stderr_d53f170a07094abaa3bc70e60cc3b9e6.
+2026-01-24T03:26:19.1136989Z Successfully created stderr named pipe at: /podr/container/pipe/da43d81a9969_gaitanalysisapp/stderr_d53f170a07094abaa3bc70e60cc3b9e6.
+2026-01-24T03:26:19.1137432Z Opening named pipe /podr/container/pipe/da43d81a9969_gaitanalysisapp/stderr_d53f170a07094abaa3bc70e60cc3b9e6 for reading in non-blocking mode.
+2026-01-24T03:26:19.1137986Z Successfully opened named pipe: /podr/container/pipe/da43d81a9969_gaitanalysisapp/stderr_d53f170a07094abaa3bc70e60cc3b9e6.
+2026-01-24T03:26:19.1138441Z Successfully removed non-blocking flag from /podr/container/pipe/da43d81a9969_gaitanalysisapp/stderr_d53f170a07094abaa3bc70e60cc3b9e6.
+2026-01-24T03:26:19.1238351Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:1c9f6206a4eb507f9cd1faf4077c65d99c3b5415 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:1c9f6206a4eb507f9cd1faf4077c65d99c3b5415
+2026-01-24T03:26:19.9604555Z Starting container: da43d81a9969_gaitanalysisapp.
+2026-01-24T03:26:20.0261700Z Starting watchers and probes.
+2026-01-24T03:26:20.0365558Z Starting metrics collection.
+2026-01-24T03:26:20.0372431Z Container is running.
+2026-01-24T03:26:20.9291297Z Container start method finished after 119059 ms.
+2026-01-24T03:26:34.2618018Z Site startup probe succeeded after 13.3033544 seconds.
+2026-01-24T03:26:34.4479167Z Site started.
+2026-01-24T03:26:54.8057032Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:26:54.9256951Z Stop and delete container. Retry count = 0
+2026-01-24T03:26:54.9261483Z Stopping container: a8c3044debc6_gaitanalysisapp.
+2026-01-24T03:27:00.1497682Z Deleting container: a8c3044debc6_gaitanalysisapp. Retry count = 0
+2026-01-24T03:27:00.3471680Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:27:00.3484856Z Container is terminated. Total time elapsed: 5541 ms.
+2026-01-24T03:27:00.3491028Z Site: gaitanalysisapp stopped.
+2026-01-24T03:35:21.6887832Z Container start method called.
+2026-01-24T03:35:21.7370447Z Establishing network.
+2026-01-24T03:35:21.7371484Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b.
+2026-01-24T03:35:33.0592495Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:35:33.0598259Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:35:33.0644787Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:35:33.0649728Z Container is terminated. Total time elapsed: 4 ms.
+2026-01-24T03:35:33.0655704Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:35:33.1257199Z Site: gaitanalysisapp stopped.
+2026-01-24T03:35:36.1975553Z Container start method called.
+2026-01-24T03:35:36.1976633Z Establishing network.
+2026-01-24T03:35:36.1977444Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b.
+2026-01-24T03:35:41.7851304Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:35:41.7942769Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:35:41.7943906Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:35:41.7944599Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T03:35:41.7946093Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:35:41.8745099Z Site: gaitanalysisapp stopped.
+2026-01-24T03:35:44.4902894Z Container start method called.
+2026-01-24T03:35:44.4904018Z Establishing network.
+2026-01-24T03:35:44.4904737Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b.
+2026-01-24T03:38:13.7159080Z Image gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b is pulled from registry gaitacr737.azurecr.io
+2026-01-24T03:38:13.7185698Z Container is starting.
+2026-01-24T03:38:13.7336717Z Establishing user namespace if not established already.
+2026-01-24T03:38:13.7346095Z Establishing network if not established already.
+2026-01-24T03:38:13.7439047Z Mounting volumes.
+2026-01-24T03:38:13.7665855Z Nested mountpoint volatile/logs
+2026-01-24T03:38:13.7841705Z Nested mountpoint 
+2026-01-24T03:38:13.9235149Z Creating container.
+2026-01-24T03:38:13.9248521Z Creating pipes for streaming container io.
+2026-01-24T03:38:13.9255775Z Creating stdout named pipe at /podr/container/pipe/de9b85680c37_gaitanalysisapp/stdout_6487bd17230a423c9fa2565310701be8.
+2026-01-24T03:38:13.9334437Z Successfully created stdout named pipe at: /podr/container/pipe/de9b85680c37_gaitanalysisapp/stdout_6487bd17230a423c9fa2565310701be8.
+2026-01-24T03:38:13.9340957Z Opening named pipe /podr/container/pipe/de9b85680c37_gaitanalysisapp/stdout_6487bd17230a423c9fa2565310701be8 for reading in non-blocking mode.
+2026-01-24T03:38:13.9343587Z Successfully opened named pipe: /podr/container/pipe/de9b85680c37_gaitanalysisapp/stdout_6487bd17230a423c9fa2565310701be8.
+2026-01-24T03:38:13.9348627Z Successfully removed non-blocking flag from /podr/container/pipe/de9b85680c37_gaitanalysisapp/stdout_6487bd17230a423c9fa2565310701be8.
+2026-01-24T03:38:13.9354119Z Creating stderr named pipe at /podr/container/pipe/de9b85680c37_gaitanalysisapp/stderr_91c0419ba9ed44a6afd1de89a6f046d5.
+2026-01-24T03:38:13.9356398Z Successfully created stderr named pipe at: /podr/container/pipe/de9b85680c37_gaitanalysisapp/stderr_91c0419ba9ed44a6afd1de89a6f046d5.
+2026-01-24T03:38:13.9458176Z Opening named pipe /podr/container/pipe/de9b85680c37_gaitanalysisapp/stderr_91c0419ba9ed44a6afd1de89a6f046d5 for reading in non-blocking mode.
+2026-01-24T03:38:13.9539485Z Successfully opened named pipe: /podr/container/pipe/de9b85680c37_gaitanalysisapp/stderr_91c0419ba9ed44a6afd1de89a6f046d5.
+2026-01-24T03:38:13.9543207Z Successfully removed non-blocking flag from /podr/container/pipe/de9b85680c37_gaitanalysisapp/stderr_91c0419ba9ed44a6afd1de89a6f046d5.
+2026-01-24T03:38:13.9730700Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:8f697af16d010bab2682c4627b672bec4316fa6b
+2026-01-24T03:38:15.5587798Z Starting container: de9b85680c37_gaitanalysisapp.
+2026-01-24T03:38:15.8184006Z Starting watchers and probes.
+2026-01-24T03:38:15.8262338Z Starting metrics collection.
+2026-01-24T03:38:15.8386996Z Container is running.
+2026-01-24T03:38:15.9778956Z Container start method finished after 151487 ms.
+2026-01-24T03:38:29.3925311Z Site startup probe succeeded after 13.3981056 seconds.
+2026-01-24T03:38:29.6144259Z Site started.
+2026-01-24T03:38:49.6641504Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:38:49.7121391Z Stop and delete container. Retry count = 0
+2026-01-24T03:38:49.7127632Z Stopping container: da43d81a9969_gaitanalysisapp.
+2026-01-24T03:38:54.8507398Z Deleting container: da43d81a9969_gaitanalysisapp. Retry count = 0
+2026-01-24T03:38:55.1702272Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:38:55.1724307Z Container is terminated. Total time elapsed: 5491 ms.
+2026-01-24T03:38:55.1798932Z Site: gaitanalysisapp stopped.
+2026-01-24T03:48:19.9684478Z Container start method called.
+2026-01-24T03:48:19.9788569Z Establishing network.
+2026-01-24T03:48:19.9789386Z Pulling image: gaitacr737.azurecr.io/gait-integrated:ed6016e462567cb8fb16d300d241d8caacacec38.
+2026-01-24T03:48:29.5061844Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:48:29.5067465Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:48:29.5137630Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:48:29.5139192Z Container is terminated. Total time elapsed: 7 ms.
+2026-01-24T03:48:29.5144036Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:48:29.8635317Z Site: gaitanalysisapp stopped.
+2026-01-24T03:48:31.8470274Z Container start method called.
+2026-01-24T03:48:31.8473360Z Establishing network.
+2026-01-24T03:48:31.8474163Z Pulling image: gaitacr737.azurecr.io/gait-integrated:83c5c946a7a4d9e5c654f4046ae173e930cdad7f.
+2026-01-24T03:50:20.3441145Z Image gaitacr737.azurecr.io/gait-integrated:83c5c946a7a4d9e5c654f4046ae173e930cdad7f is pulled from registry gaitacr737.azurecr.io
+2026-01-24T03:50:20.3564709Z Container is starting.
+2026-01-24T03:50:20.3702761Z Establishing user namespace if not established already.
+2026-01-24T03:50:20.3747479Z Establishing network if not established already.
+2026-01-24T03:50:20.3753169Z Mounting volumes.
+2026-01-24T03:50:20.3845104Z Nested mountpoint volatile/logs
+2026-01-24T03:50:20.3953672Z Nested mountpoint 
+2026-01-24T03:50:20.5075232Z Creating container.
+2026-01-24T03:50:20.5254087Z Creating pipes for streaming container io.
+2026-01-24T03:50:20.5255209Z Creating stdout named pipe at /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stdout_d29e743e2ff049c28046bab6389486d1.
+2026-01-24T03:50:20.5275041Z Successfully created stdout named pipe at: /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stdout_d29e743e2ff049c28046bab6389486d1.
+2026-01-24T03:50:20.5799382Z Opening named pipe /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stdout_d29e743e2ff049c28046bab6389486d1 for reading in non-blocking mode.
+2026-01-24T03:50:20.5810053Z Successfully opened named pipe: /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stdout_d29e743e2ff049c28046bab6389486d1.
+2026-01-24T03:50:20.5822163Z Successfully removed non-blocking flag from /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stdout_d29e743e2ff049c28046bab6389486d1.
+2026-01-24T03:50:20.5893424Z Creating stderr named pipe at /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stderr_91a97a56f7094d5fba524b4e37cb96df.
+2026-01-24T03:50:20.5902052Z Successfully created stderr named pipe at: /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stderr_91a97a56f7094d5fba524b4e37cb96df.
+2026-01-24T03:50:20.5910261Z Opening named pipe /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stderr_91a97a56f7094d5fba524b4e37cb96df for reading in non-blocking mode.
+2026-01-24T03:50:20.5986968Z Successfully opened named pipe: /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stderr_91a97a56f7094d5fba524b4e37cb96df.
+2026-01-24T03:50:20.5988361Z Successfully removed non-blocking flag from /podr/container/pipe/f5402bb3edab_gaitanalysisapp/stderr_91a97a56f7094d5fba524b4e37cb96df.
+2026-01-24T03:50:20.5989255Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:83c5c946a7a4d9e5c654f4046ae173e930cdad7f from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:83c5c946a7a4d9e5c654f4046ae173e930cdad7f
+2026-01-24T03:50:21.4918318Z Starting container: f5402bb3edab_gaitanalysisapp.
+2026-01-24T03:50:21.6455580Z Starting watchers and probes.
+2026-01-24T03:50:21.7040317Z Starting metrics collection.
+2026-01-24T03:50:21.7046547Z Container is running.
+2026-01-24T03:50:27.2927819Z Container start method finished after 115445 ms.
+2026-01-24T03:50:37.4343332Z Site startup probe succeeded after 10.0799769 seconds.
+2026-01-24T03:50:37.5995731Z Site started.
+2026-01-24T03:50:57.7001927Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:50:57.7262557Z Stop and delete container. Retry count = 0
+2026-01-24T03:50:57.7318762Z Stopping container: de9b85680c37_gaitanalysisapp.
+2026-01-24T03:51:02.9035763Z Deleting container: de9b85680c37_gaitanalysisapp. Retry count = 0
+2026-01-24T03:51:03.1436949Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:51:03.1531294Z Container is terminated. Total time elapsed: 5443 ms.
+2026-01-24T03:51:03.1560086Z Site: gaitanalysisapp stopped.
+2026-01-24T03:56:35.1691474Z Container start method called.
+2026-01-24T03:56:35.1692481Z Establishing network.
+2026-01-24T03:56:35.1693088Z Pulling image: gaitacr737.azurecr.io/gait-integrated:a8091a6f2ccc4567e44b21e1c9f6f2eb00a35fa9.
+2026-01-24T03:56:55.0577447Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:56:55.0582062Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:56:55.0584816Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:56:55.0587045Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T03:56:55.0671023Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:56:55.1785806Z Site: gaitanalysisapp stopped.
+2026-01-24T03:56:58.0069845Z Container start method called.
+2026-01-24T03:56:58.0157555Z Establishing network.
+2026-01-24T03:56:58.0158748Z Pulling image: gaitacr737.azurecr.io/gait-integrated:dfc8a209bea2aeac8defe5b1ef24cfdc4d43ffd4.
+2026-01-24T03:57:03.9892406Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:57:03.9976676Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:57:03.9982883Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:57:03.9992034Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T03:57:04.0073930Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:57:04.1077587Z Site: gaitanalysisapp stopped.
+2026-01-24T03:57:05.6732977Z Container start method called.
+2026-01-24T03:57:05.6908902Z Establishing network.
+2026-01-24T03:57:05.6909906Z Pulling image: gaitacr737.azurecr.io/gait-integrated:dfc8a209bea2aeac8defe5b1ef24cfdc4d43ffd4.
+2026-01-24T03:58:27.4743525Z Container pull image interrupted. Revert by terminate.
+2026-01-24T03:58:27.4749412Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T03:58:27.4750945Z Container spec TerminationMessagePolicy  path 
+2026-01-24T03:58:27.4856170Z Container is terminated. Total time elapsed: 10 ms.
+2026-01-24T03:58:27.4866234Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T03:58:27.5369314Z Site: gaitanalysisapp stopped.
+2026-01-24T03:58:30.7413378Z Container start method called.
+2026-01-24T03:58:30.7491511Z Establishing network.
+2026-01-24T03:58:30.7492548Z Pulling image: gaitacr737.azurecr.io/gait-integrated:7734b524d382791c589db107d8ae490e7b941779.
+2026-01-24T04:00:23.6985135Z Image gaitacr737.azurecr.io/gait-integrated:7734b524d382791c589db107d8ae490e7b941779 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:00:23.7070194Z Container is starting.
+2026-01-24T04:00:23.7162328Z Establishing user namespace if not established already.
+2026-01-24T04:00:23.7171908Z Establishing network if not established already.
+2026-01-24T04:00:23.7182255Z Mounting volumes.
+2026-01-24T04:00:23.7202111Z Nested mountpoint volatile/logs
+2026-01-24T04:00:23.7285850Z Nested mountpoint 
+2026-01-24T04:00:24.4748690Z Creating container.
+2026-01-24T04:00:24.4846579Z Creating pipes for streaming container io.
+2026-01-24T04:00:24.4847973Z Creating stdout named pipe at /podr/container/pipe/d913382ba912_gaitanalysisapp/stdout_a825f7d4d562470989c6c38bfc1ba4c8.
+2026-01-24T04:00:24.4956754Z Successfully created stdout named pipe at: /podr/container/pipe/d913382ba912_gaitanalysisapp/stdout_a825f7d4d562470989c6c38bfc1ba4c8.
+2026-01-24T04:00:24.4962552Z Opening named pipe /podr/container/pipe/d913382ba912_gaitanalysisapp/stdout_a825f7d4d562470989c6c38bfc1ba4c8 for reading in non-blocking mode.
+2026-01-24T04:00:24.5053960Z Successfully opened named pipe: /podr/container/pipe/d913382ba912_gaitanalysisapp/stdout_a825f7d4d562470989c6c38bfc1ba4c8.
+2026-01-24T04:00:24.5059958Z Successfully removed non-blocking flag from /podr/container/pipe/d913382ba912_gaitanalysisapp/stdout_a825f7d4d562470989c6c38bfc1ba4c8.
+2026-01-24T04:00:24.5063630Z Creating stderr named pipe at /podr/container/pipe/d913382ba912_gaitanalysisapp/stderr_4048228b5dec4151803419d8a153ad9b.
+2026-01-24T04:00:24.5067533Z Successfully created stderr named pipe at: /podr/container/pipe/d913382ba912_gaitanalysisapp/stderr_4048228b5dec4151803419d8a153ad9b.
+2026-01-24T04:00:24.5140238Z Opening named pipe /podr/container/pipe/d913382ba912_gaitanalysisapp/stderr_4048228b5dec4151803419d8a153ad9b for reading in non-blocking mode.
+2026-01-24T04:00:24.5141408Z Successfully opened named pipe: /podr/container/pipe/d913382ba912_gaitanalysisapp/stderr_4048228b5dec4151803419d8a153ad9b.
+2026-01-24T04:00:24.5143368Z Successfully removed non-blocking flag from /podr/container/pipe/d913382ba912_gaitanalysisapp/stderr_4048228b5dec4151803419d8a153ad9b.
+2026-01-24T04:00:24.5154445Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:7734b524d382791c589db107d8ae490e7b941779 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:7734b524d382791c589db107d8ae490e7b941779
+2026-01-24T04:00:26.4657826Z Starting container: d913382ba912_gaitanalysisapp.
+2026-01-24T04:00:26.5269008Z Starting watchers and probes.
+2026-01-24T04:00:26.5366035Z Starting metrics collection.
+2026-01-24T04:00:26.5544471Z Container is running.
+2026-01-24T04:00:26.6155142Z Container start method finished after 115873 ms.
+2026-01-24T04:00:40.8509741Z Site startup probe succeeded after 14.051846 seconds.
+2026-01-24T04:00:41.0033949Z Site started.
+2026-01-24T04:01:01.0431019Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:01:01.0634105Z Stop and delete container. Retry count = 0
+2026-01-24T04:01:01.0647539Z Stopping container: f5402bb3edab_gaitanalysisapp.
+2026-01-24T04:01:06.2554539Z Deleting container: f5402bb3edab_gaitanalysisapp. Retry count = 0
+2026-01-24T04:01:06.4631696Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:01:06.4648414Z Container is terminated. Total time elapsed: 5420 ms.
+2026-01-24T04:01:06.4649368Z Site: gaitanalysisapp stopped.
+2026-01-24T04:06:59.1427269Z Container start method called.
+2026-01-24T04:06:59.1430064Z Establishing network.
+2026-01-24T04:06:59.1431587Z Pulling image: gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202.
+2026-01-24T04:07:06.5980331Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:07:06.5982102Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:07:06.5987468Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:07:06.6003060Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:07:06.6078026Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:07:06.7103415Z Site: gaitanalysisapp stopped.
+2026-01-24T04:07:10.1161420Z Container start method called.
+2026-01-24T04:07:10.1168244Z Establishing network.
+2026-01-24T04:07:10.1169505Z Pulling image: gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202.
+2026-01-24T04:07:16.7963757Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:07:16.7969785Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:07:16.7970785Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:07:16.7971646Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:07:16.7976446Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:07:16.8657232Z Site: gaitanalysisapp stopped.
+2026-01-24T04:07:20.5253876Z Container start method called.
+2026-01-24T04:07:20.5255402Z Establishing network.
+2026-01-24T04:07:20.5256548Z Pulling image: gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202.
+2026-01-24T04:09:13.8052946Z Image gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:09:13.8117272Z Container is starting.
+2026-01-24T04:09:13.8139574Z Establishing user namespace if not established already.
+2026-01-24T04:09:13.8147812Z Establishing network if not established already.
+2026-01-24T04:09:13.8219443Z Mounting volumes.
+2026-01-24T04:09:13.8240525Z Nested mountpoint volatile/logs
+2026-01-24T04:09:13.8640943Z Nested mountpoint 
+2026-01-24T04:09:13.9837061Z Creating container.
+2026-01-24T04:09:13.9846641Z Creating pipes for streaming container io.
+2026-01-24T04:09:13.9847762Z Creating stdout named pipe at /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stdout_a13a9e0905c048da943b4b9515139962.
+2026-01-24T04:09:13.9853215Z Successfully created stdout named pipe at: /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stdout_a13a9e0905c048da943b4b9515139962.
+2026-01-24T04:09:13.9853970Z Opening named pipe /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stdout_a13a9e0905c048da943b4b9515139962 for reading in non-blocking mode.
+2026-01-24T04:09:13.9944740Z Successfully opened named pipe: /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stdout_a13a9e0905c048da943b4b9515139962.
+2026-01-24T04:09:13.9954090Z Successfully removed non-blocking flag from /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stdout_a13a9e0905c048da943b4b9515139962.
+2026-01-24T04:09:14.0034955Z Creating stderr named pipe at /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stderr_3bfc8e80d68c4b419e0be5589b77dd90.
+2026-01-24T04:09:14.0046653Z Successfully created stderr named pipe at: /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stderr_3bfc8e80d68c4b419e0be5589b77dd90.
+2026-01-24T04:09:14.0051490Z Opening named pipe /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stderr_3bfc8e80d68c4b419e0be5589b77dd90 for reading in non-blocking mode.
+2026-01-24T04:09:14.0189477Z Successfully opened named pipe: /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stderr_3bfc8e80d68c4b419e0be5589b77dd90.
+2026-01-24T04:09:14.0230570Z Successfully removed non-blocking flag from /podr/container/pipe/84ea77aa3788_gaitanalysisapp/stderr_3bfc8e80d68c4b419e0be5589b77dd90.
+2026-01-24T04:09:14.0245336Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:c3fc50070aa24a9dd9608f618678213af2ba6202
+2026-01-24T04:09:14.7411484Z Starting container: 84ea77aa3788_gaitanalysisapp.
+2026-01-24T04:09:14.8897470Z Starting watchers and probes.
+2026-01-24T04:09:14.8993089Z Starting metrics collection.
+2026-01-24T04:09:14.9008363Z Container is running.
+2026-01-24T04:09:15.1204051Z Container start method finished after 114547 ms.
+2026-01-24T04:09:19.8428621Z Site startup probe succeeded after 4.6326619 seconds.
+2026-01-24T04:09:20.0291403Z Site started.
+2026-01-24T04:09:40.0802977Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:09:40.0947672Z Stop and delete container. Retry count = 0
+2026-01-24T04:09:40.0955328Z Stopping container: d913382ba912_gaitanalysisapp.
+2026-01-24T04:09:45.4792720Z Deleting container: d913382ba912_gaitanalysisapp. Retry count = 0
+2026-01-24T04:09:46.1811909Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:09:46.1817241Z Container is terminated. Total time elapsed: 6101 ms.
+2026-01-24T04:09:46.1818264Z Site: gaitanalysisapp stopped.
+2026-01-24T04:15:49.7367537Z Container start method called.
+2026-01-24T04:15:49.7368977Z Establishing network.
+2026-01-24T04:15:49.7369822Z Pulling image: gaitacr737.azurecr.io/gait-integrated:74db91892ffc1fdd4ec2f751780b95cefb711728.
+2026-01-24T04:16:01.7059981Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:16:01.7061785Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:16:01.7141218Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:16:01.7253081Z Container is terminated. Total time elapsed: 18 ms.
+2026-01-24T04:16:01.7258763Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:16:01.8331512Z Site: gaitanalysisapp stopped.
+2026-01-24T04:16:05.1958410Z Container start method called.
+2026-01-24T04:16:05.2047439Z Establishing network.
+2026-01-24T04:16:05.2364933Z Pulling image: gaitacr737.azurecr.io/gait-integrated:74db91892ffc1fdd4ec2f751780b95cefb711728.
+2026-01-24T04:18:11.8701236Z Image gaitacr737.azurecr.io/gait-integrated:74db91892ffc1fdd4ec2f751780b95cefb711728 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:18:11.8770109Z Container is starting.
+2026-01-24T04:18:11.8929676Z Establishing user namespace if not established already.
+2026-01-24T04:18:11.8934369Z Establishing network if not established already.
+2026-01-24T04:18:11.8937294Z Mounting volumes.
+2026-01-24T04:18:11.8940165Z Nested mountpoint volatile/logs
+2026-01-24T04:18:11.9025862Z Nested mountpoint 
+2026-01-24T04:18:12.0398544Z Creating container.
+2026-01-24T04:18:12.0399348Z Creating pipes for streaming container io.
+2026-01-24T04:18:12.0399941Z Creating stdout named pipe at /podr/container/pipe/38875a767aa4_gaitanalysisapp/stdout_1da3ff7ef6b24a8ea5ee6b4dde06e0b4.
+2026-01-24T04:18:12.0501412Z Successfully created stdout named pipe at: /podr/container/pipe/38875a767aa4_gaitanalysisapp/stdout_1da3ff7ef6b24a8ea5ee6b4dde06e0b4.
+2026-01-24T04:18:12.0574393Z Opening named pipe /podr/container/pipe/38875a767aa4_gaitanalysisapp/stdout_1da3ff7ef6b24a8ea5ee6b4dde06e0b4 for reading in non-blocking mode.
+2026-01-24T04:18:12.0575882Z Successfully opened named pipe: /podr/container/pipe/38875a767aa4_gaitanalysisapp/stdout_1da3ff7ef6b24a8ea5ee6b4dde06e0b4.
+2026-01-24T04:18:12.0576630Z Successfully removed non-blocking flag from /podr/container/pipe/38875a767aa4_gaitanalysisapp/stdout_1da3ff7ef6b24a8ea5ee6b4dde06e0b4.
+2026-01-24T04:18:12.0577407Z Creating stderr named pipe at /podr/container/pipe/38875a767aa4_gaitanalysisapp/stderr_272fd9a799f84dfd8dcff70cbdc9ff6a.
+2026-01-24T04:18:12.0578407Z Successfully created stderr named pipe at: /podr/container/pipe/38875a767aa4_gaitanalysisapp/stderr_272fd9a799f84dfd8dcff70cbdc9ff6a.
+2026-01-24T04:18:12.0578969Z Opening named pipe /podr/container/pipe/38875a767aa4_gaitanalysisapp/stderr_272fd9a799f84dfd8dcff70cbdc9ff6a for reading in non-blocking mode.
+2026-01-24T04:18:12.0579646Z Successfully opened named pipe: /podr/container/pipe/38875a767aa4_gaitanalysisapp/stderr_272fd9a799f84dfd8dcff70cbdc9ff6a.
+2026-01-24T04:18:12.0580235Z Successfully removed non-blocking flag from /podr/container/pipe/38875a767aa4_gaitanalysisapp/stderr_272fd9a799f84dfd8dcff70cbdc9ff6a.
+2026-01-24T04:18:12.0580884Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:74db91892ffc1fdd4ec2f751780b95cefb711728 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:74db91892ffc1fdd4ec2f751780b95cefb711728
+2026-01-24T04:18:14.1800026Z Starting container: 38875a767aa4_gaitanalysisapp.
+2026-01-24T04:18:14.2903785Z Starting watchers and probes.
+2026-01-24T04:18:14.3005571Z Starting metrics collection.
+2026-01-24T04:18:14.3011957Z Container is running.
+2026-01-24T04:18:14.4196068Z Container start method finished after 129223 ms.
+2026-01-24T04:18:29.5157762Z Site startup probe succeeded after 15.0460966 seconds.
+2026-01-24T04:18:29.7166288Z Site started.
+2026-01-24T04:18:49.7613473Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:18:49.7991415Z Stop and delete container. Retry count = 0
+2026-01-24T04:18:49.7998451Z Stopping container: 84ea77aa3788_gaitanalysisapp.
+2026-01-24T04:18:54.9019718Z Deleting container: 84ea77aa3788_gaitanalysisapp. Retry count = 0
+2026-01-24T04:18:55.0804525Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:18:55.0815735Z Container is terminated. Total time elapsed: 5319 ms.
+2026-01-24T04:18:55.0909115Z Site: gaitanalysisapp stopped.
+2026-01-24T04:22:32.6900208Z Container start method called.
+2026-01-24T04:22:32.7314330Z Establishing network.
+2026-01-24T04:22:32.7316154Z Pulling image: gaitacr737.azurecr.io/gait-integrated:63a572a90d98978536fe13addcc51580f6bfd6ad.
+2026-01-24T04:22:40.7977196Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:22:40.8042937Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:22:40.8053057Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:22:40.8063345Z Container is terminated. Total time elapsed: 1 ms.
+2026-01-24T04:22:40.8139698Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:22:40.8937179Z Site: gaitanalysisapp stopped.
+2026-01-24T04:22:42.8558024Z Container start method called.
+2026-01-24T04:22:42.8559278Z Establishing network.
+2026-01-24T04:22:42.8560100Z Pulling image: gaitacr737.azurecr.io/gait-integrated:63a572a90d98978536fe13addcc51580f6bfd6ad.
+2026-01-24T04:24:00.1269959Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:24:00.1277166Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:24:00.1278551Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:24:00.1373766Z Container is terminated. Total time elapsed: 9 ms.
+2026-01-24T04:24:00.1375901Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:24:00.2290632Z Site: gaitanalysisapp stopped.
+2026-01-24T04:24:04.3032088Z Container start method called.
+2026-01-24T04:24:04.3033183Z Establishing network.
+2026-01-24T04:24:04.3033839Z Pulling image: gaitacr737.azurecr.io/gait-integrated:203e5059fe08ae245215ef70e487a7f52a11f077.
+2026-01-24T04:25:56.9932639Z Image gaitacr737.azurecr.io/gait-integrated:203e5059fe08ae245215ef70e487a7f52a11f077 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:25:56.9946066Z Container is starting.
+2026-01-24T04:25:57.0025040Z Establishing user namespace if not established already.
+2026-01-24T04:25:57.0034778Z Establishing network if not established already.
+2026-01-24T04:25:57.0096429Z Mounting volumes.
+2026-01-24T04:25:57.0124701Z Nested mountpoint volatile/logs
+2026-01-24T04:25:57.0314862Z Nested mountpoint 
+2026-01-24T04:25:57.1223692Z Creating container.
+2026-01-24T04:25:57.1331815Z Creating pipes for streaming container io.
+2026-01-24T04:25:57.1418100Z Creating stdout named pipe at /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stdout_eac330cf4c274a66979d4439b3665f98.
+2026-01-24T04:25:57.1532690Z Successfully created stdout named pipe at: /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stdout_eac330cf4c274a66979d4439b3665f98.
+2026-01-24T04:25:57.1533527Z Opening named pipe /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stdout_eac330cf4c274a66979d4439b3665f98 for reading in non-blocking mode.
+2026-01-24T04:25:57.1534320Z Successfully opened named pipe: /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stdout_eac330cf4c274a66979d4439b3665f98.
+2026-01-24T04:25:57.1621280Z Successfully removed non-blocking flag from /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stdout_eac330cf4c274a66979d4439b3665f98.
+2026-01-24T04:25:57.1624285Z Creating stderr named pipe at /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stderr_48e701d77c9240228529e793d25f3a5d.
+2026-01-24T04:25:57.1632913Z Successfully created stderr named pipe at: /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stderr_48e701d77c9240228529e793d25f3a5d.
+2026-01-24T04:25:57.1709390Z Opening named pipe /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stderr_48e701d77c9240228529e793d25f3a5d for reading in non-blocking mode.
+2026-01-24T04:25:57.1715569Z Successfully opened named pipe: /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stderr_48e701d77c9240228529e793d25f3a5d.
+2026-01-24T04:25:57.1724332Z Successfully removed non-blocking flag from /podr/container/pipe/31f8fb6a11c3_gaitanalysisapp/stderr_48e701d77c9240228529e793d25f3a5d.
+2026-01-24T04:25:57.1732775Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:203e5059fe08ae245215ef70e487a7f52a11f077 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:203e5059fe08ae245215ef70e487a7f52a11f077
+2026-01-24T04:25:57.6416810Z Starting container: 31f8fb6a11c3_gaitanalysisapp.
+2026-01-24T04:25:57.7253828Z Starting watchers and probes.
+2026-01-24T04:25:57.7265069Z Starting metrics collection.
+2026-01-24T04:25:57.7270350Z Container is running.
+2026-01-24T04:25:57.8472991Z Container start method finished after 113543 ms.
+2026-01-24T04:26:13.0432232Z Site startup probe succeeded after 15.1210873 seconds.
+2026-01-24T04:26:13.2041986Z Site started.
+2026-01-24T04:26:33.2980320Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:26:33.3352162Z Stop and delete container. Retry count = 0
+2026-01-24T04:26:33.3393443Z Stopping container: 38875a767aa4_gaitanalysisapp.
+2026-01-24T04:26:38.6433760Z Deleting container: 38875a767aa4_gaitanalysisapp. Retry count = 0
+2026-01-24T04:26:39.2971023Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:26:39.3051389Z Container is terminated. Total time elapsed: 6004 ms.
+2026-01-24T04:26:39.3066066Z Site: gaitanalysisapp stopped.
+2026-01-24T04:26:43.5345519Z Container start method called.
+2026-01-24T04:26:43.5661395Z Establishing network.
+2026-01-24T04:26:43.6045352Z Pulling image: gaitacr737.azurecr.io/gait-integrated:e6f0462083a3749abd14e0a2d63333261ee6f063.
+2026-01-24T04:27:24.3843482Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:27:24.4329502Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:27:24.4331729Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:27:24.4332868Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:27:24.4336688Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:27:24.5618783Z Site: gaitanalysisapp stopped.
+2026-01-24T04:27:33.2147384Z Site: gaitanalysisapp stopped.
+2026-01-24T04:27:37.2219630Z Container start method called.
+2026-01-24T04:27:37.2227783Z Establishing network.
+2026-01-24T04:27:37.2228496Z Pulling image: gaitacr737.azurecr.io/gait-integrated:45aed710276eb28af89b4f388cf9ff1e65ed7e58.
+2026-01-24T04:27:43.1248416Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:27:43.1340775Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:27:43.1342230Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:27:43.1343383Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:27:43.1347806Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:27:43.1654141Z Site: gaitanalysisapp stopped.
+2026-01-24T04:27:45.5046794Z Container start method called.
+2026-01-24T04:27:45.5048051Z Establishing network.
+2026-01-24T04:27:45.5055125Z Pulling image: gaitacr737.azurecr.io/gait-integrated:45aed710276eb28af89b4f388cf9ff1e65ed7e58.
+2026-01-24T04:28:57.7439434Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:28:57.7444161Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:28:57.7446392Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:28:57.7455301Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:28:57.7456956Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:28:57.7852171Z Site: gaitanalysisapp stopped.
+2026-01-24T04:29:00.4578639Z Container start method called.
+2026-01-24T04:29:00.4652991Z Establishing network.
+2026-01-24T04:29:00.4654938Z Pulling image: gaitacr737.azurecr.io/gait-integrated:0db647989f1a937230892d49e196f45091e2aa0a.
+2026-01-24T04:29:05.0565888Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:29:05.0859612Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:29:05.0946910Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:29:05.0950089Z Container is terminated. Total time elapsed: 8 ms.
+2026-01-24T04:29:05.0956410Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:29:05.2164033Z Site: gaitanalysisapp stopped.
+2026-01-24T04:29:06.9043199Z Container start method called.
+2026-01-24T04:29:06.9072334Z Establishing network.
+2026-01-24T04:29:06.9146628Z Pulling image: gaitacr737.azurecr.io/gait-integrated:3d51babeb46680265220f002717c283f159ac05f.
+2026-01-24T04:29:10.5895292Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:29:10.5902098Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:29:10.5980359Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:29:10.5986490Z Container is terminated. Total time elapsed: 7 ms.
+2026-01-24T04:29:10.6001872Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:29:10.6388584Z Site: gaitanalysisapp stopped.
+2026-01-24T04:29:12.5412694Z Container start method called.
+2026-01-24T04:29:12.5417986Z Establishing network.
+2026-01-24T04:29:12.5421897Z Pulling image: gaitacr737.azurecr.io/gait-integrated:0db647989f1a937230892d49e196f45091e2aa0a.
+2026-01-24T04:30:27.6331977Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:30:27.6336815Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:30:27.6558475Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:30:27.6760245Z Container is terminated. Total time elapsed: 42 ms.
+2026-01-24T04:30:27.6834187Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:30:27.8360462Z Site: gaitanalysisapp stopped.
+2026-01-24T04:30:30.8979470Z Container start method called.
+2026-01-24T04:30:30.8980359Z Establishing network.
+2026-01-24T04:30:30.8981073Z Pulling image: gaitacr737.azurecr.io/gait-integrated:0a9979d331f15f79fc89df58d11e7fd8aa9571a5.
+2026-01-24T04:30:46.2123118Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:30:46.2206248Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:30:46.2207141Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:30:46.2207915Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:30:46.2208576Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:30:46.2798656Z Site: gaitanalysisapp stopped.
+2026-01-24T04:30:52.6466845Z Container start method called.
+2026-01-24T04:30:52.6587068Z Establishing network.
+2026-01-24T04:30:52.7784736Z Pulling image: gaitacr737.azurecr.io/gait-integrated:85fe6f07b6fc9411b41cd6ba121a44c13cb138d3.
+2026-01-24T04:30:52.8621183Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:30:52.8627373Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:30:52.8671457Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:30:52.8676792Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:30:52.8680923Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:30:52.9372946Z Site: gaitanalysisapp stopped.
+2026-01-24T04:30:54.7608824Z Container start method called.
+2026-01-24T04:30:54.7614267Z Establishing network.
+2026-01-24T04:30:54.7617470Z Pulling image: gaitacr737.azurecr.io/gait-integrated:85fe6f07b6fc9411b41cd6ba121a44c13cb138d3.
+2026-01-24T04:31:03.5235386Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:31:03.5324803Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:31:03.5332910Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:31:03.5415664Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:31:03.5425223Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:31:03.6032761Z Site: gaitanalysisapp stopped.
+2026-01-24T04:31:05.3033285Z Container start method called.
+2026-01-24T04:31:05.3231786Z Establishing network.
+2026-01-24T04:31:05.3324070Z Pulling image: gaitacr737.azurecr.io/gait-integrated:85fe6f07b6fc9411b41cd6ba121a44c13cb138d3.
+2026-01-24T04:32:13.1764861Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:32:13.1953004Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:32:13.1957501Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:32:13.1958465Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:32:13.1959049Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:32:13.3666894Z Site: gaitanalysisapp stopped.
+2026-01-24T04:32:20.4906369Z Container start method called.
+2026-01-24T04:32:20.4910446Z Establishing network.
+2026-01-24T04:32:20.4911645Z Pulling image: gaitacr737.azurecr.io/gait-integrated:f37027a85cb0060a006ba7bb35d8a34e11628731.
+2026-01-24T04:36:49.2388322Z Image gaitacr737.azurecr.io/gait-integrated:f37027a85cb0060a006ba7bb35d8a34e11628731 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:36:49.2411523Z Container is starting.
+2026-01-24T04:36:49.2547919Z Establishing user namespace if not established already.
+2026-01-24T04:36:49.2555474Z Establishing network if not established already.
+2026-01-24T04:36:49.2592606Z Mounting volumes.
+2026-01-24T04:36:49.2637179Z Nested mountpoint volatile/logs
+2026-01-24T04:36:49.3146415Z Nested mountpoint 
+2026-01-24T04:36:49.4256721Z Creating container.
+2026-01-24T04:36:49.4271448Z Creating pipes for streaming container io.
+2026-01-24T04:36:49.4274228Z Creating stdout named pipe at /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stdout_02b54c945dc24162a5f2bc0aacaeb74e.
+2026-01-24T04:36:49.4329652Z Successfully created stdout named pipe at: /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stdout_02b54c945dc24162a5f2bc0aacaeb74e.
+2026-01-24T04:36:49.4336536Z Opening named pipe /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stdout_02b54c945dc24162a5f2bc0aacaeb74e for reading in non-blocking mode.
+2026-01-24T04:36:49.4338282Z Successfully opened named pipe: /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stdout_02b54c945dc24162a5f2bc0aacaeb74e.
+2026-01-24T04:36:49.4344904Z Successfully removed non-blocking flag from /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stdout_02b54c945dc24162a5f2bc0aacaeb74e.
+2026-01-24T04:36:49.4351247Z Creating stderr named pipe at /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stderr_c945c1fce41740b7b844d3c482c823c6.
+2026-01-24T04:36:49.4353828Z Successfully created stderr named pipe at: /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stderr_c945c1fce41740b7b844d3c482c823c6.
+2026-01-24T04:36:49.4680648Z Opening named pipe /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stderr_c945c1fce41740b7b844d3c482c823c6 for reading in non-blocking mode.
+2026-01-24T04:36:49.4684726Z Successfully opened named pipe: /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stderr_c945c1fce41740b7b844d3c482c823c6.
+2026-01-24T04:36:49.4691421Z Successfully removed non-blocking flag from /podr/container/pipe/8f0c2510b973_gaitanalysisapp/stderr_c945c1fce41740b7b844d3c482c823c6.
+2026-01-24T04:36:49.4706387Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:f37027a85cb0060a006ba7bb35d8a34e11628731 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:f37027a85cb0060a006ba7bb35d8a34e11628731
+2026-01-24T04:36:50.3950772Z Starting container: 8f0c2510b973_gaitanalysisapp.
+2026-01-24T04:36:50.5251178Z Starting watchers and probes.
+2026-01-24T04:36:50.5353142Z Starting metrics collection.
+2026-01-24T04:36:50.5452886Z Container is running.
+2026-01-24T04:36:51.6414248Z Container start method finished after 271150 ms.
+2026-01-24T04:36:57.8962209Z Site startup probe succeeded after 6.0846359 seconds.
+2026-01-24T04:36:58.1424974Z Site started.
+2026-01-24T04:37:18.3155087Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:37:18.7961390Z Stop and delete container. Retry count = 0
+2026-01-24T04:37:18.8043107Z Stopping container: 31f8fb6a11c3_gaitanalysisapp.
+2026-01-24T04:37:23.9212845Z Deleting container: 31f8fb6a11c3_gaitanalysisapp. Retry count = 0
+2026-01-24T04:37:24.1915393Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:37:24.1936071Z Container is terminated. Total time elapsed: 5877 ms.
+2026-01-24T04:37:24.2047053Z Site: gaitanalysisapp stopped.
+2026-01-24T04:41:40.8582207Z Container start method called.
+2026-01-24T04:41:40.8584082Z Establishing network.
+2026-01-24T04:41:40.8584751Z Pulling image: gaitacr737.azurecr.io/gait-integrated:c4a9b273541e963279ae16148217a43ab4f477d3.
+2026-01-24T04:41:48.9911471Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:41:48.9916994Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:41:48.9920684Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:41:48.9977688Z Container is terminated. Total time elapsed: 5 ms.
+2026-01-24T04:41:48.9983565Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:41:49.0297773Z Site: gaitanalysisapp stopped.
+2026-01-24T04:41:51.3699718Z Container start method called.
+2026-01-24T04:41:51.4089542Z Establishing network.
+2026-01-24T04:41:51.4092205Z Pulling image: gaitacr737.azurecr.io/gait-integrated:785abb0e0ca89f6561610cbd8aeb61ea13ec55e8.
+2026-01-24T04:44:05.0622897Z Image gaitacr737.azurecr.io/gait-integrated:785abb0e0ca89f6561610cbd8aeb61ea13ec55e8 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T04:44:05.0631595Z Container is starting.
+2026-01-24T04:44:05.0720065Z Establishing user namespace if not established already.
+2026-01-24T04:44:05.0721037Z Establishing network if not established already.
+2026-01-24T04:44:05.0721727Z Mounting volumes.
+2026-01-24T04:44:05.0722620Z Nested mountpoint volatile/logs
+2026-01-24T04:44:05.1624514Z Nested mountpoint 
+2026-01-24T04:44:05.1807784Z Creating container.
+2026-01-24T04:44:05.1808371Z Creating pipes for streaming container io.
+2026-01-24T04:44:05.1808848Z Creating stdout named pipe at /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stdout_620fda226f9c444ca777a88eb58867cc.
+2026-01-24T04:44:05.2012113Z Successfully created stdout named pipe at: /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stdout_620fda226f9c444ca777a88eb58867cc.
+2026-01-24T04:44:05.2012936Z Opening named pipe /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stdout_620fda226f9c444ca777a88eb58867cc for reading in non-blocking mode.
+2026-01-24T04:44:05.2013662Z Successfully opened named pipe: /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stdout_620fda226f9c444ca777a88eb58867cc.
+2026-01-24T04:44:05.2014279Z Successfully removed non-blocking flag from /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stdout_620fda226f9c444ca777a88eb58867cc.
+2026-01-24T04:44:05.2014887Z Creating stderr named pipe at /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stderr_70d3af32f27e4beba905a04b85cf8485.
+2026-01-24T04:44:05.2015789Z Successfully created stderr named pipe at: /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stderr_70d3af32f27e4beba905a04b85cf8485.
+2026-01-24T04:44:05.2016377Z Opening named pipe /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stderr_70d3af32f27e4beba905a04b85cf8485 for reading in non-blocking mode.
+2026-01-24T04:44:05.2017019Z Successfully opened named pipe: /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stderr_70d3af32f27e4beba905a04b85cf8485.
+2026-01-24T04:44:05.2017727Z Successfully removed non-blocking flag from /podr/container/pipe/e18c784e6d2e_gaitanalysisapp/stderr_70d3af32f27e4beba905a04b85cf8485.
+2026-01-24T04:44:05.2018359Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:785abb0e0ca89f6561610cbd8aeb61ea13ec55e8 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:785abb0e0ca89f6561610cbd8aeb61ea13ec55e8
+2026-01-24T04:44:05.7143249Z Starting container: e18c784e6d2e_gaitanalysisapp.
+2026-01-24T04:44:05.7864349Z Starting watchers and probes.
+2026-01-24T04:44:05.7970012Z Starting metrics collection.
+2026-01-24T04:44:05.8164991Z Container is running.
+2026-01-24T04:44:05.9658562Z Container start method finished after 134557 ms.
+2026-01-24T04:44:10.4914678Z Site startup probe succeeded after 4.504959 seconds.
+2026-01-24T04:44:10.6621809Z Site started.
+2026-01-24T04:44:30.7097583Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:44:30.7404315Z Stop and delete container. Retry count = 0
+2026-01-24T04:44:30.7413525Z Stopping container: 8f0c2510b973_gaitanalysisapp.
+2026-01-24T04:44:35.8521396Z Deleting container: 8f0c2510b973_gaitanalysisapp. Retry count = 0
+2026-01-24T04:44:36.0293503Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:44:36.0316842Z Container is terminated. Total time elapsed: 5321 ms.
+2026-01-24T04:44:36.0326083Z Site: gaitanalysisapp stopped.
+2026-01-24T04:49:41.4315035Z Container start method called.
+2026-01-24T04:49:41.5018534Z Establishing network.
+2026-01-24T04:49:41.5019652Z Pulling image: gaitacr737.azurecr.io/gait-integrated:c180c5b23103c20f651516beedd50ca71fc43224.
+2026-01-24T04:49:53.0013003Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:49:53.0013889Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:49:53.0014812Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:49:53.0015540Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:49:53.0122021Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:49:53.2201582Z Site: gaitanalysisapp stopped.
+2026-01-24T04:49:55.7700916Z Container start method called.
+2026-01-24T04:49:55.7701987Z Establishing network.
+2026-01-24T04:49:55.7702753Z Pulling image: gaitacr737.azurecr.io/gait-integrated:51d06325f6af95b337920dab412b63f570532bdf.
+2026-01-24T04:50:00.4330579Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:50:00.4419760Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:50:00.4427252Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:50:00.4504693Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:50:00.4512935Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:50:00.8228756Z Site: gaitanalysisapp stopped.
+2026-01-24T04:50:03.1507845Z Container start method called.
+2026-01-24T04:50:03.2412876Z Establishing network.
+2026-01-24T04:50:03.2607437Z Pulling image: gaitacr737.azurecr.io/gait-integrated:51d06325f6af95b337920dab412b63f570532bdf.
+2026-01-24T04:51:22.3968926Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:51:22.3976284Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:51:22.4042266Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:51:22.4051576Z Container is terminated. Total time elapsed: 7 ms.
+2026-01-24T04:51:22.4054821Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:51:22.4471860Z Site: gaitanalysisapp stopped.
+2026-01-24T04:51:27.2257641Z Container start method called.
+2026-01-24T04:51:27.2258595Z Establishing network.
+2026-01-24T04:51:27.2259193Z Pulling image: gaitacr737.azurecr.io/gait-integrated:119d75bade3e99c9eb1b70ab32be5fd9c5a8e128.
+2026-01-24T04:51:28.6879462Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:51:28.6882010Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:51:28.6884339Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:51:28.6886416Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:51:28.6888136Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:51:28.7381153Z Site: gaitanalysisapp stopped.
+2026-01-24T04:51:30.3989219Z Container start method called.
+2026-01-24T04:51:30.3990090Z Establishing network.
+2026-01-24T04:51:30.3991583Z Pulling image: gaitacr737.azurecr.io/gait-integrated:119d75bade3e99c9eb1b70ab32be5fd9c5a8e128.
+2026-01-24T04:51:57.8326534Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:51:57.8328898Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:51:57.8329785Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:51:57.8334008Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:51:57.8334891Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:51:57.8624128Z Site: gaitanalysisapp stopped.
+2026-01-24T04:52:00.4727648Z Container start method called.
+2026-01-24T04:52:00.4934396Z Establishing network.
+2026-01-24T04:52:00.4935574Z Pulling image: gaitacr737.azurecr.io/gait-integrated:b8bbc56cb959631bfb6e53fc9d0a641eb16e51e9.
+2026-01-24T04:52:03.4952796Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:52:03.4959763Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:52:03.5063063Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:52:03.5234374Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:52:03.5240546Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:52:03.5351647Z Site: gaitanalysisapp stopped.
+2026-01-24T04:52:06.5148294Z Container start method called.
+2026-01-24T04:52:06.5265472Z Establishing network.
+2026-01-24T04:52:06.5357903Z Pulling image: gaitacr737.azurecr.io/gait-integrated:b8bbc56cb959631bfb6e53fc9d0a641eb16e51e9.
+2026-01-24T04:52:09.3684630Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:52:09.3697417Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:52:09.3705211Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:52:09.3883531Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:52:09.3891251Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:52:09.4598942Z Site: gaitanalysisapp stopped.
+2026-01-24T04:52:11.2604047Z Container start method called.
+2026-01-24T04:52:11.2604814Z Establishing network.
+2026-01-24T04:52:11.2605430Z Pulling image: gaitacr737.azurecr.io/gait-integrated:f02f2966a7c9cfd00b2b0530bfa2c989f41908bc.
+2026-01-24T04:52:14.9605519Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:52:14.9727455Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:52:14.9802020Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:52:14.9807352Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:52:14.9810836Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:52:15.0619257Z Site: gaitanalysisapp stopped.
+2026-01-24T04:52:17.7938305Z Container start method called.
+2026-01-24T04:52:17.8184178Z Establishing network.
+2026-01-24T04:52:17.8243190Z Pulling image: gaitacr737.azurecr.io/gait-integrated:f02f2966a7c9cfd00b2b0530bfa2c989f41908bc.
+2026-01-24T04:52:56.9696215Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:52:56.9702212Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:52:56.9705966Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:52:56.9711227Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:52:56.9784441Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:52:57.0184851Z Site: gaitanalysisapp stopped.
+2026-01-24T04:52:59.2908756Z Container start method called.
+2026-01-24T04:52:59.4105699Z Establishing network.
+2026-01-24T04:52:59.4117088Z Pulling image: gaitacr737.azurecr.io/gait-integrated:e52415113f882af91692603767b15a57fb1a72e1.
+2026-01-24T04:53:20.4362842Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:53:20.4363627Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:53:20.4364276Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:53:20.4460793Z Container is terminated. Total time elapsed: 1 ms.
+2026-01-24T04:53:20.4463466Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:53:20.5572966Z Site: gaitanalysisapp stopped.
+2026-01-24T04:53:23.1152989Z Container start method called.
+2026-01-24T04:53:23.1158497Z Establishing network.
+2026-01-24T04:53:23.1159430Z Pulling image: gaitacr737.azurecr.io/gait-integrated:7c23c62cd65bb7d0cda86ddf3d0e8f2b743c7bdb.
+2026-01-24T04:53:31.7129351Z Container pull image interrupted. Revert by terminate.
+2026-01-24T04:53:31.7132721Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:53:31.7137002Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:53:31.7139466Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T04:53:31.7140321Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T04:53:31.7241695Z Site: gaitanalysisapp stopped.
+2026-01-24T04:53:44.946Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T04:53:54.0587752Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T04:53:54.0712486Z Stop and delete container. Retry count = 0
+2026-01-24T04:53:54.0783489Z Stopping container: e18c784e6d2e_gaitanalysisapp.
+2026-01-24T04:53:59.1702706Z Deleting container: e18c784e6d2e_gaitanalysisapp. Retry count = 0
+2026-01-24T04:53:59.3042975Z Container spec TerminationMessagePolicy  path 
+2026-01-24T04:53:59.3094640Z Container is terminated. Total time elapsed: 5245 ms.
+2026-01-24T04:53:59.3095450Z Site: gaitanalysisapp stopped.
+2026-01-24T04:54:03.540Z INFO  - Pulling image: gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098
+2026-01-24T04:54:03.765Z INFO  - 4764d6f855f8f00cac94ddc3453fb9916c33e098 Pulling from gait-integrated
+2026-01-24T04:54:03.766Z INFO  - 380ebb5ce8c1 Pulling fs layer
+2026-01-24T04:54:03.773Z INFO  - 5b09819094bb Pulling fs layer
+2026-01-24T04:54:03.774Z INFO  - 3e731abb5c1d Pulling fs layer
+2026-01-24T04:54:03.774Z INFO  - 0b2bf04f68e9 Pulling fs layer
+2026-01-24T04:54:03.776Z INFO  - 8ca7ed605565 Pulling fs layer
+2026-01-24T04:54:03.777Z INFO  - ff17bb73ce99 Pulling fs layer
+2026-01-24T04:54:03.783Z INFO  - 3b01c295e922 Pulling fs layer
+2026-01-24T04:54:03.783Z INFO  - cd796adf66c9 Pulling fs layer
+2026-01-24T04:54:03.784Z INFO  - d623b8b5d82a Pulling fs layer
+2026-01-24T04:54:03.785Z INFO  - 3ebf5cf2b50f Pulling fs layer
+2026-01-24T04:54:03.785Z INFO  - 01ca4ea40c1c Pulling fs layer
+2026-01-24T04:54:03.795Z INFO  - b8924ac7eae3 Pulling fs layer
+2026-01-24T04:54:03.795Z INFO  - 86d0d45b9bc2 Pulling fs layer
+2026-01-24T04:54:03.796Z INFO  - f2b5da90430b Pulling fs layer
+2026-01-24T04:54:03.803Z INFO  - 5f07e2835aa4 Pulling fs layer
+2026-01-24T04:54:03.805Z INFO  - 92f0ea9f8c69 Pulling fs layer
+2026-01-24T04:54:03.996Z INFO  - 3ebf5cf2b50f Downloading 57KB / 57KB
+2026-01-24T04:54:04.015Z INFO  - 3ebf5cf2b50f Verifying Checksum
+2026-01-24T04:54:04.024Z INFO  - 3ebf5cf2b50f Download complete
+2026-01-24T04:54:04.027Z INFO  - 0b2bf04f68e9 Downloading 250B / 250B
+2026-01-24T04:54:04.044Z INFO  - 0b2bf04f68e9 Verifying Checksum
+2026-01-24T04:54:04.044Z INFO  - 0b2bf04f68e9 Download complete
+2026-01-24T04:54:04.137Z INFO  - 92f0ea9f8c69 Downloading 3KB / 70KB
+2026-01-24T04:54:04.145Z INFO  - 92f0ea9f8c69 Downloading 70KB / 70KB
+2026-01-24T04:54:04.146Z INFO  - 92f0ea9f8c69 Verifying Checksum
+2026-01-24T04:54:04.146Z INFO  - 92f0ea9f8c69 Download complete
+2026-01-24T04:54:04.187Z INFO  - ff17bb73ce99 Downloading 206MB / 206MB
+2026-01-24T04:54:04.206Z INFO  - 86d0d45b9bc2 Downloading 6KB / 6KB
+2026-01-24T04:54:04.216Z INFO  - f2b5da90430b Downloading 135B / 135B
+2026-01-24T04:54:04.216Z INFO  - cd796adf66c9 Downloading 853B / 853B
+2026-01-24T04:54:04.224Z INFO  - 8ca7ed605565 Downloading 92B / 92B
+2026-01-24T04:54:04.225Z INFO  - 5f07e2835aa4 Downloading 464B / 464B
+2026-01-24T04:54:04.226Z INFO  - 5b09819094bb Downloading 1MB / 1MB
+2026-01-24T04:54:04.227Z INFO  - b8924ac7eae3 Downloading 248KB / 248KB
+2026-01-24T04:54:04.235Z INFO  - 380ebb5ce8c1 Downloading 29MB / 29MB
+2026-01-24T04:54:04.236Z INFO  - 01ca4ea40c1c Downloading 3KB / 124KB
+2026-01-24T04:54:04.237Z INFO  - 3b01c295e922 Downloading 11MB / 11MB
+2026-01-24T04:54:04.245Z INFO  - 01ca4ea40c1c Downloading 124KB / 124KB
+2026-01-24T04:54:04.248Z INFO  -  
+2026-01-24T04:54:04.254Z ERROR - write /mnt/docker/231072.231072/tmp/GetImageBlob2519297624: no space left on deviceErr: 0, Message: write /mnt/docker/231072.231072/tmp/GetImageBlob2519297624: no space left on device
+2026-01-24T04:54:04.256Z INFO  - Pull Image failed, Time taken: 0 Seconds
+2026-01-24T04:54:04.257Z ERROR - Pulling docker image gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098 failed:
+2026-01-24T04:54:04.338Z ERROR - DockerApiException: Docker API responded with status code=InternalServerError, response={"message":"Head \"https://gaitacr737.azurecr.io/v2/gait-integrated/manifests/4764d6f855f8f00cac94ddc3453fb9916c33e098\": unauthorized: {\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"authentication required, visit https://aka.ms/acr/authorization for more information. CorrelationId: 3a7b2054-84a7-4e21-8331-15553c9cc31d\"}]}"}
+
+2026-01-24T04:54:04.339Z WARN  - Image pull failed. Defaulting to local copy if present.
+2026-01-24T04:54:04.340Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T04:54:04.342Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T04:54:12.031Z INFO  - Pulling image: gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098
+2026-01-24T04:54:13.745Z INFO  - 4764d6f855f8f00cac94ddc3453fb9916c33e098 Pulling from gait-integrated
+2026-01-24T04:54:13.747Z INFO  - 380ebb5ce8c1 Pulling fs layer
+2026-01-24T04:54:13.748Z INFO  - 5b09819094bb Pulling fs layer
+2026-01-24T04:54:13.749Z INFO  - 3e731abb5c1d Pulling fs layer
+2026-01-24T04:54:13.749Z INFO  - 0b2bf04f68e9 Pulling fs layer
+2026-01-24T04:54:13.750Z INFO  - 8ca7ed605565 Pulling fs layer
+2026-01-24T04:54:13.751Z INFO  - ff17bb73ce99 Pulling fs layer
+2026-01-24T04:54:13.751Z INFO  - 3b01c295e922 Pulling fs layer
+2026-01-24T04:54:13.751Z INFO  - cd796adf66c9 Pulling fs layer
+2026-01-24T04:54:13.752Z INFO  - d623b8b5d82a Pulling fs layer
+2026-01-24T04:54:13.753Z INFO  - 3ebf5cf2b50f Pulling fs layer
+2026-01-24T04:54:13.753Z INFO  - 01ca4ea40c1c Pulling fs layer
+2026-01-24T04:54:13.753Z INFO  - b8924ac7eae3 Pulling fs layer
+2026-01-24T04:54:13.754Z INFO  - 86d0d45b9bc2 Pulling fs layer
+2026-01-24T04:54:13.754Z INFO  - f2b5da90430b Pulling fs layer
+2026-01-24T04:54:13.755Z INFO  - 5f07e2835aa4 Pulling fs layer
+2026-01-24T04:54:13.756Z INFO  - 92f0ea9f8c69 Pulling fs layer
+2026-01-24T04:54:13.756Z INFO  - 92f0ea9f8c69 Downloading 3KB / 70KB
+2026-01-24T04:54:13.757Z INFO  - 8ca7ed605565 Downloading 92B / 92B
+2026-01-24T04:54:13.757Z INFO  - cd796adf66c9 Downloading 853B / 853B
+2026-01-24T04:54:13.757Z INFO  - 3ebf5cf2b50f Downloading 57KB / 57KB
+2026-01-24T04:54:13.758Z INFO  - 92f0ea9f8c69 Downloading 70KB / 70KB
+2026-01-24T04:54:13.758Z INFO  - 8ca7ed605565 Verifying Checksum
+2026-01-24T04:54:13.758Z INFO  - 8ca7ed605565 Download complete
+2026-01-24T04:54:13.759Z INFO  - cd796adf66c9 Verifying Checksum
+2026-01-24T04:54:13.759Z INFO  - cd796adf66c9 Download complete
+2026-01-24T04:54:13.759Z INFO  - 3ebf5cf2b50f Verifying Checksum
+2026-01-24T04:54:13.760Z INFO  - 3ebf5cf2b50f Download complete
+2026-01-24T04:54:13.761Z INFO  - 92f0ea9f8c69 Verifying Checksum
+2026-01-24T04:54:13.761Z INFO  - 92f0ea9f8c69 Download complete
+2026-01-24T04:54:13.762Z INFO  - 86d0d45b9bc2 Downloading 6KB / 6KB
+2026-01-24T04:54:13.762Z INFO  - 86d0d45b9bc2 Verifying Checksum
+2026-01-24T04:54:13.762Z INFO  - 86d0d45b9bc2 Download complete
+2026-01-24T04:54:13.763Z INFO  - 0b2bf04f68e9 Downloading 250B / 250B
+2026-01-24T04:54:13.763Z INFO  - 0b2bf04f68e9 Verifying Checksum
+2026-01-24T04:54:13.764Z INFO  - 0b2bf04f68e9 Download complete
+2026-01-24T04:54:13.764Z INFO  - 01ca4ea40c1c Downloading 3KB / 124KB
+2026-01-24T04:54:13.765Z INFO  - f2b5da90430b Downloading 135B / 135B
+2026-01-24T04:54:13.765Z INFO  - 5f07e2835aa4 Downloading 464B / 464B
+2026-01-24T04:54:13.765Z INFO  - d623b8b5d82a Downloading 365MB / 365MB
+2026-01-24T04:54:13.765Z INFO  - 380ebb5ce8c1 Downloading 29MB / 29MB
+2026-01-24T04:54:13.765Z INFO  - f2b5da90430b Verifying Checksum
+2026-01-24T04:54:13.766Z INFO  - f2b5da90430b Download complete
+2026-01-24T04:54:13.766Z INFO  - 5f07e2835aa4 Verifying Checksum
+2026-01-24T04:54:13.767Z INFO  - 5f07e2835aa4 Download complete
+2026-01-24T04:54:13.767Z INFO  - 01ca4ea40c1c Downloading 124KB / 124KB
+2026-01-24T04:54:13.767Z INFO  - 01ca4ea40c1c Verifying Checksum
+2026-01-24T04:54:13.768Z INFO  - 01ca4ea40c1c Download complete
+2026-01-24T04:54:13.768Z INFO  - b8924ac7eae3 Downloading 248KB / 248KB
+2026-01-24T04:54:13.769Z INFO  -  
+2026-01-24T04:54:13.769Z ERROR - write /mnt/docker/231072.231072/tmp/GetImageBlob2256424627: no space left on deviceErr: 0, Message: write /mnt/docker/231072.231072/tmp/GetImageBlob2256424627: no space left on device
+2026-01-24T04:54:13.779Z INFO  - Pull Image failed, Time taken: 1 Seconds
+2026-01-24T04:54:13.779Z ERROR - Pulling docker image gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098 failed:
+2026-01-24T04:54:14.743Z ERROR - DockerApiException: Docker API responded with status code=InternalServerError, response={"message":"Head \"https://gaitacr737.azurecr.io/v2/gait-integrated/manifests/4764d6f855f8f00cac94ddc3453fb9916c33e098\": unauthorized: {\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"authentication required, visit https://aka.ms/acr/authorization for more information. CorrelationId: 760a4af9-98d1-4576-a8d3-a72abe6469cb\"}]}"}
+
+2026-01-24T04:54:14.745Z WARN  - Image pull failed. Defaulting to local copy if present.
+2026-01-24T04:54:14.750Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T04:54:14.760Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T04:54:23.655Z INFO  - Pulling image: gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098
+2026-01-24T04:54:23.846Z INFO  - 4764d6f855f8f00cac94ddc3453fb9916c33e098 Pulling from gait-integrated
+2026-01-24T04:54:23.848Z INFO  - 380ebb5ce8c1 Pulling fs layer
+2026-01-24T04:54:23.856Z INFO  - 5b09819094bb Pulling fs layer
+2026-01-24T04:54:23.857Z INFO  - 3e731abb5c1d Pulling fs layer
+2026-01-24T04:54:23.867Z INFO  - 0b2bf04f68e9 Pulling fs layer
+2026-01-24T04:54:23.875Z INFO  - 8ca7ed605565 Pulling fs layer
+2026-01-24T04:54:23.876Z INFO  - ff17bb73ce99 Pulling fs layer
+2026-01-24T04:54:23.877Z INFO  - 3b01c295e922 Pulling fs layer
+2026-01-24T04:54:23.877Z INFO  - cd796adf66c9 Pulling fs layer
+2026-01-24T04:54:23.886Z INFO  - d623b8b5d82a Pulling fs layer
+2026-01-24T04:54:23.887Z INFO  - 3ebf5cf2b50f Pulling fs layer
+2026-01-24T04:54:23.895Z INFO  - 01ca4ea40c1c Pulling fs layer
+2026-01-24T04:54:23.896Z INFO  - b8924ac7eae3 Pulling fs layer
+2026-01-24T04:54:23.897Z INFO  - 86d0d45b9bc2 Pulling fs layer
+2026-01-24T04:54:23.898Z INFO  - f2b5da90430b Pulling fs layer
+2026-01-24T04:54:23.905Z INFO  - 5f07e2835aa4 Pulling fs layer
+2026-01-24T04:54:23.906Z INFO  - 92f0ea9f8c69 Pulling fs layer
+2026-01-24T04:54:24.188Z INFO  - cd796adf66c9 Downloading 853B / 853B
+2026-01-24T04:54:24.196Z INFO  - 92f0ea9f8c69 Downloading 3KB / 70KB
+2026-01-24T04:54:24.197Z INFO  - 86d0d45b9bc2 Downloading 6KB / 6KB
+2026-01-24T04:54:24.198Z INFO  - 92f0ea9f8c69 Downloading 70KB / 70KB
+2026-01-24T04:54:24.199Z INFO  - cd796adf66c9 Verifying Checksum
+2026-01-24T04:54:24.217Z INFO  - cd796adf66c9 Download complete
+2026-01-24T04:54:24.218Z INFO  - 86d0d45b9bc2 Verifying Checksum
+2026-01-24T04:54:24.227Z INFO  - 86d0d45b9bc2 Download complete
+2026-01-24T04:54:24.228Z INFO  - 92f0ea9f8c69 Verifying Checksum
+2026-01-24T04:54:24.236Z INFO  - 92f0ea9f8c69 Download complete
+2026-01-24T04:54:24.237Z INFO  - f2b5da90430b Downloading 135B / 135B
+2026-01-24T04:54:24.238Z INFO  - 8ca7ed605565 Downloading 92B / 92B
+2026-01-24T04:54:24.239Z INFO  - f2b5da90430b Verifying Checksum
+2026-01-24T04:54:24.240Z INFO  - f2b5da90430b Download complete
+2026-01-24T04:54:24.241Z INFO  - 8ca7ed605565 Verifying Checksum
+2026-01-24T04:54:24.242Z INFO  - 8ca7ed605565 Download complete
+2026-01-24T04:54:24.243Z INFO  - 01ca4ea40c1c Downloading 3KB / 124KB
+2026-01-24T04:54:24.243Z INFO  - 0b2bf04f68e9 Downloading 250B / 250B
+2026-01-24T04:54:24.244Z INFO  - 5f07e2835aa4 Downloading 464B / 464B
+2026-01-24T04:54:24.245Z INFO  - 3ebf5cf2b50f Downloading 57KB / 57KB
+2026-01-24T04:54:24.246Z INFO  - 0b2bf04f68e9 Verifying Checksum
+2026-01-24T04:54:24.247Z INFO  - 0b2bf04f68e9 Download complete
+2026-01-24T04:54:24.248Z INFO  - 5f07e2835aa4 Verifying Checksum
+2026-01-24T04:54:24.250Z INFO  - 5f07e2835aa4 Download complete
+2026-01-24T04:54:24.251Z INFO  - 3ebf5cf2b50f Verifying Checksum
+2026-01-24T04:54:24.252Z INFO  - 3ebf5cf2b50f Download complete
+2026-01-24T04:54:24.253Z INFO  - 01ca4ea40c1c Downloading 124KB / 124KB
+2026-01-24T04:54:24.254Z INFO  - 01ca4ea40c1c Verifying Checksum
+2026-01-24T04:54:24.254Z INFO  - 01ca4ea40c1c Download complete
+2026-01-24T04:54:24.254Z INFO  - 5b09819094bb Downloading 1MB / 1MB
+2026-01-24T04:54:24.254Z INFO  - b8924ac7eae3 Downloading 248KB / 248KB
+2026-01-24T04:54:24.254Z INFO  -  
+2026-01-24T04:54:24.254Z ERROR - write /mnt/docker/231072.231072/tmp/GetImageBlob131308768: no space left on deviceErr: 0, Message: write /mnt/docker/231072.231072/tmp/GetImageBlob131308768: no space left on device
+2026-01-24T04:54:24.257Z INFO  - Pull Image failed, Time taken: 0 Seconds
+2026-01-24T04:54:24.257Z ERROR - Pulling docker image gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098 failed:
+2026-01-24T04:54:24.358Z ERROR - DockerApiException: Docker API responded with status code=InternalServerError, response={"message":"Head \"https://gaitacr737.azurecr.io/v2/gait-integrated/manifests/4764d6f855f8f00cac94ddc3453fb9916c33e098\": unauthorized: {\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"authentication required, visit https://aka.ms/acr/authorization for more information. CorrelationId: 5a5c62a4-a7da-4206-b27c-904e123d0b73\"}]}"}
+
+2026-01-24T04:54:24.358Z WARN  - Image pull failed. Defaulting to local copy if present.
+2026-01-24T04:54:24.359Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T04:54:24.381Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T04:57:15.443Z INFO  - Pulling image: gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098
+2026-01-24T04:57:26.042Z INFO  - 4764d6f855f8f00cac94ddc3453fb9916c33e098 Pulling from gait-integrated
+2026-01-24T04:57:26.043Z INFO  - 380ebb5ce8c1 Pulling fs layer
+2026-01-24T04:57:26.050Z INFO  - 5b09819094bb Pulling fs layer
+2026-01-24T04:57:26.050Z INFO  - 3e731abb5c1d Pulling fs layer
+2026-01-24T04:57:26.051Z INFO  - 0b2bf04f68e9 Pulling fs layer
+2026-01-24T04:57:26.052Z INFO  - 8ca7ed605565 Pulling fs layer
+2026-01-24T04:57:26.052Z INFO  - ff17bb73ce99 Pulling fs layer
+2026-01-24T04:57:26.052Z INFO  - 3b01c295e922 Pulling fs layer
+2026-01-24T04:57:26.052Z INFO  - cd796adf66c9 Pulling fs layer
+2026-01-24T04:57:26.053Z INFO  - d623b8b5d82a Pulling fs layer
+2026-01-24T04:57:26.053Z INFO  - 3ebf5cf2b50f Pulling fs layer
+2026-01-24T04:57:26.053Z INFO  - 01ca4ea40c1c Pulling fs layer
+2026-01-24T04:57:26.053Z INFO  - b8924ac7eae3 Pulling fs layer
+2026-01-24T04:57:26.054Z INFO  - 86d0d45b9bc2 Pulling fs layer
+2026-01-24T04:57:26.054Z INFO  - f2b5da90430b Pulling fs layer
+2026-01-24T04:57:26.054Z INFO  - 5f07e2835aa4 Pulling fs layer
+2026-01-24T04:57:26.055Z INFO  - 92f0ea9f8c69 Pulling fs layer
+2026-01-24T04:57:26.113Z INFO  - b8924ac7eae3 Waiting
+2026-01-24T04:57:26.114Z INFO  - 86d0d45b9bc2 Waiting
+2026-01-24T04:57:26.120Z INFO  - f2b5da90430b Waiting
+2026-01-24T04:57:26.121Z INFO  - 5f07e2835aa4 Waiting
+2026-01-24T04:57:26.121Z INFO  - 92f0ea9f8c69 Waiting
+2026-01-24T04:57:27.611Z INFO  - 01ca4ea40c1c Downloading 3KB / 124KB
+2026-01-24T04:57:27.640Z INFO  - 0b2bf04f68e9 Downloading 250B / 250B
+2026-01-24T04:57:27.641Z INFO  - cd796adf66c9 Downloading 853B / 853B
+2026-01-24T04:57:27.641Z INFO  - 3ebf5cf2b50f Downloading 57KB / 57KB
+2026-01-24T04:57:27.642Z INFO  - 8ca7ed605565 Downloading 92B / 92B
+2026-01-24T04:57:27.651Z INFO  - 0b2bf04f68e9 Verifying Checksum
+2026-01-24T04:57:27.671Z INFO  - 0b2bf04f68e9 Download complete
+2026-01-24T04:57:27.671Z INFO  - cd796adf66c9 Verifying Checksum
+2026-01-24T04:57:27.672Z INFO  - cd796adf66c9 Download complete
+2026-01-24T04:57:27.690Z INFO  - 3ebf5cf2b50f Verifying Checksum
+2026-01-24T04:57:27.692Z INFO  - 3ebf5cf2b50f Download complete
+2026-01-24T04:57:27.692Z INFO  - 8ca7ed605565 Verifying Checksum
+2026-01-24T04:57:27.699Z INFO  - 8ca7ed605565 Download complete
+2026-01-24T04:57:27.969Z INFO  - 01ca4ea40c1c Downloading 95KB / 124KB
+2026-01-24T04:57:27.971Z INFO  - 5b09819094bb Downloading 1MB / 1MB
+2026-01-24T04:57:27.981Z INFO  - 01ca4ea40c1c Downloading 124KB / 124KB
+2026-01-24T04:57:27.982Z INFO  - 5b09819094bb Verifying Checksum
+2026-01-24T04:57:27.982Z INFO  - 5b09819094bb Download complete
+2026-01-24T04:57:27.982Z INFO  - 01ca4ea40c1c Verifying Checksum
+2026-01-24T04:57:27.982Z INFO  - 01ca4ea40c1c Download complete
+2026-01-24T04:57:27.982Z INFO  - d623b8b5d82a Downloading 527KB / 365MB
+2026-01-24T04:57:28.011Z INFO  - ff17bb73ce99 Downloading 527KB / 206MB
+2026-01-24T04:57:28.082Z INFO  - 86d0d45b9bc2 Downloading 6KB / 6KB
+2026-01-24T04:57:28.090Z INFO  - 86d0d45b9bc2 Verifying Checksum
+2026-01-24T04:57:28.091Z INFO  - 86d0d45b9bc2 Download complete
+2026-01-24T04:57:28.238Z INFO  - d623b8b5d82a Downloading 1MB / 365MB
+2026-01-24T04:57:28.241Z INFO  - 3b01c295e922 Downloading 1023KB / 11MB
+2026-01-24T04:57:28.251Z INFO  - ff17bb73ce99 Downloading 1MB / 206MB
+2026-01-24T04:57:28.270Z INFO  - 3e731abb5c1d Downloading 3MB / 13MB
+2026-01-24T04:57:28.319Z INFO  - ff17bb73ce99 Downloading 2MB / 206MB
+2026-01-24T04:57:28.331Z INFO  - 3e731abb5c1d Downloading 4MB / 13MB
+2026-01-24T04:57:28.390Z INFO  - 3b01c295e922 Downloading 3MB / 11MB
+2026-01-24T04:57:28.451Z INFO  - d623b8b5d82a Downloading 2MB / 365MB
+2026-01-24T04:57:28.479Z INFO  - 3b01c295e922 Downloading 4MB / 11MB
+2026-01-24T04:57:28.588Z INFO  - d623b8b5d82a Downloading 3MB / 365MB
+2026-01-24T04:57:28.590Z INFO  - 3b01c295e922 Downloading 4MB / 11MB
+2026-01-24T04:57:28.739Z INFO  - b8924ac7eae3 Downloading 95KB / 248KB
+2026-01-24T04:57:28.779Z INFO  - 3e731abb5c1d Downloading 6MB / 13MB
+2026-01-24T04:57:28.788Z INFO  - 380ebb5ce8c1 Downloading 1MB / 29MB
+2026-01-24T04:57:28.809Z INFO  - b8924ac7eae3 Downloading 248KB / 248KB
+2026-01-24T04:57:28.809Z INFO  - b8924ac7eae3 Verifying Checksum
+2026-01-24T04:57:28.809Z INFO  - b8924ac7eae3 Download complete
+2026-01-24T04:57:28.869Z INFO  - 380ebb5ce8c1 Downloading 2MB / 29MB
+2026-01-24T04:57:28.899Z INFO  - ff17bb73ce99 Downloading 6MB / 206MB
+2026-01-24T04:57:28.907Z INFO  - 3b01c295e922 Downloading 5MB / 11MB
+2026-01-24T04:57:29.798Z INFO  - 3e731abb5c1d Downloading 8MB / 13MB
+2026-01-24T04:57:29.798Z INFO  - 92f0ea9f8c69 Downloading 3KB / 70KB
+2026-01-24T04:57:29.798Z INFO  - f2b5da90430b Downloading 135B / 135B
+2026-01-24T04:57:29.798Z INFO  - 92f0ea9f8c69 Downloading 70KB / 70KB
+2026-01-24T04:57:29.798Z INFO  - f2b5da90430b Verifying Checksum
+2026-01-24T04:57:29.798Z INFO  - f2b5da90430b Download complete
+2026-01-24T04:57:29.798Z INFO  - 92f0ea9f8c69 Verifying Checksum
+2026-01-24T04:57:29.798Z INFO  - 92f0ea9f8c69 Download complete
+2026-01-24T04:57:29.798Z INFO  - ff17bb73ce99 Downloading 9MB / 206MB
+2026-01-24T04:57:29.798Z INFO  - 3b01c295e922 Verifying Checksum
+2026-01-24T04:57:29.798Z INFO  - 3b01c295e922 Download complete
+2026-01-24T04:57:30.798Z INFO  - 3e731abb5c1d Downloading 10MB / 13MB
+2026-01-24T04:57:30.798Z INFO  - 5f07e2835aa4 Downloading 464B / 464B
+2026-01-24T04:57:30.798Z INFO  - d623b8b5d82a Downloading 9MB / 365MB
+2026-01-24T04:57:30.798Z INFO  - 380ebb5ce8c1 Downloading 5MB / 29MB
+2026-01-24T04:57:30.798Z INFO  - 5f07e2835aa4 Verifying Checksum
+2026-01-24T04:57:30.798Z INFO  - 5f07e2835aa4 Download complete
+2026-01-24T04:57:30.798Z INFO  - ff17bb73ce99 Downloading 10MB / 206MB
+2026-01-24T04:57:30.798Z INFO  - 3e731abb5c1d Verifying Checksum
+2026-01-24T04:57:30.799Z INFO  - 3e731abb5c1d Download complete
+2026-01-24T04:57:30.799Z INFO  - 380ebb5ce8c1 Downloading 8MB / 29MB
+2026-01-24T04:57:31.600Z INFO  - ff17bb73ce99 Downloading 13MB / 206MB
+2026-01-24T04:57:32.328Z INFO  - d623b8b5d82a Downloading 15MB / 365MB
+2026-01-24T04:57:32.380Z INFO  - 380ebb5ce8c1 Downloading 11MB / 29MB
+2026-01-24T04:57:32.408Z INFO  - ff17bb73ce99 Downloading 17MB / 206MB
+2026-01-24T04:57:32.778Z INFO  - 380ebb5ce8c1 Downloading 14MB / 29MB
+2026-01-24T04:57:32.959Z INFO  - ff17bb73ce99 Downloading 18MB / 206MB
+2026-01-24T04:57:33.740Z INFO  - d623b8b5d82a Downloading 22MB / 365MB
+2026-01-24T04:57:34.420Z INFO  - 380ebb5ce8c1 Downloading 17MB / 29MB
+2026-01-24T04:57:34.779Z INFO  - d623b8b5d82a Downloading 24MB / 365MB
+2026-01-24T04:57:34.890Z INFO  - ff17bb73ce99 Downloading 21MB / 206MB
+2026-01-24T04:57:35.089Z INFO  - ff17bb73ce99 Downloading 22MB / 206MB
+2026-01-24T04:57:35.160Z INFO  - 380ebb5ce8c1 Downloading 20MB / 29MB
+2026-01-24T04:57:35.490Z INFO  - 380ebb5ce8c1 Downloading 21MB / 29MB
+2026-01-24T04:57:35.560Z INFO  - ff17bb73ce99 Downloading 25MB / 206MB
+2026-01-24T04:57:35.610Z INFO  - d623b8b5d82a Downloading 29MB / 365MB
+2026-01-24T04:57:35.692Z INFO  - 380ebb5ce8c1 Downloading 23MB / 29MB
+2026-01-24T04:57:35.781Z INFO  - d623b8b5d82a Downloading 30MB / 365MB
+2026-01-24T04:57:35.899Z INFO  - ff17bb73ce99 Downloading 30MB / 206MB
+2026-01-24T04:57:35.900Z INFO  - 380ebb5ce8c1 Downloading 24MB / 29MB
+2026-01-24T04:57:35.901Z INFO  - d623b8b5d82a Downloading 31MB / 365MB
+2026-01-24T04:57:36.071Z INFO  - d623b8b5d82a Downloading 31MB / 365MB
+2026-01-24T04:57:36.210Z INFO  - 380ebb5ce8c1 Verifying Checksum
+2026-01-24T04:57:36.210Z INFO  - 380ebb5ce8c1 Download complete
+2026-01-24T04:57:36.821Z INFO  - ff17bb73ce99 Downloading 34MB / 206MB
+2026-01-24T04:57:36.879Z INFO  - ff17bb73ce99 Downloading 38MB / 206MB
+2026-01-24T04:57:36.909Z INFO  - d623b8b5d82a Downloading 37MB / 365MB
+2026-01-24T04:57:37.120Z INFO  - d623b8b5d82a Downloading 39MB / 365MB
+2026-01-24T04:57:37.421Z INFO  - 380ebb5ce8c1 Extracting 1MB / 29MB
+2026-01-24T04:57:37.511Z INFO  - ff17bb73ce99 Downloading 42MB / 206MB
+2026-01-24T04:57:37.571Z INFO  - 380ebb5ce8c1 Extracting 1MB / 29MB
+2026-01-24T04:57:37.721Z INFO  - 380ebb5ce8c1 Extracting 2MB / 29MB
+2026-01-24T04:57:37.779Z INFO  - ff17bb73ce99 Downloading 43MB / 206MB
+2026-01-24T04:57:38.000Z INFO  - 380ebb5ce8c1 Extracting 3MB / 29MB
+2026-01-24T04:57:38.180Z INFO  - d623b8b5d82a Downloading 44MB / 365MB
+2026-01-24T04:57:38.491Z INFO  - d623b8b5d82a Downloading 45MB / 365MB
+2026-01-24T04:57:38.531Z INFO  - ff17bb73ce99 Downloading 46MB / 206MB
+2026-01-24T04:57:38.581Z INFO  - 380ebb5ce8c1 Extracting 5MB / 29MB
+2026-01-24T04:57:38.750Z INFO  - 380ebb5ce8c1 Extracting 5MB / 29MB
+2026-01-24T04:57:38.841Z INFO  - d623b8b5d82a Downloading 46MB / 365MB
+2026-01-24T04:57:39.090Z INFO  - 380ebb5ce8c1 Extracting 6MB / 29MB
+2026-01-24T04:57:39.211Z INFO  - 380ebb5ce8c1 Extracting 7MB / 29MB
+2026-01-24T04:57:39.252Z INFO  - ff17bb73ce99 Downloading 50MB / 206MB
+2026-01-24T04:57:39.431Z INFO  - 380ebb5ce8c1 Extracting 9MB / 29MB
+2026-01-24T04:57:39.669Z INFO  - ff17bb73ce99 Downloading 51MB / 206MB
+2026-01-24T04:57:39.921Z INFO  - d623b8b5d82a Downloading 53MB / 365MB
+2026-01-24T04:57:40.001Z INFO  - 380ebb5ce8c1 Extracting 10MB / 29MB
+2026-01-24T04:57:40.061Z INFO  - ff17bb73ce99 Downloading 54MB / 206MB
+2026-01-24T04:57:40.210Z INFO  - 380ebb5ce8c1 Extracting 10MB / 29MB
+2026-01-24T04:57:40.592Z INFO  - 380ebb5ce8c1 Extracting 11MB / 29MB
+2026-01-24T04:57:40.652Z INFO  - ff17bb73ce99 Downloading 58MB / 206MB
+2026-01-24T04:57:40.802Z INFO  - d623b8b5d82a Downloading 58MB / 365MB
+2026-01-24T04:57:40.882Z INFO  - ff17bb73ce99 Downloading 59MB / 206MB
+2026-01-24T04:57:40.891Z INFO  - 380ebb5ce8c1 Extracting 12MB / 29MB
+2026-01-24T04:57:41.062Z INFO  - 380ebb5ce8c1 Extracting 13MB / 29MB
+2026-01-24T04:57:41.260Z INFO  - d623b8b5d82a Downloading 61MB / 365MB
+2026-01-24T04:57:41.960Z INFO  - ff17bb73ce99 Downloading 62MB / 206MB
+2026-01-24T04:57:42.430Z INFO  - 380ebb5ce8c1 Extracting 20MB / 29MB
+2026-01-24T04:57:42.490Z INFO  - 380ebb5ce8c1 Extracting 21MB / 29MB
+2026-01-24T04:57:42.572Z INFO  - 380ebb5ce8c1 Extracting 22MB / 29MB
+2026-01-24T04:57:42.861Z INFO  - ff17bb73ce99 Downloading 67MB / 206MB
+2026-01-24T04:57:42.930Z INFO  - d623b8b5d82a Downloading 67MB / 365MB
+2026-01-24T04:57:42.951Z INFO  - 380ebb5ce8c1 Extracting 24MB / 29MB
+2026-01-24T04:57:43.691Z INFO  - ff17bb73ce99 Downloading 71MB / 206MB
+2026-01-24T04:57:43.840Z INFO  - ff17bb73ce99 Downloading 71MB / 206MB
+2026-01-24T04:57:44.413Z INFO  - d623b8b5d82a Downloading 73MB / 365MB
+2026-01-24T04:57:44.612Z INFO  - d623b8b5d82a Downloading 74MB / 365MB
+2026-01-24T04:57:44.821Z INFO  - ff17bb73ce99 Downloading 74MB / 206MB
+2026-01-24T04:57:45.192Z INFO  - ff17bb73ce99 Downloading 75MB / 206MB
+2026-01-24T04:57:45.481Z INFO  - ff17bb73ce99 Downloading 75MB / 206MB
+2026-01-24T04:57:45.672Z INFO  - ff17bb73ce99 Downloading 76MB / 206MB
+2026-01-24T04:57:45.871Z INFO  - d623b8b5d82a Downloading 81MB / 365MB
+2026-01-24T04:57:45.882Z INFO  - d623b8b5d82a Downloading 82MB / 365MB
+2026-01-24T04:57:46.083Z INFO  - d623b8b5d82a Downloading 83MB / 365MB
+2026-01-24T04:57:46.983Z INFO  - d623b8b5d82a Downloading 83MB / 365MB
+2026-01-24T04:57:47.051Z INFO  - ff17bb73ce99 Downloading 78MB / 206MB
+2026-01-24T04:57:47.593Z INFO  - ff17bb73ce99 Downloading 79MB / 206MB
+2026-01-24T04:57:47.972Z INFO  - 380ebb5ce8c1 Extracting 25MB / 29MB
+2026-01-24T04:57:48.351Z INFO  - 380ebb5ce8c1 Extracting 26MB / 29MB
+2026-01-24T04:57:48.381Z INFO  - d623b8b5d82a Downloading 88MB / 365MB
+2026-01-24T04:57:48.393Z INFO  - 380ebb5ce8c1 Extracting 27MB / 29MB
+2026-01-24T04:57:48.642Z INFO  - d623b8b5d82a Downloading 88MB / 365MB
+2026-01-24T04:57:48.763Z INFO  - d623b8b5d82a Downloading 89MB / 365MB
+2026-01-24T04:57:48.863Z INFO  - ff17bb73ce99 Downloading 83MB / 206MB
+2026-01-24T04:57:48.883Z INFO  - d623b8b5d82a Downloading 89MB / 365MB
+2026-01-24T04:57:49.122Z INFO  - ff17bb73ce99 Downloading 84MB / 206MB
+2026-01-24T04:57:49.530Z INFO  - 380ebb5ce8c1 Extracting 27MB / 29MB
+2026-01-24T04:57:49.530Z INFO  - d623b8b5d82a Downloading 91MB / 365MB
+2026-01-24T04:57:50.311Z INFO  - ff17bb73ce99 Downloading 87MB / 206MB
+2026-01-24T04:57:50.512Z INFO  - ff17bb73ce99 Downloading 87MB / 206MB
+2026-01-24T04:57:50.801Z INFO  - ff17bb73ce99 Downloading 88MB / 206MB
+2026-01-24T04:57:50.920Z INFO  - d623b8b5d82a Downloading 95MB / 365MB
+2026-01-24T04:57:51.150Z INFO  - ff17bb73ce99 Downloading 88MB / 206MB
+2026-01-24T04:57:51.460Z INFO  - d623b8b5d82a Downloading 95MB / 365MB
+2026-01-24T04:57:51.461Z INFO  - d623b8b5d82a Downloading 97MB / 365MB
+2026-01-24T04:57:51.732Z INFO  - ff17bb73ce99 Downloading 92MB / 206MB
+2026-01-24T04:57:52.271Z INFO  - ff17bb73ce99 Downloading 95MB / 206MB
+2026-01-24T04:57:52.400Z INFO  - ff17bb73ce99 Downloading 96MB / 206MB
+2026-01-24T04:57:52.521Z INFO  - ff17bb73ce99 Downloading 96MB / 206MB
+2026-01-24T04:57:52.660Z INFO  - d623b8b5d82a Downloading 104MB / 365MB
+2026-01-24T04:57:52.881Z INFO  - ff17bb73ce99 Downloading 99MB / 206MB
+2026-01-24T04:57:52.940Z INFO  - ff17bb73ce99 Downloading 206MB / 206MB
+2026-01-24T04:57:52.960Z INFO  - d623b8b5d82a Downloading 365MB / 365MB
+2026-01-24T04:57:53.079Z INFO  - 380ebb5ce8c1 Extracting 28MB / 29MB
+2026-01-24T04:57:53.220Z INFO  -  
+2026-01-24T04:57:53.220Z ERROR - write /mnt/docker/231072.231072/tmp/GetImageBlob207660159: no space left on deviceErr: 0, Message: write /mnt/docker/231072.231072/tmp/GetImageBlob207660159: no space left on device
+2026-01-24T04:57:53.287Z INFO  - Pull Image failed, Time taken: 37 Seconds
+2026-01-24T04:57:53.287Z ERROR - Pulling docker image gaitacr737.azurecr.io/gait-integrated:4764d6f855f8f00cac94ddc3453fb9916c33e098 failed:
+2026-01-24T04:57:53.891Z ERROR - DockerApiException: Docker API responded with status code=InternalServerError, response={"message":"Head \"https://gaitacr737.azurecr.io/v2/gait-integrated/manifests/4764d6f855f8f00cac94ddc3453fb9916c33e098\": unauthorized: {\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"authentication required, visit https://aka.ms/acr/authorization for more information. CorrelationId: 5fd4fa90-dd36-407c-8574-48cb7cd831ca\"}]}"}
+
+2026-01-24T04:57:53.899Z WARN  - Image pull failed. Defaulting to local copy if present.
+2026-01-24T04:57:53.919Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T04:57:53.970Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T05:04:02.3681739Z Container start method called.
+2026-01-24T05:04:02.4287341Z Establishing network.
+2026-01-24T05:04:02.4365514Z Pulling image: gaitacr737.azurecr.io/gait-integrated:44517dfaa77499b014988fe6fa2c2ac48d73f931.
+2026-01-24T05:12:47.0961960Z Image gaitacr737.azurecr.io/gait-integrated:44517dfaa77499b014988fe6fa2c2ac48d73f931 is pulled from registry gaitacr737.azurecr.io
+2026-01-24T05:12:47.1012646Z Container is starting.
+2026-01-24T05:12:47.1064028Z Establishing user namespace if not established already.
+2026-01-24T05:12:47.1069043Z Establishing network if not established already.
+2026-01-24T05:12:47.1114683Z Mounting volumes.
+2026-01-24T05:12:47.1233481Z Nested mountpoint volatile/logs
+2026-01-24T05:12:47.1439053Z Nested mountpoint 
+2026-01-24T05:12:47.2430575Z Creating container.
+2026-01-24T05:12:47.2532429Z Creating pipes for streaming container io.
+2026-01-24T05:12:47.2534973Z Creating stdout named pipe at /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stdout_41c4e61eb2b347b9ba640e4c229a8483.
+2026-01-24T05:12:47.2589341Z Successfully created stdout named pipe at: /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stdout_41c4e61eb2b347b9ba640e4c229a8483.
+2026-01-24T05:12:47.2632904Z Opening named pipe /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stdout_41c4e61eb2b347b9ba640e4c229a8483 for reading in non-blocking mode.
+2026-01-24T05:12:47.2646185Z Successfully opened named pipe: /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stdout_41c4e61eb2b347b9ba640e4c229a8483.
+2026-01-24T05:12:47.2651806Z Successfully removed non-blocking flag from /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stdout_41c4e61eb2b347b9ba640e4c229a8483.
+2026-01-24T05:12:47.2655230Z Creating stderr named pipe at /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stderr_0e373a10d99d44f5aabcb249a2bc4b78.
+2026-01-24T05:12:47.2658421Z Successfully created stderr named pipe at: /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stderr_0e373a10d99d44f5aabcb249a2bc4b78.
+2026-01-24T05:12:47.2659062Z Opening named pipe /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stderr_0e373a10d99d44f5aabcb249a2bc4b78 for reading in non-blocking mode.
+2026-01-24T05:12:47.2659724Z Successfully opened named pipe: /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stderr_0e373a10d99d44f5aabcb249a2bc4b78.
+2026-01-24T05:12:47.2660195Z Successfully removed non-blocking flag from /podr/container/pipe/92f9b77eeca7_gaitanalysisapp/stderr_0e373a10d99d44f5aabcb249a2bc4b78.
+2026-01-24T05:12:47.2734206Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:44517dfaa77499b014988fe6fa2c2ac48d73f931 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:44517dfaa77499b014988fe6fa2c2ac48d73f931
+2026-01-24T05:12:57.8345686Z Starting container: 92f9b77eeca7_gaitanalysisapp.
+2026-01-24T05:12:57.8910541Z Starting watchers and probes.
+2026-01-24T05:12:57.8982934Z Starting metrics collection.
+2026-01-24T05:12:57.9002152Z Container is running.
+2026-01-24T05:12:58.0274178Z Container start method finished after 535650 ms.
+2026-01-24T05:13:13.1944306Z Site startup probe succeeded after 15.0575906 seconds.
+2026-01-24T05:13:13.4148966Z Site started.
+2026-01-24T05:13:37.2194096Z Container start method called.
+2026-01-24T05:13:37.2199190Z Establishing network.
+2026-01-24T05:13:37.2199896Z Pulling image: gaitacr737.azurecr.io/gait-integrated:2b76128be7155cc6d0d7397f90f58d0903030701.
+2026-01-24T05:14:22.0346755Z Container pull image interrupted. Revert by terminate.
+2026-01-24T05:14:22.0349348Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T05:14:22.0352697Z Container spec TerminationMessagePolicy  path 
+2026-01-24T05:14:22.0355350Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-24T05:14:22.0410863Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-24T05:14:22.0610258Z Site: gaitanalysisapp stopped.
+2026-01-24T05:14:42.4556088Z Container is terminating. Grace period: 5 seconds.
+2026-01-24T05:14:42.4748225Z Stop and delete container. Retry count = 0
+2026-01-24T05:14:42.4760410Z Stopping container: 92f9b77eeca7_gaitanalysisapp.
+2026-01-24T05:14:47.6600046Z Deleting container: 92f9b77eeca7_gaitanalysisapp. Retry count = 0
+2026-01-24T05:14:48.2654539Z Container spec TerminationMessagePolicy  path 
+2026-01-24T05:14:48.2659418Z Container is terminated. Total time elapsed: 5809 ms.
+2026-01-24T05:14:48.2660295Z Site: gaitanalysisapp stopped.
+2026-01-24T05:15:08.075Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T05:15:08.090Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T05:18:13.937Z INFO  - Pulling image: gaitacr737.azurecr.io/gait-integrated:2b76128be7155cc6d0d7397f90f58d0903030701
+2026-01-24T05:18:14.343Z INFO  - 2b76128be7155cc6d0d7397f90f58d0903030701 Pulling from gait-integrated
+2026-01-24T05:18:14.350Z INFO  - 380ebb5ce8c1 Pulling fs layer
+2026-01-24T05:18:14.351Z INFO  - 5b09819094bb Pulling fs layer
+2026-01-24T05:18:14.351Z INFO  - 3e731abb5c1d Pulling fs layer
+2026-01-24T05:18:14.353Z INFO  - 0b2bf04f68e9 Pulling fs layer
+2026-01-24T05:18:14.353Z INFO  - 01e0b2150821 Pulling fs layer
+2026-01-24T05:18:14.354Z INFO  - df00fda08583 Pulling fs layer
+2026-01-24T05:18:14.355Z INFO  - 1393974325fb Pulling fs layer
+2026-01-24T05:18:14.355Z INFO  - ebca2bda788c Pulling fs layer
+2026-01-24T05:18:14.360Z INFO  - 33772c57569d Pulling fs layer
+2026-01-24T05:18:14.361Z INFO  - 813d3a70e00a Pulling fs layer
+2026-01-24T05:18:14.361Z INFO  - fc2b16bf860d Pulling fs layer
+2026-01-24T05:18:14.362Z INFO  - e8187f8359ce Pulling fs layer
+2026-01-24T05:18:14.363Z INFO  - ec780a846cf8 Pulling fs layer
+2026-01-24T05:18:14.370Z INFO  - 536e37968a26 Pulling fs layer
+2026-01-24T05:18:14.370Z INFO  - 5ecafb508439 Pulling fs layer
+2026-01-24T05:18:14.371Z INFO  - e9bd9e386075 Pulling fs layer
+2026-01-24T05:18:14.627Z INFO  - 813d3a70e00a Downloading 57KB / 57KB
+2026-01-24T05:18:14.627Z INFO  - 813d3a70e00a Verifying Checksum
+2026-01-24T05:18:14.630Z INFO  - 813d3a70e00a Download complete
+2026-01-24T05:18:14.681Z INFO  - fc2b16bf860d Downloading 3KB / 124KB
+2026-01-24T05:18:14.683Z INFO  - 536e37968a26 Downloading 134B / 134B
+2026-01-24T05:18:14.690Z INFO  - ebca2bda788c Downloading 853B / 853B
+2026-01-24T05:18:14.691Z INFO  - 536e37968a26 Verifying Checksum
+2026-01-24T05:18:14.691Z INFO  - 536e37968a26 Download complete
+2026-01-24T05:18:14.692Z INFO  - ebca2bda788c Verifying Checksum
+2026-01-24T05:18:14.693Z INFO  - ebca2bda788c Download complete
+2026-01-24T05:18:14.732Z INFO  - ec780a846cf8 Downloading 6KB / 6KB
+2026-01-24T05:18:14.733Z INFO  - ec780a846cf8 Verifying Checksum
+2026-01-24T05:18:14.740Z INFO  - ec780a846cf8 Download complete
+2026-01-24T05:18:14.772Z INFO  - df00fda08583 Downloading 527KB / 206MB
+2026-01-24T05:18:14.791Z INFO  - 33772c57569d Downloading 527KB / 365MB
+2026-01-24T05:18:14.802Z INFO  - fc2b16bf860d Downloading 124KB / 124KB
+2026-01-24T05:18:14.803Z INFO  - e9bd9e386075 Downloading 3KB / 70KB
+2026-01-24T05:18:14.821Z INFO  - e9bd9e386075 Downloading 70KB / 70KB
+2026-01-24T05:18:14.822Z INFO  - fc2b16bf860d Verifying Checksum
+2026-01-24T05:18:14.822Z INFO  - fc2b16bf860d Download complete
+2026-01-24T05:18:14.823Z INFO  - e9bd9e386075 Verifying Checksum
+2026-01-24T05:18:14.832Z INFO  - e9bd9e386075 Download complete
+2026-01-24T05:18:14.861Z INFO  - 0b2bf04f68e9 Downloading 250B / 250B
+2026-01-24T05:18:14.863Z INFO  - 5ecafb508439 Downloading 466B / 466B
+2026-01-24T05:18:14.871Z INFO  - 01e0b2150821 Downloading 90B / 90B
+2026-01-24T05:18:14.872Z INFO  - 0b2bf04f68e9 Verifying Checksum
+2026-01-24T05:18:14.873Z INFO  - 0b2bf04f68e9 Download complete
+2026-01-24T05:18:14.881Z INFO  - 5ecafb508439 Verifying Checksum
+2026-01-24T05:18:14.882Z INFO  - 5ecafb508439 Download complete
+2026-01-24T05:18:14.882Z INFO  - 01e0b2150821 Verifying Checksum
+2026-01-24T05:18:14.891Z INFO  - 01e0b2150821 Download complete
+2026-01-24T05:18:14.893Z INFO  - 33772c57569d Downloading 3MB / 365MB
+2026-01-24T05:18:14.901Z INFO  - e8187f8359ce Downloading 223KB / 275KB
+2026-01-24T05:18:14.952Z INFO  - e8187f8359ce Downloading 275KB / 275KB
+2026-01-24T05:18:14.953Z INFO  - e8187f8359ce Verifying Checksum
+2026-01-24T05:18:14.970Z INFO  - e8187f8359ce Download complete
+2026-01-24T05:18:15.013Z INFO  - 5b09819094bb Downloading 1MB / 1MB
+2026-01-24T05:18:15.020Z INFO  - 5b09819094bb Verifying Checksum
+2026-01-24T05:18:15.021Z INFO  - 5b09819094bb Download complete
+2026-01-24T05:18:15.171Z INFO  - 1393974325fb Downloading 3MB / 11MB
+2026-01-24T05:18:15.213Z INFO  - df00fda08583 Downloading 6MB / 206MB
+2026-01-24T05:18:15.220Z INFO  - 3e731abb5c1d Downloading 4MB / 13MB
+2026-01-24T05:18:15.221Z INFO  - 380ebb5ce8c1 Downloading 2MB / 29MB
+2026-01-24T05:18:15.231Z INFO  - 33772c57569d Downloading 8MB / 365MB
+2026-01-24T05:18:15.411Z INFO  - 3e731abb5c1d Downloading 5MB / 13MB
+2026-01-24T05:18:15.411Z INFO  - 33772c57569d Downloading 9MB / 365MB
+2026-01-24T05:18:15.461Z INFO  - 3e731abb5c1d Downloading 6MB / 13MB
+2026-01-24T05:18:15.492Z INFO  - df00fda08583 Downloading 10MB / 206MB
+2026-01-24T05:18:15.620Z INFO  - 1393974325fb Downloading 10MB / 11MB
+2026-01-24T05:18:15.620Z INFO  - 1393974325fb Verifying Checksum
+2026-01-24T05:18:15.620Z INFO  - 1393974325fb Download complete
+2026-01-24T05:18:15.671Z INFO  - df00fda08583 Downloading 12MB / 206MB
+2026-01-24T05:18:15.692Z INFO  - 3e731abb5c1d Verifying Checksum
+2026-01-24T05:18:15.692Z INFO  - 3e731abb5c1d Download complete
+2026-01-24T05:18:15.751Z INFO  - 33772c57569d Downloading 14MB / 365MB
+2026-01-24T05:18:15.751Z INFO  - 380ebb5ce8c1 Downloading 8MB / 29MB
+2026-01-24T05:18:15.870Z INFO  - 380ebb5ce8c1 Downloading 13MB / 29MB
+2026-01-24T05:18:15.990Z INFO  - 380ebb5ce8c1 Downloading 16MB / 29MB
+2026-01-24T05:18:16.011Z INFO  - df00fda08583 Downloading 17MB / 206MB
+2026-01-24T05:18:16.102Z INFO  - 33772c57569d Downloading 25MB / 365MB
+2026-01-24T05:18:16.172Z INFO  - 380ebb5ce8c1 Downloading 17MB / 29MB
+2026-01-24T05:18:16.220Z INFO  - 380ebb5ce8c1 Downloading 19MB / 29MB
+2026-01-24T05:18:16.290Z INFO  - 33772c57569d Downloading 30MB / 365MB
+2026-01-24T05:18:16.342Z INFO  - df00fda08583 Downloading 25MB / 206MB
+2026-01-24T05:18:16.651Z INFO  - 33772c57569d Downloading 37MB / 365MB
+2026-01-24T05:18:16.760Z INFO  - 380ebb5ce8c1 Verifying Checksum
+2026-01-24T05:18:16.760Z INFO  - 380ebb5ce8c1 Download complete
+2026-01-24T05:18:16.911Z INFO  - 33772c57569d Downloading 45MB / 365MB
+2026-01-24T05:18:16.932Z INFO  - df00fda08583 Downloading 42MB / 206MB
+2026-01-24T05:18:17.072Z INFO  - 33772c57569d Downloading 47MB / 365MB
+2026-01-24T05:18:17.230Z INFO  - df00fda08583 Downloading 46MB / 206MB
+2026-01-24T05:18:17.231Z INFO  - 380ebb5ce8c1 Extracting 1MB / 29MB
+2026-01-24T05:18:17.392Z INFO  - 33772c57569d Downloading 52MB / 365MB
+2026-01-24T05:18:17.492Z INFO  - 33772c57569d Downloading 52MB / 365MB
+2026-01-24T05:18:17.492Z INFO  - 380ebb5ce8c1 Extracting 3MB / 29MB
+2026-01-24T05:18:17.602Z INFO  - df00fda08583 Downloading 51MB / 206MB
+2026-01-24T05:18:17.602Z INFO  - 33772c57569d Downloading 53MB / 365MB
+2026-01-24T05:18:17.612Z INFO  - 380ebb5ce8c1 Extracting 3MB / 29MB
+2026-01-24T05:18:17.712Z INFO  - df00fda08583 Downloading 54MB / 206MB
+2026-01-24T05:18:17.712Z INFO  - 380ebb5ce8c1 Extracting 4MB / 29MB
+2026-01-24T05:18:17.833Z INFO  - df00fda08583 Downloading 55MB / 206MB
+2026-01-24T05:18:17.903Z INFO  - 380ebb5ce8c1 Extracting 5MB / 29MB
+2026-01-24T05:18:18.240Z INFO  - df00fda08583 Downloading 58MB / 206MB
+2026-01-24T05:18:18.240Z INFO  - 380ebb5ce8c1 Extracting 7MB / 29MB
+2026-01-24T05:18:18.342Z INFO  - df00fda08583 Downloading 58MB / 206MB
+2026-01-24T05:18:18.430Z INFO  - 33772c57569d Downloading 59MB / 365MB
+2026-01-24T05:18:18.500Z INFO  - 380ebb5ce8c1 Extracting 8MB / 29MB
+2026-01-24T05:18:18.561Z INFO  - 33772c57569d Downloading 61MB / 365MB
+2026-01-24T05:18:18.761Z INFO  - 33772c57569d Downloading 66MB / 365MB
+2026-01-24T05:18:18.872Z INFO  - 380ebb5ce8c1 Extracting 10MB / 29MB
+2026-01-24T05:18:18.962Z INFO  - 33772c57569d Downloading 68MB / 365MB
+2026-01-24T05:18:18.963Z INFO  - 380ebb5ce8c1 Extracting 10MB / 29MB
+2026-01-24T05:18:19.081Z INFO  - df00fda08583 Downloading 67MB / 206MB
+2026-01-24T05:18:19.243Z INFO  - 33772c57569d Downloading 74MB / 365MB
+2026-01-24T05:18:19.381Z INFO  - df00fda08583 Downloading 70MB / 206MB
+2026-01-24T05:18:19.402Z INFO  - 33772c57569d Downloading 76MB / 365MB
+2026-01-24T05:18:19.482Z INFO  - df00fda08583 Downloading 72MB / 206MB
+2026-01-24T05:18:19.501Z INFO  - 380ebb5ce8c1 Extracting 13MB / 29MB
+2026-01-24T05:18:19.772Z INFO  - 380ebb5ce8c1 Extracting 15MB / 29MB
+2026-01-24T05:18:20.131Z INFO  - df00fda08583 Downloading 75MB / 206MB
+2026-01-24T05:18:20.131Z INFO  - 380ebb5ce8c1 Extracting 19MB / 29MB
+2026-01-24T05:18:20.242Z INFO  - df00fda08583 Downloading 75MB / 206MB
+2026-01-24T05:18:20.243Z INFO  - 380ebb5ce8c1 Extracting 20MB / 29MB
+2026-01-24T05:18:20.352Z INFO  - 33772c57569d Downloading 84MB / 365MB
+2026-01-24T05:18:20.361Z INFO  - df00fda08583 Downloading 76MB / 206MB
+2026-01-24T05:18:20.650Z INFO  - 380ebb5ce8c1 Extracting 23MB / 29MB
+2026-01-24T05:18:20.812Z INFO  - 33772c57569d Downloading 95MB / 365MB
+2026-01-24T05:18:20.982Z INFO  - df00fda08583 Downloading 79MB / 206MB
+2026-01-24T05:18:21.042Z INFO  - 33772c57569d Downloading 96MB / 365MB
+2026-01-24T05:18:21.242Z INFO  - df00fda08583 Downloading 84MB / 206MB
+2026-01-24T05:18:21.271Z INFO  - 33772c57569d Downloading 103MB / 365MB
+2026-01-24T05:18:21.342Z INFO  - df00fda08583 Downloading 87MB / 206MB
+2026-01-24T05:18:21.561Z INFO  - 33772c57569d Downloading 111MB / 365MB
+2026-01-24T05:18:21.730Z INFO  - 380ebb5ce8c1 Extracting 25MB / 29MB
+2026-01-24T05:18:21.883Z INFO  - 380ebb5ce8c1 Extracting 26MB / 29MB
+2026-01-24T05:18:21.953Z INFO  - df00fda08583 Downloading 99MB / 206MB
+2026-01-24T05:18:21.983Z INFO  - 33772c57569d Downloading 117MB / 365MB
+2026-01-24T05:18:22.103Z INFO  - 33772c57569d Downloading 119MB / 365MB
+2026-01-24T05:18:22.191Z INFO  - 380ebb5ce8c1 Extracting 27MB / 29MB
+2026-01-24T05:18:22.242Z INFO  - df00fda08583 Downloading 103MB / 206MB
+2026-01-24T05:18:22.362Z INFO  - df00fda08583 Downloading 107MB / 206MB
+2026-01-24T05:18:22.413Z INFO  - 33772c57569d Downloading 124MB / 365MB
+2026-01-24T05:18:22.513Z INFO  - 33772c57569d Downloading 126MB / 365MB
+2026-01-24T05:18:22.741Z INFO  - df00fda08583 Downloading 117MB / 206MB
+2026-01-24T05:18:22.901Z INFO  - 33772c57569d Downloading 134MB / 365MB
+2026-01-24T05:18:23.033Z INFO  - df00fda08583 Downloading 121MB / 206MB
+2026-01-24T05:18:23.162Z INFO  - 33772c57569d Downloading 135MB / 365MB
+2026-01-24T05:18:23.261Z INFO  - 380ebb5ce8c1 Extracting 28MB / 29MB
+2026-01-24T05:18:23.261Z INFO  - df00fda08583 Downloading 124MB / 206MB
+2026-01-24T05:18:23.483Z INFO  - 33772c57569d Downloading 139MB / 365MB
+2026-01-24T05:18:23.513Z INFO  - df00fda08583 Downloading 128MB / 206MB
+2026-01-24T05:18:23.683Z INFO  - 33772c57569d Downloading 147MB / 365MB
+2026-01-24T05:18:23.723Z INFO  - df00fda08583 Downloading 133MB / 206MB
+2026-01-24T05:18:23.981Z INFO  - 380ebb5ce8c1 Extracting 29MB / 29MB
+2026-01-24T05:18:23.991Z INFO  - df00fda08583 Downloading 137MB / 206MB
+2026-01-24T05:18:24.032Z INFO  - 33772c57569d Downloading 154MB / 365MB
+2026-01-24T05:18:24.073Z INFO  - 380ebb5ce8c1 Pull complete
+2026-01-24T05:18:24.133Z INFO  - 5b09819094bb Extracting 32KB / 1MB
+2026-01-24T05:18:24.242Z INFO  - 33772c57569d Downloading 160MB / 365MB
+2026-01-24T05:18:24.352Z INFO  - 33772c57569d Downloading 163MB / 365MB
+2026-01-24T05:18:24.353Z INFO  - df00fda08583 Downloading 150MB / 206MB
+2026-01-24T05:18:24.503Z INFO  - df00fda08583 Downloading 154MB / 206MB
+2026-01-24T05:18:24.512Z INFO  - 5b09819094bb Extracting 512KB / 1MB
+2026-01-24T05:18:24.632Z INFO  - df00fda08583 Downloading 157MB / 206MB
+2026-01-24T05:18:24.633Z INFO  - 33772c57569d Downloading 169MB / 365MB
+2026-01-24T05:18:24.773Z INFO  - 33772c57569d Downloading 171MB / 365MB
+2026-01-24T05:18:24.782Z INFO  - df00fda08583 Downloading 157MB / 206MB
+2026-01-24T05:18:24.792Z INFO  - 5b09819094bb Extracting 736KB / 1MB
+2026-01-24T05:18:24.893Z INFO  - 5b09819094bb Extracting 768KB / 1MB
+2026-01-24T05:18:25.003Z INFO  - 5b09819094bb Extracting 1MB / 1MB
+2026-01-24T05:18:25.061Z INFO  - 5b09819094bb Extracting 1MB / 1MB
+2026-01-24T05:18:25.092Z INFO  - df00fda08583 Downloading 161MB / 206MB
+2026-01-24T05:18:25.092Z INFO  - 5b09819094bb Extracting 1MB / 1MB
+2026-01-24T05:18:25.143Z INFO  - 33772c57569d Downloading 176MB / 365MB
+2026-01-24T05:18:25.152Z INFO  - df00fda08583 Downloading 162MB / 206MB
+2026-01-24T05:18:25.271Z INFO  - df00fda08583 Downloading 165MB / 206MB
+2026-01-24T05:18:26.201Z INFO  - df00fda08583 Downloading 167MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 5b09819094bb Pull complete
+2026-01-24T05:18:26.361Z INFO  - df00fda08583 Downloading 170MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 33772c57569d Downloading 186MB / 365MB
+2026-01-24T05:18:26.361Z INFO  - df00fda08583 Downloading 175MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 33772c57569d Downloading 192MB / 365MB
+2026-01-24T05:18:26.361Z INFO  - df00fda08583 Downloading 177MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 3e731abb5c1d Extracting 640KB / 13MB
+2026-01-24T05:18:26.361Z INFO  - df00fda08583 Downloading 179MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 33772c57569d Downloading 197MB / 365MB
+2026-01-24T05:18:26.361Z INFO  - 33772c57569d Downloading 199MB / 365MB
+2026-01-24T05:18:26.361Z INFO  - 3e731abb5c1d Extracting 2MB / 13MB
+2026-01-24T05:18:26.361Z INFO  - df00fda08583 Downloading 182MB / 206MB
+2026-01-24T05:18:26.361Z INFO  - 33772c57569d Downloading 200MB / 365MB
+2026-01-24T05:18:26.461Z INFO  - 3e731abb5c1d Extracting 2MB / 13MB
+2026-01-24T05:18:26.583Z INFO  - df00fda08583 Downloading 186MB / 206MB
+2026-01-24T05:18:26.761Z INFO  - 3e731abb5c1d Extracting 3MB / 13MB
+2026-01-24T05:18:26.801Z INFO  - 33772c57569d Downloading 206MB / 365MB
+2026-01-24T05:18:26.823Z INFO  - df00fda08583 Downloading 190MB / 206MB
+2026-01-24T05:18:26.931Z INFO  - 33772c57569d Downloading 207MB / 365MB
+2026-01-24T05:18:26.981Z INFO  - df00fda08583 Downloading 191MB / 206MB
+2026-01-24T05:18:27.404Z INFO  - 3e731abb5c1d Extracting 6MB / 13MB
+2026-01-24T05:18:27.482Z INFO  - df00fda08583 Downloading 195MB / 206MB
+2026-01-24T05:18:27.523Z INFO  - 3e731abb5c1d Extracting 7MB / 13MB
+2026-01-24T05:18:27.543Z INFO  - 33772c57569d Downloading 212MB / 365MB
+2026-01-24T05:18:27.641Z INFO  - 3e731abb5c1d Extracting 7MB / 13MB
+2026-01-24T05:18:27.761Z INFO  - 33772c57569d Downloading 214MB / 365MB
+2026-01-24T05:18:27.864Z INFO  - df00fda08583 Downloading 199MB / 206MB
+2026-01-24T05:18:28.192Z INFO  - 33772c57569d Downloading 222MB / 365MB
+2026-01-24T05:18:28.351Z INFO  - df00fda08583 Verifying Checksum
+2026-01-24T05:18:28.353Z INFO  - df00fda08583 Download complete
+2026-01-24T05:18:28.443Z INFO  - 33772c57569d Downloading 229MB / 365MB
+2026-01-24T05:18:28.511Z INFO  - 3e731abb5c1d Extracting 10MB / 13MB
+2026-01-24T05:18:28.621Z INFO  - 3e731abb5c1d Extracting 11MB / 13MB
+2026-01-24T05:18:28.703Z INFO  - 33772c57569d Downloading 235MB / 365MB
+2026-01-24T05:18:28.812Z INFO  - 33772c57569d Downloading 236MB / 365MB
+2026-01-24T05:18:28.882Z INFO  - 3e731abb5c1d Extracting 11MB / 13MB
+2026-01-24T05:18:29.034Z INFO  - 3e731abb5c1d Extracting 11MB / 13MB
+2026-01-24T05:18:29.083Z INFO  - 33772c57569d Downloading 242MB / 365MB
+2026-01-24T05:18:29.202Z INFO  - 33772c57569d Downloading 243MB / 365MB
+2026-01-24T05:18:29.291Z INFO  - 3e731abb5c1d Extracting 12MB / 13MB
+2026-01-24T05:18:29.532Z INFO  - 3e731abb5c1d Extracting 12MB / 13MB
+2026-01-24T05:18:29.672Z INFO  - 3e731abb5c1d Extracting 12MB / 13MB
+2026-01-24T05:18:29.773Z INFO  - 3e731abb5c1d Extracting 13MB / 13MB
+2026-01-24T05:18:29.843Z INFO  - 33772c57569d Downloading 249MB / 365MB
+2026-01-24T05:18:29.892Z INFO  - 3e731abb5c1d Extracting 13MB / 13MB
+2026-01-24T05:18:30.051Z INFO  - 33772c57569d Downloading 251MB / 365MB
+2026-01-24T05:18:30.531Z INFO  - 33772c57569d Downloading 252MB / 365MB
+2026-01-24T05:18:31.232Z INFO  - 33772c57569d Downloading 256MB / 365MB
+2026-01-24T05:18:31.252Z INFO  - 3e731abb5c1d Pull complete
+2026-01-24T05:18:31.391Z INFO  - 33772c57569d Downloading 257MB / 365MB
+2026-01-24T05:18:31.631Z INFO  - 33772c57569d Downloading 258MB / 365MB
+2026-01-24T05:18:31.670Z INFO  - 0b2bf04f68e9 Extracting 250B / 250B
+2026-01-24T05:18:32.232Z INFO  - 0b2bf04f68e9 Extracting 250B / 250B
+2026-01-24T05:18:32.670Z INFO  - 0b2bf04f68e9 Pull complete
+2026-01-24T05:18:32.688Z INFO  - 01e0b2150821 Extracting 90B / 90B
+2026-01-24T05:18:32.839Z INFO  - 33772c57569d Downloading 264MB / 365MB
+2026-01-24T05:18:33.040Z INFO  - 33772c57569d Downloading 265MB / 365MB
+2026-01-24T05:18:33.260Z INFO  - 33772c57569d Downloading 266MB / 365MB
+2026-01-24T05:18:33.499Z INFO  - 01e0b2150821 Extracting 90B / 90B
+2026-01-24T05:18:33.878Z INFO  - 33772c57569d Downloading 271MB / 365MB
+2026-01-24T05:18:33.879Z INFO  - 01e0b2150821 Pull complete
+2026-01-24T05:18:34.008Z INFO  - 33772c57569d Downloading 272MB / 365MB
+2026-01-24T05:18:34.050Z INFO  - 33772c57569d Downloading 273MB / 365MB
+2026-01-24T05:18:34.160Z INFO  - 33772c57569d Downloading 273MB / 365MB
+2026-01-24T05:18:34.728Z INFO  - df00fda08583 Extracting 544KB / 206MB
+2026-01-24T05:18:34.859Z INFO  - df00fda08583 Extracting 1MB / 206MB
+2026-01-24T05:18:35.228Z INFO  - df00fda08583 Extracting 4MB / 206MB
+2026-01-24T05:18:35.538Z INFO  - 33772c57569d Downloading 279MB / 365MB
+2026-01-24T05:18:35.538Z INFO  - df00fda08583 Extracting 5MB / 206MB
+2026-01-24T05:18:35.919Z INFO  - 33772c57569d Downloading 280MB / 365MB
+2026-01-24T05:18:35.919Z INFO  - df00fda08583 Extracting 8MB / 206MB
+2026-01-24T05:18:36.198Z INFO  - df00fda08583 Extracting 10MB / 206MB
+2026-01-24T05:18:36.920Z INFO  - df00fda08583 Extracting 12MB / 206MB
+2026-01-24T05:18:37.069Z INFO  - df00fda08583 Extracting 13MB / 206MB
+2026-01-24T05:18:37.649Z INFO  - df00fda08583 Extracting 17MB / 206MB
+2026-01-24T05:18:37.737Z INFO  - df00fda08583 Extracting 18MB / 206MB
+2026-01-24T05:18:37.859Z INFO  - 33772c57569d Downloading 365MB / 365MB
+2026-01-24T05:18:38.127Z INFO  -  
+2026-01-24T05:18:38.127Z ERROR - write /mnt/docker/231072.231072/tmp/GetImageBlob171803805: no space left on deviceErr: 0, Message: write /mnt/docker/231072.231072/tmp/GetImageBlob171803805: no space left on device
+2026-01-24T05:18:38.169Z INFO  - Pull Image failed, Time taken: 24 Seconds
+2026-01-24T05:18:38.169Z ERROR - Pulling docker image gaitacr737.azurecr.io/gait-integrated:2b76128be7155cc6d0d7397f90f58d0903030701 failed:
+2026-01-24T05:18:38.657Z ERROR - DockerApiException: Docker API responded with status code=InternalServerError, response={"message":"Head \"https://gaitacr737.azurecr.io/v2/gait-integrated/manifests/2b76128be7155cc6d0d7397f90f58d0903030701\": unauthorized: {\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"authentication required, visit https://aka.ms/acr/authorization for more information. CorrelationId: f7b18c63-4c87-4d6c-a9e1-8dbc26ce6241\"}]}"}
+
+2026-01-24T05:18:38.658Z WARN  - Image pull failed. Defaulting to local copy if present.
+2026-01-24T05:18:38.667Z ERROR - Image pull failed: Verify docker image configuration and credentials (if using private repository)
+2026-01-24T05:18:38.680Z INFO  - Stopping site gaitanalysisapp because it failed during startup.
+2026-01-24T05:21:29.7912550Z Container start method called.
+2026-01-24T05:21:29.7913843Z Establishing network.
+2026-01-24T05:21:29.7914557Z Pulling image: gaitacr737.azurecr.io/gait-integrated:2b76128be7155cc6d0d7397f90f58d0903030701.

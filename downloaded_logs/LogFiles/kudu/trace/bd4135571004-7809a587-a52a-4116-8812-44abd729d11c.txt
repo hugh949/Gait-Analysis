@@ -1,0 +1,1 @@
+2026-01-08T15:01:57  Startup Request, url: /api/logstreamV2/?max=50&nextToken=eyJmaWQiOjYzOTAzNDgxMjM5MjI0MTk3MywicG9zIjoxNDQ0MSwiZmlyc3Rsb2d1dGMiOjYzOTAzNDgxMjIzMDA0NTIyMH0=&api-version=2016-09-01, method: GET, type: request, pid: 760,1,5, SCM_DO_BUILD_DURING_DEPLOYMENT: false, ScmType: GitHubAction

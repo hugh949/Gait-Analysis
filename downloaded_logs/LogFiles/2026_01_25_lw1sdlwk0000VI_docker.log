@@ -1,0 +1,361 @@
+2026-01-25T03:15:31.3451899Z Container start method called.
+2026-01-25T03:15:31.3854276Z Establishing network.
+2026-01-25T03:15:31.3870917Z Pulling image: gaitacr737.azurecr.io/gait-integrated:691ace30dec2bd77e86b2fbe9d588a04592c07c1.
+2026-01-25T03:17:29.0725051Z Image gaitacr737.azurecr.io/gait-integrated:691ace30dec2bd77e86b2fbe9d588a04592c07c1 is pulled from registry gaitacr737.azurecr.io
+2026-01-25T03:17:29.0858633Z Container is starting.
+2026-01-25T03:17:29.0894084Z Establishing user namespace if not established already.
+2026-01-25T03:17:29.0901611Z Establishing network if not established already.
+2026-01-25T03:17:29.0905929Z Mounting volumes.
+2026-01-25T03:17:29.0914449Z Nested mountpoint volatile/logs
+2026-01-25T03:17:29.1011591Z Nested mountpoint 
+2026-01-25T03:17:29.2025926Z Creating container.
+2026-01-25T03:17:29.2026497Z Creating pipes for streaming container io.
+2026-01-25T03:17:29.2027016Z Creating stdout named pipe at /podr/container/pipe/01d33e894c03_gaitanalysisapp/stdout_fa89c1e96e154a85bfb3a61fe773c5d2.
+2026-01-25T03:17:29.2214843Z Successfully created stdout named pipe at: /podr/container/pipe/01d33e894c03_gaitanalysisapp/stdout_fa89c1e96e154a85bfb3a61fe773c5d2.
+2026-01-25T03:17:29.2215705Z Opening named pipe /podr/container/pipe/01d33e894c03_gaitanalysisapp/stdout_fa89c1e96e154a85bfb3a61fe773c5d2 for reading in non-blocking mode.
+2026-01-25T03:17:29.2216600Z Successfully opened named pipe: /podr/container/pipe/01d33e894c03_gaitanalysisapp/stdout_fa89c1e96e154a85bfb3a61fe773c5d2.
+2026-01-25T03:17:29.2217313Z Successfully removed non-blocking flag from /podr/container/pipe/01d33e894c03_gaitanalysisapp/stdout_fa89c1e96e154a85bfb3a61fe773c5d2.
+2026-01-25T03:17:29.2218076Z Creating stderr named pipe at /podr/container/pipe/01d33e894c03_gaitanalysisapp/stderr_43ec1dc055824a63bda91e958728e479.
+2026-01-25T03:17:29.2219091Z Successfully created stderr named pipe at: /podr/container/pipe/01d33e894c03_gaitanalysisapp/stderr_43ec1dc055824a63bda91e958728e479.
+2026-01-25T03:17:29.2229336Z Opening named pipe /podr/container/pipe/01d33e894c03_gaitanalysisapp/stderr_43ec1dc055824a63bda91e958728e479 for reading in non-blocking mode.
+2026-01-25T03:17:29.2231207Z Successfully opened named pipe: /podr/container/pipe/01d33e894c03_gaitanalysisapp/stderr_43ec1dc055824a63bda91e958728e479.
+2026-01-25T03:17:29.2232501Z Successfully removed non-blocking flag from /podr/container/pipe/01d33e894c03_gaitanalysisapp/stderr_43ec1dc055824a63bda91e958728e479.
+2026-01-25T03:17:29.2233262Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:691ace30dec2bd77e86b2fbe9d588a04592c07c1 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:691ace30dec2bd77e86b2fbe9d588a04592c07c1
+2026-01-25T03:17:30.4449631Z Starting container: 01d33e894c03_gaitanalysisapp.
+2026-01-25T03:17:30.5085504Z Starting watchers and probes.
+2026-01-25T03:17:30.5152293Z Starting metrics collection.
+2026-01-25T03:17:30.5247230Z Container is running.
+2026-01-25T03:17:30.5834694Z Container start method finished after 119224 ms.
+2026-01-25T03:17:36.5049478Z Site startup probe succeeded after 5.910362 seconds.
+2026-01-25T03:17:36.6572030Z Site started.
+2026-01-25T03:31:57.1220909Z Container start method called.
+2026-01-25T03:31:57.1300965Z Establishing network.
+2026-01-25T03:31:57.1302005Z Pulling image: gaitacr737.azurecr.io/gait-integrated:617e3ac580545f1a8859d11455071f833e96064a.
+2026-01-25T03:32:18.3658962Z Container pull image interrupted. Revert by terminate.
+2026-01-25T03:32:18.3662730Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T03:32:18.3855410Z Container spec TerminationMessagePolicy  path 
+2026-01-25T03:32:18.3957374Z Container is terminated. Total time elapsed: 28 ms.
+2026-01-25T03:32:18.3966603Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T03:32:18.6663843Z Site: gaitanalysisapp stopped.
+2026-01-25T03:32:20.9976561Z Container start method called.
+2026-01-25T03:32:20.9977372Z Establishing network.
+2026-01-25T03:32:20.9978027Z Pulling image: gaitacr737.azurecr.io/gait-integrated:617e3ac580545f1a8859d11455071f833e96064a.
+2026-01-25T03:33:53.0391202Z Image gaitacr737.azurecr.io/gait-integrated:617e3ac580545f1a8859d11455071f833e96064a is pulled from registry gaitacr737.azurecr.io
+2026-01-25T03:33:53.0451597Z Container is starting.
+2026-01-25T03:33:53.0533381Z Establishing user namespace if not established already.
+2026-01-25T03:33:53.0535132Z Establishing network if not established already.
+2026-01-25T03:33:53.0537515Z Mounting volumes.
+2026-01-25T03:33:53.0596237Z Nested mountpoint volatile/logs
+2026-01-25T03:33:53.0803691Z Nested mountpoint 
+2026-01-25T03:33:53.1191650Z Creating container.
+2026-01-25T03:33:53.1192822Z Creating pipes for streaming container io.
+2026-01-25T03:33:53.1194427Z Creating stdout named pipe at /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stdout_1e07d98dd9bb47bf9f41a71d53076046.
+2026-01-25T03:33:53.1224755Z Successfully created stdout named pipe at: /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stdout_1e07d98dd9bb47bf9f41a71d53076046.
+2026-01-25T03:33:53.1291232Z Opening named pipe /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stdout_1e07d98dd9bb47bf9f41a71d53076046 for reading in non-blocking mode.
+2026-01-25T03:33:53.1292337Z Successfully opened named pipe: /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stdout_1e07d98dd9bb47bf9f41a71d53076046.
+2026-01-25T03:33:53.1293039Z Successfully removed non-blocking flag from /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stdout_1e07d98dd9bb47bf9f41a71d53076046.
+2026-01-25T03:33:53.1293669Z Creating stderr named pipe at /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stderr_015af19f0dd2479bac517960b5b2f9b5.
+2026-01-25T03:33:53.1294649Z Successfully created stderr named pipe at: /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stderr_015af19f0dd2479bac517960b5b2f9b5.
+2026-01-25T03:33:53.1295217Z Opening named pipe /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stderr_015af19f0dd2479bac517960b5b2f9b5 for reading in non-blocking mode.
+2026-01-25T03:33:53.1295898Z Successfully opened named pipe: /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stderr_015af19f0dd2479bac517960b5b2f9b5.
+2026-01-25T03:33:53.1296478Z Successfully removed non-blocking flag from /podr/container/pipe/9f42311eabc5_gaitanalysisapp/stderr_015af19f0dd2479bac517960b5b2f9b5.
+2026-01-25T03:33:53.1308756Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:617e3ac580545f1a8859d11455071f833e96064a from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:617e3ac580545f1a8859d11455071f833e96064a
+2026-01-25T03:33:54.3828024Z Starting container: 9f42311eabc5_gaitanalysisapp.
+2026-01-25T03:33:54.4506800Z Starting watchers and probes.
+2026-01-25T03:33:54.4811136Z Starting metrics collection.
+2026-01-25T03:33:54.4890769Z Container is running.
+2026-01-25T03:33:54.6091014Z Container start method finished after 93611 ms.
+2026-01-25T03:33:58.6773231Z Site startup probe succeeded after 4.0556587 seconds.
+2026-01-25T03:33:58.8567182Z Site started.
+2026-01-25T03:34:19.4142713Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T03:34:19.4409652Z Stop and delete container. Retry count = 0
+2026-01-25T03:34:19.4421826Z Stopping container: 01d33e894c03_gaitanalysisapp.
+2026-01-25T03:34:24.5717146Z Deleting container: 01d33e894c03_gaitanalysisapp. Retry count = 0
+2026-01-25T03:34:24.8133701Z Container spec TerminationMessagePolicy  path 
+2026-01-25T03:34:24.8137268Z Container is terminated. Total time elapsed: 5399 ms.
+2026-01-25T03:34:24.8151165Z Site: gaitanalysisapp stopped.
+2026-01-25T04:18:10.7896839Z Container start method called.
+2026-01-25T04:18:10.7951496Z Establishing network.
+2026-01-25T04:18:10.7961148Z Pulling image: gaitacr737.azurecr.io/gait-integrated:46df04d8ddf9c05aeeb496cdcc7c77152465e2bc.
+2026-01-25T04:18:18.7336593Z Container pull image interrupted. Revert by terminate.
+2026-01-25T04:18:18.7342765Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:18:18.7350887Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:18:18.7575053Z Container is terminated. Total time elapsed: 22 ms.
+2026-01-25T04:18:18.7581947Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T04:18:18.9678615Z Site: gaitanalysisapp stopped.
+2026-01-25T04:18:20.2494806Z Container start method called.
+2026-01-25T04:18:20.2498467Z Establishing network.
+2026-01-25T04:18:20.2499194Z Pulling image: gaitacr737.azurecr.io/gait-integrated:46df04d8ddf9c05aeeb496cdcc7c77152465e2bc.
+2026-01-25T04:19:48.5889916Z Image gaitacr737.azurecr.io/gait-integrated:46df04d8ddf9c05aeeb496cdcc7c77152465e2bc is pulled from registry gaitacr737.azurecr.io
+2026-01-25T04:19:48.5902201Z Container is starting.
+2026-01-25T04:19:48.6078180Z Establishing user namespace if not established already.
+2026-01-25T04:19:48.6083006Z Establishing network if not established already.
+2026-01-25T04:19:48.6085001Z Mounting volumes.
+2026-01-25T04:19:48.6132694Z Nested mountpoint volatile/logs
+2026-01-25T04:19:48.6205313Z Nested mountpoint 
+2026-01-25T04:19:48.7575869Z Creating container.
+2026-01-25T04:19:48.7576747Z Creating pipes for streaming container io.
+2026-01-25T04:19:48.7577614Z Creating stdout named pipe at /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stdout_d691439cfd9e4bb7bc55c15f8f69b614.
+2026-01-25T04:19:48.7693234Z Successfully created stdout named pipe at: /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stdout_d691439cfd9e4bb7bc55c15f8f69b614.
+2026-01-25T04:19:48.7694042Z Opening named pipe /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stdout_d691439cfd9e4bb7bc55c15f8f69b614 for reading in non-blocking mode.
+2026-01-25T04:19:48.7696623Z Successfully opened named pipe: /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stdout_d691439cfd9e4bb7bc55c15f8f69b614.
+2026-01-25T04:19:48.7697609Z Successfully removed non-blocking flag from /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stdout_d691439cfd9e4bb7bc55c15f8f69b614.
+2026-01-25T04:19:48.7698392Z Creating stderr named pipe at /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stderr_2df8bed38dd54ce8b12e476e82da9668.
+2026-01-25T04:19:48.7699403Z Successfully created stderr named pipe at: /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stderr_2df8bed38dd54ce8b12e476e82da9668.
+2026-01-25T04:19:48.7700162Z Opening named pipe /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stderr_2df8bed38dd54ce8b12e476e82da9668 for reading in non-blocking mode.
+2026-01-25T04:19:48.7701013Z Successfully opened named pipe: /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stderr_2df8bed38dd54ce8b12e476e82da9668.
+2026-01-25T04:19:48.7872291Z Successfully removed non-blocking flag from /podr/container/pipe/f1c1986b4078_gaitanalysisapp/stderr_2df8bed38dd54ce8b12e476e82da9668.
+2026-01-25T04:19:48.7989271Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:46df04d8ddf9c05aeeb496cdcc7c77152465e2bc from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:46df04d8ddf9c05aeeb496cdcc7c77152465e2bc
+2026-01-25T04:19:49.5162415Z Starting container: f1c1986b4078_gaitanalysisapp.
+2026-01-25T04:19:49.6582652Z Starting watchers and probes.
+2026-01-25T04:19:49.6685169Z Starting metrics collection.
+2026-01-25T04:19:49.6695233Z Container is running.
+2026-01-25T04:19:49.8286276Z Container start method finished after 89578 ms.
+2026-01-25T04:19:54.9548931Z Site startup probe succeeded after 5.0038278 seconds.
+2026-01-25T04:19:55.1255353Z Site started.
+2026-01-25T04:20:15.9083247Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:20:15.9372490Z Stop and delete container. Retry count = 0
+2026-01-25T04:20:15.9378624Z Stopping container: 9f42311eabc5_gaitanalysisapp.
+2026-01-25T04:20:21.0366519Z Deleting container: 9f42311eabc5_gaitanalysisapp. Retry count = 0
+2026-01-25T04:20:21.1876212Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:20:21.1898574Z Container is terminated. Total time elapsed: 5280 ms.
+2026-01-25T04:20:21.1901562Z Site: gaitanalysisapp stopped.
+2026-01-25T04:42:28.2786555Z Container start method called.
+2026-01-25T04:42:28.2794941Z Establishing network.
+2026-01-25T04:42:28.2799273Z Pulling image: gaitacr737.azurecr.io/gait-integrated:1a9fe6f6daa773920dddd295f2e64f734551f6dc.
+2026-01-25T04:42:38.0723639Z Container pull image interrupted. Revert by terminate.
+2026-01-25T04:42:38.0728922Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:42:38.0730087Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:42:38.1080809Z Container is terminated. Total time elapsed: 34 ms.
+2026-01-25T04:42:38.1083736Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T04:42:38.2187291Z Site: gaitanalysisapp stopped.
+2026-01-25T04:42:40.8265796Z Container start method called.
+2026-01-25T04:42:40.8381398Z Establishing network.
+2026-01-25T04:42:40.8382500Z Pulling image: gaitacr737.azurecr.io/gait-integrated:1a9fe6f6daa773920dddd295f2e64f734551f6dc.
+2026-01-25T04:44:12.6978529Z Image gaitacr737.azurecr.io/gait-integrated:1a9fe6f6daa773920dddd295f2e64f734551f6dc is pulled from registry gaitacr737.azurecr.io
+2026-01-25T04:44:12.7013339Z Container is starting.
+2026-01-25T04:44:12.7201953Z Establishing user namespace if not established already.
+2026-01-25T04:44:12.7207424Z Establishing network if not established already.
+2026-01-25T04:44:12.7209792Z Mounting volumes.
+2026-01-25T04:44:12.7293116Z Nested mountpoint volatile/logs
+2026-01-25T04:44:12.7586527Z Nested mountpoint 
+2026-01-25T04:44:12.8721993Z Creating container.
+2026-01-25T04:44:12.8722824Z Creating pipes for streaming container io.
+2026-01-25T04:44:12.8723561Z Creating stdout named pipe at /podr/container/pipe/d55d07f56774_gaitanalysisapp/stdout_ec4623e0ba6f4410914348e9000874ec.
+2026-01-25T04:44:12.8809869Z Successfully created stdout named pipe at: /podr/container/pipe/d55d07f56774_gaitanalysisapp/stdout_ec4623e0ba6f4410914348e9000874ec.
+2026-01-25T04:44:12.8814052Z Opening named pipe /podr/container/pipe/d55d07f56774_gaitanalysisapp/stdout_ec4623e0ba6f4410914348e9000874ec for reading in non-blocking mode.
+2026-01-25T04:44:12.8815186Z Successfully opened named pipe: /podr/container/pipe/d55d07f56774_gaitanalysisapp/stdout_ec4623e0ba6f4410914348e9000874ec.
+2026-01-25T04:44:12.8819313Z Successfully removed non-blocking flag from /podr/container/pipe/d55d07f56774_gaitanalysisapp/stdout_ec4623e0ba6f4410914348e9000874ec.
+2026-01-25T04:44:12.8822262Z Creating stderr named pipe at /podr/container/pipe/d55d07f56774_gaitanalysisapp/stderr_baae652dc8a24c3db94f509174f8ce82.
+2026-01-25T04:44:12.8827892Z Successfully created stderr named pipe at: /podr/container/pipe/d55d07f56774_gaitanalysisapp/stderr_baae652dc8a24c3db94f509174f8ce82.
+2026-01-25T04:44:12.8830784Z Opening named pipe /podr/container/pipe/d55d07f56774_gaitanalysisapp/stderr_baae652dc8a24c3db94f509174f8ce82 for reading in non-blocking mode.
+2026-01-25T04:44:12.8833717Z Successfully opened named pipe: /podr/container/pipe/d55d07f56774_gaitanalysisapp/stderr_baae652dc8a24c3db94f509174f8ce82.
+2026-01-25T04:44:12.8910894Z Successfully removed non-blocking flag from /podr/container/pipe/d55d07f56774_gaitanalysisapp/stderr_baae652dc8a24c3db94f509174f8ce82.
+2026-01-25T04:44:12.8920816Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:1a9fe6f6daa773920dddd295f2e64f734551f6dc from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:1a9fe6f6daa773920dddd295f2e64f734551f6dc
+2026-01-25T04:44:13.5381266Z Starting container: d55d07f56774_gaitanalysisapp.
+2026-01-25T04:44:13.6689282Z Starting watchers and probes.
+2026-01-25T04:44:13.6989481Z Starting metrics collection.
+2026-01-25T04:44:13.7088080Z Container is running.
+2026-01-25T04:44:13.8494997Z Container start method finished after 93011 ms.
+2026-01-25T04:44:18.0418146Z Site startup probe succeeded after 4.1701297 seconds.
+2026-01-25T04:44:18.2166416Z Site started.
+2026-01-25T04:44:38.2653151Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:44:38.3564849Z Stop and delete container. Retry count = 0
+2026-01-25T04:44:38.3639346Z Stopping container: f1c1986b4078_gaitanalysisapp.
+2026-01-25T04:44:43.4010318Z Deleting container: f1c1986b4078_gaitanalysisapp. Retry count = 0
+2026-01-25T04:44:43.5528836Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:44:43.5540438Z Container is terminated. Total time elapsed: 5288 ms.
+2026-01-25T04:44:43.5614685Z Site: gaitanalysisapp stopped.
+2026-01-25T04:52:51.2139435Z Container start method called.
+2026-01-25T04:52:51.2423672Z Establishing network.
+2026-01-25T04:52:51.2424810Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39.
+2026-01-25T04:53:00.6599257Z Container pull image interrupted. Revert by terminate.
+2026-01-25T04:53:00.6604757Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:53:00.6607355Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:53:00.6609737Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-25T04:53:00.6617909Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T04:53:00.8722841Z Site: gaitanalysisapp stopped.
+2026-01-25T04:53:03.2057299Z Container start method called.
+2026-01-25T04:53:03.2139945Z Establishing network.
+2026-01-25T04:53:03.2143960Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39.
+2026-01-25T04:53:20.8187522Z Container pull image interrupted. Revert by terminate.
+2026-01-25T04:53:20.8190436Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:53:20.8197119Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:53:20.8251158Z Container is terminated. Total time elapsed: 4 ms.
+2026-01-25T04:53:20.8281832Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T04:53:20.8507710Z Site: gaitanalysisapp stopped.
+2026-01-25T04:53:22.8944045Z Container start method called.
+2026-01-25T04:53:22.8950099Z Establishing network.
+2026-01-25T04:53:22.8953592Z Pulling image: gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39.
+2026-01-25T04:54:57.6318765Z Image gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39 is pulled from registry gaitacr737.azurecr.io
+2026-01-25T04:54:57.6515539Z Container is starting.
+2026-01-25T04:54:57.6600043Z Establishing user namespace if not established already.
+2026-01-25T04:54:57.6610067Z Establishing network if not established already.
+2026-01-25T04:54:57.6616871Z Mounting volumes.
+2026-01-25T04:54:57.6642153Z Nested mountpoint volatile/logs
+2026-01-25T04:54:57.7037909Z Nested mountpoint 
+2026-01-25T04:54:57.7753283Z Creating container.
+2026-01-25T04:54:57.7828029Z Creating pipes for streaming container io.
+2026-01-25T04:54:57.7831187Z Creating stdout named pipe at /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stdout_ce193ae3df72412782eea6d532d2dde7.
+2026-01-25T04:54:57.7925809Z Successfully created stdout named pipe at: /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stdout_ce193ae3df72412782eea6d532d2dde7.
+2026-01-25T04:54:57.7931980Z Opening named pipe /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stdout_ce193ae3df72412782eea6d532d2dde7 for reading in non-blocking mode.
+2026-01-25T04:54:57.7942754Z Successfully opened named pipe: /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stdout_ce193ae3df72412782eea6d532d2dde7.
+2026-01-25T04:54:57.7947622Z Successfully removed non-blocking flag from /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stdout_ce193ae3df72412782eea6d532d2dde7.
+2026-01-25T04:54:57.7952647Z Creating stderr named pipe at /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stderr_bb91f51fc4e14ab1af4a81fb7936a24e.
+2026-01-25T04:54:57.8031469Z Successfully created stderr named pipe at: /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stderr_bb91f51fc4e14ab1af4a81fb7936a24e.
+2026-01-25T04:54:57.8033204Z Opening named pipe /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stderr_bb91f51fc4e14ab1af4a81fb7936a24e for reading in non-blocking mode.
+2026-01-25T04:54:57.8037345Z Successfully opened named pipe: /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stderr_bb91f51fc4e14ab1af4a81fb7936a24e.
+2026-01-25T04:54:57.8040159Z Successfully removed non-blocking flag from /podr/container/pipe/effe1bfd9d8f_gaitanalysisapp/stderr_bb91f51fc4e14ab1af4a81fb7936a24e.
+2026-01-25T04:54:57.8044973Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:8e6e63575807b74af9741c6ce2fc4fa3e3dcaa39
+2026-01-25T04:54:58.5952291Z Starting container: effe1bfd9d8f_gaitanalysisapp.
+2026-01-25T04:54:58.6541228Z Starting watchers and probes.
+2026-01-25T04:54:58.6838928Z Starting metrics collection.
+2026-01-25T04:54:58.6933716Z Container is running.
+2026-01-25T04:54:58.7952235Z Container start method finished after 95900 ms.
+2026-01-25T04:55:04.0932985Z Site startup probe succeeded after 5.2585996 seconds.
+2026-01-25T04:55:04.2511363Z Site started.
+2026-01-25T04:55:24.3538184Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:55:24.3737760Z Stop and delete container. Retry count = 0
+2026-01-25T04:55:24.3742756Z Stopping container: d55d07f56774_gaitanalysisapp.
+2026-01-25T04:55:29.4982675Z Deleting container: d55d07f56774_gaitanalysisapp. Retry count = 0
+2026-01-25T04:55:29.6759147Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:55:29.6796688Z Container is terminated. Total time elapsed: 5325 ms.
+2026-01-25T04:55:29.6806346Z Site: gaitanalysisapp stopped.
+2026-01-25T04:57:42.6039312Z Container start method called.
+2026-01-25T04:57:42.6040783Z Establishing network.
+2026-01-25T04:57:42.6041649Z Pulling image: gaitacr737.azurecr.io/gait-integrated:91962076623cfb6d337d4c37331ce1ab602f062f.
+2026-01-25T04:57:51.8071051Z Container pull image interrupted. Revert by terminate.
+2026-01-25T04:57:51.8160791Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:57:51.8165938Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:57:51.8170745Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-25T04:57:51.8175735Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T04:57:51.8672269Z Site: gaitanalysisapp stopped.
+2026-01-25T04:57:53.8264087Z Container start method called.
+2026-01-25T04:57:53.8584578Z Establishing network.
+2026-01-25T04:57:53.8587213Z Pulling image: gaitacr737.azurecr.io/gait-integrated:91962076623cfb6d337d4c37331ce1ab602f062f.
+2026-01-25T04:59:27.2220587Z Image gaitacr737.azurecr.io/gait-integrated:91962076623cfb6d337d4c37331ce1ab602f062f is pulled from registry gaitacr737.azurecr.io
+2026-01-25T04:59:27.2326586Z Container is starting.
+2026-01-25T04:59:27.2554593Z Establishing user namespace if not established already.
+2026-01-25T04:59:27.2562434Z Establishing network if not established already.
+2026-01-25T04:59:27.2568492Z Mounting volumes.
+2026-01-25T04:59:27.2656860Z Nested mountpoint volatile/logs
+2026-01-25T04:59:27.2730763Z Nested mountpoint 
+2026-01-25T04:59:27.3526939Z Creating container.
+2026-01-25T04:59:27.3533559Z Creating pipes for streaming container io.
+2026-01-25T04:59:27.3720269Z Creating stdout named pipe at /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stdout_7f6908daaafe462c93be059d09e80d37.
+2026-01-25T04:59:27.3737191Z Successfully created stdout named pipe at: /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stdout_7f6908daaafe462c93be059d09e80d37.
+2026-01-25T04:59:27.3740437Z Opening named pipe /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stdout_7f6908daaafe462c93be059d09e80d37 for reading in non-blocking mode.
+2026-01-25T04:59:27.3829944Z Successfully opened named pipe: /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stdout_7f6908daaafe462c93be059d09e80d37.
+2026-01-25T04:59:27.3830953Z Successfully removed non-blocking flag from /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stdout_7f6908daaafe462c93be059d09e80d37.
+2026-01-25T04:59:27.3832518Z Creating stderr named pipe at /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stderr_6717735b94bd43f2b4d202f75cab5e4c.
+2026-01-25T04:59:27.3919323Z Successfully created stderr named pipe at: /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stderr_6717735b94bd43f2b4d202f75cab5e4c.
+2026-01-25T04:59:27.3932428Z Opening named pipe /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stderr_6717735b94bd43f2b4d202f75cab5e4c for reading in non-blocking mode.
+2026-01-25T04:59:27.4019308Z Successfully opened named pipe: /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stderr_6717735b94bd43f2b4d202f75cab5e4c.
+2026-01-25T04:59:27.4024147Z Successfully removed non-blocking flag from /podr/container/pipe/a40cc6c97089_gaitanalysisapp/stderr_6717735b94bd43f2b4d202f75cab5e4c.
+2026-01-25T04:59:27.4038454Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:91962076623cfb6d337d4c37331ce1ab602f062f from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:91962076623cfb6d337d4c37331ce1ab602f062f
+2026-01-25T04:59:28.3922640Z Starting container: a40cc6c97089_gaitanalysisapp.
+2026-01-25T04:59:28.4542945Z Starting watchers and probes.
+2026-01-25T04:59:28.4812539Z Starting metrics collection.
+2026-01-25T04:59:28.4927113Z Container is running.
+2026-01-25T04:59:28.6036509Z Container start method finished after 94746 ms.
+2026-01-25T04:59:33.2889844Z Site startup probe succeeded after 4.6656093 seconds.
+2026-01-25T04:59:33.4479582Z Site started.
+2026-01-25T04:59:53.4713655Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T04:59:53.4965815Z Stop and delete container. Retry count = 0
+2026-01-25T04:59:53.4969050Z Stopping container: effe1bfd9d8f_gaitanalysisapp.
+2026-01-25T04:59:58.5878263Z Deleting container: effe1bfd9d8f_gaitanalysisapp. Retry count = 0
+2026-01-25T04:59:58.7572377Z Container spec TerminationMessagePolicy  path 
+2026-01-25T04:59:58.7577099Z Container is terminated. Total time elapsed: 5285 ms.
+2026-01-25T04:59:58.7583183Z Site: gaitanalysisapp stopped.
+2026-01-25T05:07:39.9268616Z Container start method called.
+2026-01-25T05:07:39.9668027Z Establishing network.
+2026-01-25T05:07:39.9672506Z Pulling image: gaitacr737.azurecr.io/gait-integrated:7c5ee897fd441f01ae4472cfa03156c8919cdb37.
+2026-01-25T05:07:49.2147702Z Container pull image interrupted. Revert by terminate.
+2026-01-25T05:07:49.2215979Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T05:07:49.2222632Z Container spec TerminationMessagePolicy  path 
+2026-01-25T05:07:49.2223619Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-25T05:07:49.2224844Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T05:07:49.2811389Z Site: gaitanalysisapp stopped.
+2026-01-25T05:07:51.4819844Z Container start method called.
+2026-01-25T05:07:51.4820981Z Establishing network.
+2026-01-25T05:07:51.4821731Z Pulling image: gaitacr737.azurecr.io/gait-integrated:7c5ee897fd441f01ae4472cfa03156c8919cdb37.
+2026-01-25T05:09:32.4468666Z Image gaitacr737.azurecr.io/gait-integrated:7c5ee897fd441f01ae4472cfa03156c8919cdb37 is pulled from registry gaitacr737.azurecr.io
+2026-01-25T05:09:32.4619790Z Container is starting.
+2026-01-25T05:09:32.4700502Z Establishing user namespace if not established already.
+2026-01-25T05:09:32.4703100Z Establishing network if not established already.
+2026-01-25T05:09:32.4708545Z Mounting volumes.
+2026-01-25T05:09:32.4848929Z Nested mountpoint volatile/logs
+2026-01-25T05:09:32.4967803Z Nested mountpoint 
+2026-01-25T05:09:32.5774154Z Creating container.
+2026-01-25T05:09:32.5871112Z Creating pipes for streaming container io.
+2026-01-25T05:09:32.5879112Z Creating stdout named pipe at /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stdout_c5043ccf550046438d7619f522b171cd.
+2026-01-25T05:09:32.6169009Z Successfully created stdout named pipe at: /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stdout_c5043ccf550046438d7619f522b171cd.
+2026-01-25T05:09:32.6170614Z Opening named pipe /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stdout_c5043ccf550046438d7619f522b171cd for reading in non-blocking mode.
+2026-01-25T05:09:32.6173322Z Successfully opened named pipe: /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stdout_c5043ccf550046438d7619f522b171cd.
+2026-01-25T05:09:32.6177146Z Successfully removed non-blocking flag from /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stdout_c5043ccf550046438d7619f522b171cd.
+2026-01-25T05:09:32.6179283Z Creating stderr named pipe at /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stderr_5f2db26f6e4e4a16b7ab207e31d1cf57.
+2026-01-25T05:09:32.6182840Z Successfully created stderr named pipe at: /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stderr_5f2db26f6e4e4a16b7ab207e31d1cf57.
+2026-01-25T05:09:32.6189085Z Opening named pipe /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stderr_5f2db26f6e4e4a16b7ab207e31d1cf57 for reading in non-blocking mode.
+2026-01-25T05:09:32.6275418Z Successfully opened named pipe: /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stderr_5f2db26f6e4e4a16b7ab207e31d1cf57.
+2026-01-25T05:09:32.6276207Z Successfully removed non-blocking flag from /podr/container/pipe/9ed9362b1bf2_gaitanalysisapp/stderr_5f2db26f6e4e4a16b7ab207e31d1cf57.
+2026-01-25T05:09:32.6278017Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:7c5ee897fd441f01ae4472cfa03156c8919cdb37 from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:7c5ee897fd441f01ae4472cfa03156c8919cdb37
+2026-01-25T05:09:33.6513599Z Starting container: 9ed9362b1bf2_gaitanalysisapp.
+2026-01-25T05:09:33.7304289Z Starting watchers and probes.
+2026-01-25T05:09:33.8301820Z Starting metrics collection.
+2026-01-25T05:09:33.8321201Z Container is running.
+2026-01-25T05:09:33.9005050Z Container start method finished after 102418 ms.
+2026-01-25T05:09:38.3161742Z Site startup probe succeeded after 4.373536 seconds.
+2026-01-25T05:09:38.5156496Z Site started.
+2026-01-25T05:09:58.5474410Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T05:09:58.5721869Z Stop and delete container. Retry count = 0
+2026-01-25T05:09:58.5725385Z Stopping container: a40cc6c97089_gaitanalysisapp.
+2026-01-25T05:10:03.6665492Z Deleting container: a40cc6c97089_gaitanalysisapp. Retry count = 0
+2026-01-25T05:10:03.8660931Z Container spec TerminationMessagePolicy  path 
+2026-01-25T05:10:03.8668041Z Container is terminated. Total time elapsed: 5318 ms.
+2026-01-25T05:10:03.8668822Z Site: gaitanalysisapp stopped.
+2026-01-25T05:10:19.6244722Z Container start method called.
+2026-01-25T05:10:19.6393553Z Establishing network.
+2026-01-25T05:10:19.6475800Z Pulling image: gaitacr737.azurecr.io/gait-integrated:1a4d1bd4d923e9523ecdbfe5995c8e1ec0d4410d.
+2026-01-25T05:10:30.6289241Z Container pull image interrupted. Revert by terminate.
+2026-01-25T05:10:30.6290509Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T05:10:30.6291316Z Container spec TerminationMessagePolicy  path 
+2026-01-25T05:10:30.6291962Z Container is terminated. Total time elapsed: 0 ms.
+2026-01-25T05:10:30.6292626Z Site container: gaitanalysisapp terminated during site startup.
+2026-01-25T05:10:30.6804893Z Site: gaitanalysisapp stopped.
+2026-01-25T05:10:32.6601752Z Container start method called.
+2026-01-25T05:10:32.6613366Z Establishing network.
+2026-01-25T05:10:32.6618586Z Pulling image: gaitacr737.azurecr.io/gait-integrated:1a4d1bd4d923e9523ecdbfe5995c8e1ec0d4410d.
+2026-01-25T05:12:09.0280538Z Image gaitacr737.azurecr.io/gait-integrated:1a4d1bd4d923e9523ecdbfe5995c8e1ec0d4410d is pulled from registry gaitacr737.azurecr.io
+2026-01-25T05:12:09.0481985Z Container is starting.
+2026-01-25T05:12:09.0507409Z Establishing user namespace if not established already.
+2026-01-25T05:12:09.0510349Z Establishing network if not established already.
+2026-01-25T05:12:09.0513370Z Mounting volumes.
+2026-01-25T05:12:09.0526256Z Nested mountpoint volatile/logs
+2026-01-25T05:12:09.0676533Z Nested mountpoint 
+2026-01-25T05:12:09.2999983Z Creating container.
+2026-01-25T05:12:09.3003354Z Creating pipes for streaming container io.
+2026-01-25T05:12:09.3006201Z Creating stdout named pipe at /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stdout_df515a21142646469622ca8cd704d3f2.
+2026-01-25T05:12:09.3095618Z Successfully created stdout named pipe at: /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stdout_df515a21142646469622ca8cd704d3f2.
+2026-01-25T05:12:09.3098388Z Opening named pipe /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stdout_df515a21142646469622ca8cd704d3f2 for reading in non-blocking mode.
+2026-01-25T05:12:09.3100925Z Successfully opened named pipe: /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stdout_df515a21142646469622ca8cd704d3f2.
+2026-01-25T05:12:09.3103716Z Successfully removed non-blocking flag from /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stdout_df515a21142646469622ca8cd704d3f2.
+2026-01-25T05:12:09.3105270Z Creating stderr named pipe at /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stderr_26c80c2950224327b528f4c04311f6b9.
+2026-01-25T05:12:09.3202930Z Successfully created stderr named pipe at: /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stderr_26c80c2950224327b528f4c04311f6b9.
+2026-01-25T05:12:09.3203799Z Opening named pipe /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stderr_26c80c2950224327b528f4c04311f6b9 for reading in non-blocking mode.
+2026-01-25T05:12:09.3204649Z Successfully opened named pipe: /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stderr_26c80c2950224327b528f4c04311f6b9.
+2026-01-25T05:12:09.3205995Z Successfully removed non-blocking flag from /podr/container/pipe/0cce12a3fcad_gaitanalysisapp/stderr_26c80c2950224327b528f4c04311f6b9.
+2026-01-25T05:12:09.3206899Z Creating container with image: gaitacr737.azurecr.io/gait-integrated:1a4d1bd4d923e9523ecdbfe5995c8e1ec0d4410d from registry: gaitacr737.azurecr.io and fully qualified image name: gaitacr737.azurecr.io/gait-integrated:1a4d1bd4d923e9523ecdbfe5995c8e1ec0d4410d
+2026-01-25T05:12:10.2194320Z Starting container: 0cce12a3fcad_gaitanalysisapp.
+2026-01-25T05:12:10.3593349Z Starting watchers and probes.
+2026-01-25T05:12:10.4181100Z Starting metrics collection.
+2026-01-25T05:12:10.4182455Z Container is running.
+2026-01-25T05:12:10.6087510Z Container start method finished after 97948 ms.
+2026-01-25T05:12:20.4524641Z Site startup probe succeeded after 9.8425766 seconds.
+2026-01-25T05:12:20.8925581Z Site started.
+2026-01-25T05:12:40.9259908Z Container is terminating. Grace period: 5 seconds.
+2026-01-25T05:12:40.9458410Z Stop and delete container. Retry count = 0
+2026-01-25T05:12:40.9465772Z Stopping container: 9ed9362b1bf2_gaitanalysisapp.
+2026-01-25T05:12:46.0381557Z Deleting container: 9ed9362b1bf2_gaitanalysisapp. Retry count = 0
+2026-01-25T05:12:46.1811323Z Container spec TerminationMessagePolicy  path 
+2026-01-25T05:12:46.1820030Z Container is terminated. Total time elapsed: 5255 ms.
+2026-01-25T05:12:46.1882158Z Site: gaitanalysisapp stopped.
